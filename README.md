@@ -1,9 +1,15 @@
+ConstructR
+==========
 
-Building on Linux
-=================
+Electron-based R shell.
 
-Prerequisites
--------------
+Build
+=====
+
+Build on Linux
+--------------
+
+### Prerequisites ###
 
  * nodejs and npm
 
@@ -18,11 +24,9 @@ Prerequisites
    Available from https://github.com/sdllc/jsclientlib.  You can
    install this using gulp (in the next section). 
   
-Download, Build and Install
----------------------------
+### Download, Build and Install ###
 
 ```sh
-
 # download
 git clone https://github.com/sdllc/constructr.git
 
