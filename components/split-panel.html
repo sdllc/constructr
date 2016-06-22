@@ -1,56 +1,55 @@
-<!--
+<!-- 
 
-	split-panel.html
-	Copyright (C) 2016 Structured Data, LLC
+ Copyright (c) 2016 Structured Data, LLC
 
-	Permission is hereby granted, free of charge, to any person obtaining a
-	copy of this software and associated documentation files (the "Software"),
-	to deal in the Software without restriction, including without limitation 
-	the rights to use, copy, modify, merge, publish, distribute, sublicense, 
-	and/or sell copies of the Software, and to permit persons to whom the 
-	Software is furnished to do so, subject to the following conditions:
+ Permission is hereby granted, free of charge, to any person obtaining a copy
+ of this software and associated documentation files (the "Software"), to 
+ deal in the Software without restriction, including without limitation the 
+ rights to use, copy, modify, merge, publish, distribute, sublicense, and/or 
+ sell copies of the Software, and to permit persons to whom the Software is 
+ furnished to do so, subject to the following conditions:
 
-	The above copyright notice and this permission notice shall be included 
-	in all copies or substantial portions of the Software.
+ The above copyright notice and this permission notice shall be included in 
+ all copies or substantial portions of the Software.
 
-	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-	IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
-	FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-	AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
-	LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
-	FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-	IN THE SOFTWARE.	
-		
-	-----------------------------------------------------------------
-	
-	implementation of splitter as a polymer component.  reduces markup to
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+ IN THE SOFTWARE.
+
+ ---
+
+ implementation of splitter as a polymer component.  reduces markup to
 	
 	<split-panel>
 		<split-pane/>
 		<split-pane/>
 	</split-panel>
 
-	and automates layout, splitting, &c.  attributes:
+ and automates layout, splitting, &c.  attributes:
 	
-	split panel (container):
+ split panel (container):
 	
-		direction: horizontal | vertical
+ 	direction: horizontal | vertical
 	
-	split pane (child):
+ split pane (child):
 	
-		split: split in % 
-		hide: hide when created -- usually used only if initial split == 0
+	split: split in % 
+	hide: hide when created -- usually used only if initial split == 0
 	
-	events:
+ events:
 	
-	split panel (container) fires a 'resize' event when resize is 
-	finished, either dragging or scripted
+ split panel (container) fires a 'resize' event when resize is 
+ finished, either dragging or scripted
 	
-	methods:
+ methods:
 	
-	split panel has a setSize() method to toggle (or slide) 		
+ split panel has a setSize() method to toggle (or slide) 		
 	
-  -->
+ -->
 
 <dom-module id="split-pane">
 	
