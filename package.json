@@ -16,7 +16,6 @@
   "main": "app/main.js",
   "scripts": {
     "start": "electron app/main.js",
-    "postinstall": "install-app-deps",
     "dist": "build"
   },
   "build": {
@@ -38,6 +37,7 @@
     "xml": "^1.0.1"
   },
   "devDependencies": {
+    "bower": "^1.7.9",
     "del": "^2.2.0",
     "electron-builder": "^3.25.0",
     "electron-prebuilt": "^1.2.3",

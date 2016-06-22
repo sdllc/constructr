@@ -18,9 +18,7 @@ const remote = electron.remote;
 const dialog = remote.dialog;
 const Menu = remote.Menu;
 const MenuItem = remote.MenuItem;
-
 const Shell = require( "cmjs-shell" ); 
-//const Shell = require( "../../../cmjs-shell/shell.js" ); 
 
 const ExtendR = require( "./extendR.js");
 const PackageManager = require( "./package-manager.js" );
@@ -1044,6 +1042,10 @@ var init_r = function(){
 		// set explicitly and patch for asar.  
 
 		let basedir = Utils.patch_asar_path( path.join( __dirname, "node_modules", "controlr", "js" ));
+
+		// this is a patch for running in dev, with the 2-level app structure
+		let fstat = fs.existsSync( basedir );
+		if( !fstat ) basedir = Utils.patch_asar_path( path.join( __dirname, "..", "node_modules", "controlr", "js" ));
 
 		// we may use this more than once...
 

@@ -20,6 +20,10 @@ var cssnano = require('gulp-cssnano');
 var rename = require("gulp-rename");
 var webpack = require('webpack-stream');
 var path = require('path');
+var bower = require('bower');
+var child_process = require( 'child_process');
+var fs = require('fs');
+var os = require('os');
 
 /** flag for watching: controls some compilation features */
 var watching = false;
@@ -27,9 +31,142 @@ var production = false;
 
 var target = "app";
 
+/* run the app */
 gulp.task('run', function() {
   return run(`electron ${target}/main.js`).exec()
     .pipe( gulp.dest( 'output' ));
+});
+
+/* wrapper for bower_install */
+gulp.task('bower', function(cb){
+	bower.commands.install().on('end', function(){
+		cb();
+	});
+});
+
+function ensure_directories(dir, base){
+	base = base || "";
+	var s = dir.split( path.sep );
+	return new Promise( function (resolve, reject ){
+		var test = path.join( base, s[0] );
+		fs.stat( path.join( base, s[0] ), function( err, fstat ){
+			if( fstat ){
+				if( !fstat.isDirectory()) reject( "Not a directory: " + test );
+				if( s.length === 1 ) resolve();
+				else ensure_directories( path.join.apply( null, s.slice(1)),
+						path.join( base, s[0] )).then(function(){ resolve(); });
+			}
+			else {
+				fs.mkdir( test, function(err){
+					if( err ) reject(err);
+					else ensure_directories( path.join.apply( null, s.slice(1)),
+							path.join( base, s[0] )).then(function(){ resolve(); });
+				});
+			}
+		});
+	});
+}
+
+/** 
+ * build and install the jsclientlib to app/library.
+ * you need build tools on your path, so this will probably
+ * not work on windows. 
+ **/
+gulp.task('jsclientlib', function(cb){
+
+	var url = "https://github.com/sdllc/jsclientlib.git";
+	var libdir = path.join( "app", "library" );
+	var tmpdir = null;
+	var composite = null;
+
+	ensure_directories( libdir ).then( function(){
+		return new Promise( function( resolve, reject ){
+			fs.mkdtemp( path.join( os.tmpdir(), "js-install-tmp-" ), 
+				function( err, dir ){
+					if( err ) reject( err );
+					else resolve( dir );
+				});
+		});
+	}).then( function( dir ){
+		tmpdir = dir;
+		composite = path.join( tmpdir, "jsclientlib" );
+		gutil.log( `cloning ${url} into ${tmpdir}...` );
+		let cmd = `git clone ${url} ${composite}`;
+		return new Promise( function( resolve, reject ){
+			child_process.exec( cmd, function( err, stdout, stderr ){
+				if( err ) reject(err);
+				else resolve();
+			});
+		});
+	}).then( function(){
+		gutil.log( "building library...");
+		let cmd = `R CMD build ${composite} && R CMD INSTALL ${composite} -l app/library`		
+		return new Promise( function( resolve, reject ){
+			child_process.exec( cmd, function( err, stdout, stderr ){
+				if( err ) reject(err);
+				else resolve();
+			});
+		});
+	}).then( function(){
+		gutil.log( "cleaning up...");
+		let cmd = `rm -fr ${tmpdir}`;
+		return new Promise( function( resolve, reject ){
+			child_process.exec( cmd, function( err, stdout, stderr ){
+				if( err ) reject(err);
+				else resolve();
+			});
+		});
+	}).then( function(){
+		cb();
+	}).catch( function( err ){
+		cb( err );
+	});
+	/*
+
+	fs.mkdtemp( path.join( os.tmpdir(), "js-install-tmp-" ), function( err, tmpdir ){
+		if( err ) cb(err);
+		else {
+			console.info( `cloning ${url} into ${tmpdir}` );
+			var composite = path.join( tmpdir, "jsclientlib" );
+			var cmd = `git clone ${url} ${composite}`;
+			child_process.exec( cmd, function( err, stdout, stderr ){
+				if( err ) cb( err );
+				else {
+					console.info( "building library...");
+					cmd = `R CMD build ${composite} && R CMD INSTALL ${composite} -l app/library`
+					child_process.exec( cmd, function( err, stdout, stderr ){
+						if( err ) cb(err);
+						else {
+							console.info( "cleaning up...");
+							cmd = `rm -fr ${composite}`
+							child_process.exec( cmd, function( err, stdout, stderr ){
+								cb(err);
+							});
+						}
+					});
+				}
+			});
+		}
+	});
+	*/
+
+	/*
+	console.info( "cloning", url );
+	var cmd = "git clone " + url;
+
+	child_process.exec( cmd, function( err, stdout, stderr ){
+		if( !err ){
+
+			console.info( "building library...");
+			cmd = "R CMD build jsclientlib && R CMD INSTALL jsclientlib -l app/library"
+			child_process.exec( cmd, function( err, stdout, stderr ){
+				fs.rmdir( "jsclientlib" );
+				cb(err);
+			});
+		}
+		else cb(err);
+	});
+	*/
 });
 
 gulp.task('reload', function () {
@@ -95,14 +232,14 @@ gulp.task('core', function(){
 		.pipe( gulpif(watching, livereload()));
 });
 
-gulp.task('polymer', function(){
+gulp.task('polymer', ['bower'], function(){
     return gulp.src(polymer_files)
         .pipe( gulp.dest( target ))
         .pipe( gulpif(watching, livereload()));
 });
 
 const codemirror_source = [ 'bower_components/codemirror/**/*' ];
-gulp.task('codemirror', function(){
+gulp.task('codemirror', ['bower'], function(){
     return gulp.src( codemirror_source )
       .pipe( gulp.dest( path.join( target, 'codemirror')))
       .pipe( gulpif(watching, livereload()));
@@ -113,14 +250,14 @@ gulp.task('codemirror', function(){
 // tool which might be useful to cut out extra stuff (TODO)
 
 const handsontable_source = [ 'bower_components/handsontable/dist/*full.min*' ];
-gulp.task('handsontable', function(){
+gulp.task('handsontable', ['bower'], function(){
     return gulp.src( handsontable_source )
       .pipe( gulp.dest( path.join( target, "packages", "table", "handsontable" )))
       .pipe( gulpif(watching, livereload()));
 });
 
 /** copy external/3d party resources */
-gulp.task('ext', function(){
+gulp.task('ext', ['bower'], function(){
     return gulp.src( ext_source )
       .pipe( gulp.dest( target))
       .pipe( gulpif(watching, livereload()));
@@ -249,4 +386,4 @@ gulp.task('watch', ['watch-flags', 'default'], function () {
 	 
 });
 
-gulp.task('default', ['ext', 'handsontable', 'codemirror', 'package.json', 'data', 'html', 'styles', 'main', 'core', 'polymer', 'components', 'themes', 'R', 'plugin', 'packages' ]);
+gulp.task('default', ['bower', 'ext', 'handsontable', 'codemirror', 'package.json', 'data', 'html', 'styles', 'main', 'core', 'polymer', 'components', 'themes', 'R', 'plugin', 'packages' ]);
