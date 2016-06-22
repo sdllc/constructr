@@ -24,7 +24,7 @@
     "asar-unpack": "**/app/startup.R",
     "asar-unpack-dir": "**/{R-3.3.0,node_modules/controlr,library}/**/*",
     "win": {
-      "iconUrl": "http://192.168.1.98/constructr-icon.ico"
+      "iconUrl": "https://raw.githubusercontent.com/sdllc/constructr/master/build/icon.ico"
     }
   },
   "dependencies": {
