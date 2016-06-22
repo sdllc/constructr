@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+	
+	<head>
+		<meta charset="UTF-8">
+		<title>ConstructR Shell</title>
+
+		<link rel="stylesheet" href="codemirror/lib/codemirror.css">
+		<link rel="stylesheet" href="codemirror/addon/hint/show-hint.css">
+		<link rel="stylesheet" href="cogs/cogs.css">
+		<link rel="stylesheet" href="material/material-icons.css">
+
+		<link rel="import" href="polymer.html">
+		<link rel="import" href="components.html">
+
+		<link rel="stylesheet" href="core.css">
+
+	</head>
+	
+	<body>
+		<split-panel direction='horizontal' id='shell-layout'>
+			<split-pane id='center-pane' split='100'>
+				<div id='shell-pane'>
+					<div class='overlay-bottom-right status-icon status-overlay'><i class='cog-05'></i></div>
+					<div id='shell-container'></div>
+				</div>
+			</split-pane>
+			<split-pane id='side-panel' split='0' hide></split-pane>
+		</split-panel>
+		<div id='orphans'></div>
+	</body>
+
+	<!-- watching -->
+	<script src="http://localhost:35729/livereload.js"></script>
+	<!-- /watching -->
+
+	<script src="codemirror/lib/codemirror.js"></script>
+	<script src="codemirror/addon/hint/show-hint.js"></script>
+	<script src="codemirror/addon/runmode/runmode.js"></script>
+	<script src="codemirror/mode/r/r.js"></script>
+
+	<script src='core.js'></script>
+
+</html>

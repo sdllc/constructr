@@ -1,0 +1,9 @@
+{
+    "name": "stacked-pane",
+    "version": "0.1.0",
+    "main": "stacked-pane.js",
+	"packageDependencies": [
+		"side-panel"
+	]
+}
+

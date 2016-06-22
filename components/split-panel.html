@@ -1,0 +1,534 @@
+<!--
+
+	split-panel.html
+	Copyright (C) 2016 Structured Data, LLC
+
+	Permission is hereby granted, free of charge, to any person obtaining a
+	copy of this software and associated documentation files (the "Software"),
+	to deal in the Software without restriction, including without limitation 
+	the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+	and/or sell copies of the Software, and to permit persons to whom the 
+	Software is furnished to do so, subject to the following conditions:
+
+	The above copyright notice and this permission notice shall be included 
+	in all copies or substantial portions of the Software.
+
+	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+	IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+	FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+	AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+	LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+	FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+	IN THE SOFTWARE.	
+		
+	-----------------------------------------------------------------
+	
+	implementation of splitter as a polymer component.  reduces markup to
+	
+	<split-panel>
+		<split-pane/>
+		<split-pane/>
+	</split-panel>
+
+	and automates layout, splitting, &c.  attributes:
+	
+	split panel (container):
+	
+		direction: horizontal | vertical
+	
+	split pane (child):
+	
+		split: split in % 
+		hide: hide when created -- usually used only if initial split == 0
+	
+	events:
+	
+	split panel (container) fires a 'resize' event when resize is 
+	finished, either dragging or scripted
+	
+	methods:
+	
+	split panel has a setSize() method to toggle (or slide) 		
+	
+  -->
+
+<dom-module id="split-pane">
+	
+	<template>
+				
+		<style>
+			
+			:host {
+				flex-grow: 1;
+				display: flex;
+				align-items: stretch;
+			}
+			
+			:host([direction=vertical]) {
+				flex-direction: column;
+				width: 100%;
+			}
+
+			:host([direction=horizontal]) {
+				flex-direction: row;
+				height: 100%;
+			}
+			
+			:host(:first-child) > .psplitter {
+				display: none;
+			}
+			
+			.psplitter-pane-content {
+				flex-grow: 1;
+				position: relative;
+			}
+
+			.psplitter {
+				background-color: #ccc;
+				position: relative;
+				overflow: visible;
+			}
+
+			:host([direction=horizontal]) > .psplitter {
+				width: 1px;
+				height: 100%;
+				cursor: ew-resize;
+			}
+
+			:host() > .psplitter > .psplitter-mouse-target {
+				z-index: 998; /* get above HOT */
+			}
+			
+			:host([direction=horizontal]) > .psplitter > .psplitter-mouse-target {
+				position: absolute;
+				left: -4px;
+				width: 9px;
+				height: 100%;
+			}
+
+			:host([direction=horizontal]) > .psplitter > .psplitter-mouse-target.active {
+				left: -3px;
+				width: 7px;
+			}
+			
+			:host([direction=vertical]) > .psplitter {
+				height: 1px;
+				cursor: ns-resize;
+			}
+			
+			:host([direction=vertical]) > .psplitter > .psplitter-mouse-target {
+				position: absolute;
+				top: -4px;
+				height: 9px;
+				width: 100%;
+			}
+			
+			:host([direction=vertical]) > .psplitter > .psplitter-mouse-target.active {
+				top: -3px;
+				height: 7px;
+			}
+
+			.psplitter-mouse-target.active {
+				background-color: rgba( 255, 128, 0, .25 );
+			}
+						
+			.flex-patch {
+				position: absolute;
+				top: 0px;
+				left: 0px;
+				bottom: 0px;
+				right: 0px;
+			}
+			
+			:host(.hidden) { 
+				display: none;
+			}
+			
+		</style>
+
+		<div class='psplitter'>
+			<div class='psplitter-mouse-target' id='mouse_target'></div>
+		</div>
+				
+		<div class='psplitter-pane-content'>
+			<div class='flex-patch'>
+				<content id='pane_content'/>
+			</div>
+		</div>
+		
+	</template>
+	
+	<script>
+		Polymer({
+			is: "split-pane",
+			properties: {
+				hide: Boolean,
+				split: {
+					type: Number,
+					value: 50,
+					observer: '_splitChanged',
+					reflectToAttribute: true
+				},
+				direction: {
+					type: String,
+					value: "vertical",
+					observer: '_splitChanged'
+				}
+			},
+			ready: function(){
+				if( this.hide ) this.classList.add("hidden");
+			},
+			_splitChanged: function(x){
+				var aspect = ( this.direction === "horizontal" ? "width" : "height" );
+				//this.setAttribute( 'style', `${aspect}: ${this.split}%;` );
+				this.setAttribute( 'style', aspect + ": " + this.split + "%;" );
+			},
+			appendChild: function(child){
+				Polymer.dom(this).appendChild(child);
+			},
+			removeChild: function(child){
+				Polymer.dom(this).removeChild(child);
+			},
+			getContent: function(){
+				return Polymer.dom(this).children[0];
+			}
+			
+		});
+	</script>
+	
+</dom-module>
+
+<dom-module id="split-panel">
+
+	<template>
+		
+		<style>
+		
+			#content, #overlay {
+				position: absolute;
+				top: 0px;
+				bottom: 0px;
+				left: 0px;
+				right: 0px;
+			}
+		
+			#overlay {
+				display: none;
+				z-index: 5;
+				cursor: ns-resize;
+			}
+
+			#overlay.active {
+				display: block;
+				z-index: 999; /* need to go higher to cover HOT (assuming we are using that) */
+				background: rgba( 0, 0, 0, 0 ); 
+			}
+
+			:host([direction=horizontal]) > #overlay { 
+				cursor: ew-resize;
+			}
+
+			#overlay.visible {
+				background: rgba( 255, 128, 128, .25 );
+			}
+			
+			#content {
+				display: flex;
+				align-items: stretch;
+				flex-direction: column;
+			}
+			
+			:host([direction=horizontal]) > #content { 
+				flex-direction: row;
+			}
+			
+		</style>
+		
+		<div id='overlay'></div>
+		<div id='content'>
+			<content/>
+		</div>
+			
+	</template>
+	
+	<script>
+		
+(function(){
+	
+	var mouse_down = function( A, B, event ){
+		
+		event.stopPropagation();
+		event.preventDefault();
+
+		var target = event.target;
+		var splitter = this;
+
+		var a = A.split;
+		var total = a + B.split;
+		var w, x;
+
+		if( splitter.direction === "horizontal" ){
+			w = splitter.$.content.clientWidth; 
+			x = event.screenX;
+		}
+		else {
+			w = splitter.$.content.clientHeight; 
+			x = event.screenY;
+		}
+		var pa = a;
+	
+		var mouse_move = function(e){
+			
+			e.preventDefault();
+			e.stopPropagation();
+			
+			var z = ( splitter.direction === "horizontal" ? e.screenX : e.screenY );
+			//var p = Math.round(( z - x ) / w * 1000 )/10;
+			var p = Math.round(( z - x ) / w * 400 )/4;
+			
+			pa = a+p;
+
+			// snap
+			if( pa < splitter.snap ) pa = 0;
+			else if( total - pa < splitter.snap ) pa = total;
+
+			A.split = pa;
+			B.split = total-pa;
+		
+		};
+	
+		var mouse_up = function(e){
+			
+			e.preventDefault();
+			e.stopPropagation();
+
+			splitter.$.overlay.removeEventListener( 'mouseleave', mouse_up);
+			splitter.$.overlay.removeEventListener( 'mouseup', mouse_up);
+			splitter.$.overlay.removeEventListener( 'mousemove', mouse_move);
+			splitter.$.overlay.classList.remove( 'active' );
+			target.classList.remove( "active" );
+			
+			splitter.dragging = false;
+			Polymer.dom.flush();
+			
+			requestAnimationFrame( function(){
+				splitter.fire( 'resize' );
+			})
+			
+		};
+
+		// var target = event.target;
+		target.classList.add( "active" );
+					
+		splitter.dragging = true;
+		splitter.$.overlay.classList.add( 'active' );
+		splitter.$.overlay.addEventListener( 'mousemove', mouse_move );
+		splitter.$.overlay.addEventListener( 'mouseup', mouse_up );
+		splitter.$.overlay.addEventListener( 'mouseleave', mouse_up );
+	
+	};
+	
+	Polymer({
+		
+		is: "split-panel",
+		
+		properties: {
+			direction: {
+				type: String,
+				value: "vertical"
+			},
+			snap: {
+				type: Number,
+				value: 5 
+			},
+			dragging: {
+				type: Boolean,
+				value: false
+			}
+		},
+		
+		setSize: function(opts){
+			
+			var panes = this.querySelectorAll('split-pane');
+
+			// type?
+			if( typeof opts.target === "object" ){
+				for( var i = 0; i< panes.length; i++ ){
+					if( panes[i] === opts.target ){
+						opts.target = i;
+						break;
+					}
+				}
+			}
+
+			// in case it was hidden
+			panes[opts.target].classList.remove( "hidden" );
+			
+			if( typeof opts.take_from === "undefined" ){
+				if( opts.target === 0 ) opts.take_from = 1;
+				else opts.take_from = opts.target - 1;
+			}
+			
+			var a = panes[opts.target].split;
+			var total = panes[opts.take_from].split + a;
+
+			var semaphore = 2;
+			var transition_string = "";
+			var transition = false;
+			var splitter = this;
+			var aspect = ( this.direction === "horizontal" ? "width" : "height" );
+			
+			return new Promise( function( resolve, reject ){
+				
+				var complete = function(){
+					panes[opts.target].split = opts.size;
+					panes[opts.take_from].split = total - opts.size;
+					if( opts.hide ){	
+						panes[opts.target].classList.add('hidden');	
+					} 
+					resolve();
+					splitter.fire( "resize" );
+				};
+
+				if( opts.transition && opts.transition > 0 ){
+
+					transition = true;
+					transition_string = "transition: " + opts.transition + "s ease-in-out; ";
+				
+					var listener = function( e ){
+						e.target.removeEventListener('transitionend', listener);
+						if( (--semaphore) === 0 ){ complete(); }
+					}
+				
+					panes[opts.target].addEventListener('transitionend', listener );
+					panes[opts.take_from].addEventListener('transitionend', listener );
+				
+				}
+						
+				//panes[opts.target].setAttribute( "style", `${aspect}: ${opts.size}%; ` + transition_string );
+				//panes[opts.take_from].setAttribute( "style", `${aspect}: ${total-opts.size}%;  ` + transition_string );
+				panes[opts.target].setAttribute( "style", aspect + ": " + opts.size + "%; " + transition_string );
+				panes[opts.take_from].setAttribute( "style", aspect + ": " + (total-opts.size) + "%;  " + transition_string );
+
+				if( !transition ) complete();
+			});
+			
+		},
+
+		/** 
+		 * remove split pane at index.  other panes will be rebalanced.
+		 */
+		removePane: function( index ){
+
+			var children = Polymer.dom(this).children;
+			if( index < 0 || index >= children.length ) return; // invalid index
+		
+			// how large is target
+			var target = children[index].split;
+			var balance = 100 - target;
+			
+			// remove
+			Polymer.dom(this).removeChild( children[index] );
+			
+			// resize
+			children = Polymer.dom(this).children;
+			var remainder = 100;
+			
+			for( var i = 0; i< children.length - 1; i++ ){
+				var s = children[i].split; 
+				children[i].split = Math.round( 100 * s / balance );
+				// console.info( "panel", i, s, "->", children[i].split );
+				remainder -= children[i].split;
+			}
+			if( children.length ) children[children.length-1].split = remainder;
+			Polymer.dom(this).flush(); 
+
+			// fix listeners			
+			this.updateResizeListeners();
+			var splitter = this;
+			setImmediate( function(){ splitter.fire( "resize" ); });
+			
+		},
+		
+		/** 
+		 * insert a new pane at index (if index is undefined or < 0, will
+		 * insert in last position).  pct is the target width, in percent,
+		 * of the new pane.  other panes will be rebalanced.
+	 	 */
+		insertPane: function( pct, index ){
+
+			var children = Polymer.dom(this).children;
+
+			if( typeof index === "undefined" ) index = -1;
+			if( typeof pct === "undefined" ) pct = Math.round( 100 / ( children.length + 1 ));
+			
+			//console.info( "Target: ", index, pct );
+			var balance = 100 - pct;
+			var remainder = 100;
+			
+			var pane = document.createElement( "split-pane" );
+			var direction = this.getAttribute( "direction" );
+			if( direction ) pane.setAttribute( "direction", direction );
+			
+			// resize others
+			for( var i = 0; i< children.length; i++ ){
+				var s = children[i].split;
+				//console.info( "panel", i, s, "->", Math.round( s*balance/100 ));
+				children[i].split = Math.round( s*balance/100 );
+				remainder -= children[i].split;
+			}
+			pane.setAttribute( "split", remainder );
+
+			// insert at index or at end (FIXME: check index?)			
+			if( index < 0 ) Polymer.dom(this).appendChild(pane);
+			else Polymer.dom(this).insertBefore( pane, children[index] );
+			Polymer.dom(this).flush(); 
+ 
+			// listeners
+			this.updateResizeListeners();
+			var splitter = this;
+			setImmediate( function(){ splitter.fire( "resize" ); });
+			return pane;
+		},
+		
+		ready: function(){
+			var direction = this.getAttribute( "direction" );
+			if( !direction ) return;
+			var children = Polymer.dom(this).children;
+			for( var i = 0; i< children.length; i++ ){
+				if( children[i].tagName === "SPLIT-PANE" ){
+					children[i].setAttribute( "direction", direction );
+				}
+			}
+		},
+		
+		attached: function(){
+			this.updateResizeListeners();
+		},
+		
+		updateResizeListeners: function(){
+			var panes = Polymer.dom(this).children;
+			for( var i = 0; i< panes.length; i++ ){ 
+				
+				// hold the function so we can remove it
+				
+				if( panes[i].md_func ){
+					panes[i].$.mouse_target.removeEventListener( "mousedown", panes[i].md_func );
+					panes[i].md_func = undefined;
+				}
+				if( i ){
+					panes[i].md_func = mouse_down.bind( this, panes[i-1], panes[i] );
+					panes[i].$.mouse_target.addEventListener( "mousedown", panes[i].md_func );
+				}
+			}				
+			window.panes = panes;
+		}
+		
+	});
+		
+})();
+		
+	</script>
+		
+</dom-module>
+

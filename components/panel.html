@@ -1,0 +1,66 @@
+
+<dom-module id="panel-close-box">
+	<template>
+		<button on-click='close_panel' class='close-panel'>
+			<i class="material-icons">close</i>
+		</button>	
+	</template>
+	<script>
+
+Polymer({
+	is: "panel-close-box",
+	close_panel: function(e){
+		e.stopPropagation();
+		this.fire( "close" );
+	}
+});
+		
+	</script>
+</dom-module>
+
+<dom-module id="panel-header">
+	<template>
+		
+		<style>
+			:host>div {
+				display: flex;
+			}
+			.close-box-container {
+				flex-grow: 1;
+				text-align: right;
+			}
+			.list-header {
+				text-overflow: ellipsis;
+				overflow: hidden;
+				white-space: nowrap;
+			}
+		</style>
+		
+		<!-- 
+			if the element itself has display:flex then
+			the containing element doesn't lay it out properly
+			for some reason.  hence the wrapper div.
+		  -->
+		<div>
+			<div class='list-header'>{{title}}</div>
+			<content></content>
+			<div class='close-box-container'>
+				<panel-close-box></panel-close-box>
+			</div>
+		</div>
+		
+	</template>
+	<script>
+
+Polymer({
+	is: "panel-header",
+	properties: {
+		"close-box": {
+			type: Boolean,
+			value: false
+		}
+	}
+});
+		
+	</script>
+</dom-module>

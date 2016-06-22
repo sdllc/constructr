@@ -1,0 +1,16 @@
+
+input[type=text] {
+	font-size: inherit;
+	border-radius: 3px;
+	border: 1px solid #ccc;
+	height: 1.5em;
+	padding-left: .35em;
+}
+
+select {
+	font-size: inherit;
+	border-radius: 3px;
+	border: 1px solid #ccc;
+	height: 1.8em;
+	padding-left: .35em;
+}

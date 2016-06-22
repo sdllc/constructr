@@ -1,0 +1,110 @@
+
+/** 
+ */
+
+
+.chooser-list-footer {
+	padding: 1em;
+	flex-grow: 0;
+	position: relative;
+}
+
+.chooser-list-footer {
+	border-top: 1px solid #666;
+}
+
+
+/* ------------------------- */
+
+.chooser-list2 {
+	height: 100%;
+	width: 100%;
+	overflow: auto;
+}
+
+/* for font and sizing */
+.watch-data {
+	font-family: consolas, "Source Code Pro", monospace;
+	font-size: 10.5pt;
+}
+
+.watch-text {
+	height: 100%;
+	position: absolute;
+	padding: 0 1em 0 1em;
+	cursor: default;
+}
+
+.watch-content {
+	background: #fff;
+	padding: 1em;
+	line-height: 1.4;
+	margin: 0;
+	overflow-y: auto;
+	overflow-x: hidden;
+	text-overflow: ellipsis;
+}
+
+/* --- layout specific to mirror chooser ----------------- */
+
+mirror-list-entry > div {
+	padding: 10px 6px 10px 12px;
+}
+
+mirror-list-entry > div:nth-child(2) {
+	padding-left: 0;
+}
+
+.mirror-list-host {
+	font-size: .9em;
+	text-overflow: ellipsis;
+}
+
+/* --- layout specific to package chooser ----------------- */
+
+package-list-entry {
+	padding: 0;
+	white-space: nowrap;
+	padding-left: .5em;
+	position: relative;
+	display: flex;
+	align-items: center;
+}
+
+package-list-entry[installed] div {
+	opacity: .5;
+}
+
+package-list-entry > div {
+	position: relative;
+	cursor: default;
+	line-height: 1;
+	padding: 12px 4px 12px 8px;
+}
+
+/* --- layout specific to preferences ----------------- */
+
+preferences-option, preferences-size, preferences-input, preferences-select {
+	padding: 0;
+	white-space: nowrap;
+	padding-left: .5em;
+	position: relative;
+	display: flex;
+	align-items: center;
+}
+
+preferences-option > div, preferences-size > div, preferences-input > div, preferences-select > div {
+	position: relative;
+	cursor: default;
+	line-height: 1;
+	padding: 12px 4px 12px 8px;
+}
+
+a.browse {
+	cursor: pointer;
+	line-height: 1;
+	padding: 12px 4px 12px 8px;
+}
+
+
+

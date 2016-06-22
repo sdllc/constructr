@@ -1,0 +1,29 @@
+{
+    "name": "graphics",
+    "version": "0.1.0",
+    "main": "graphics-device.js",
+    "preferences": {
+        "save.graphics.data": {
+            "type": "boolean",
+            "default": true,
+            "label": "Save graphics data" 
+        }
+    },
+    "preferenceGroups": {
+        "Graphics Target": {
+            "graphics.target": {
+                "type": "choice",
+                "options": "get_graphics_targets",
+                "label": ""
+            }
+        },
+        "Inline Graphics Size": {
+            "inline.graphics.size": {
+                "type": "size",
+                "default": { "width": 600, "height": 400 },
+                "min": { "width": 50, "height": 50 }
+            }
+        }
+    }
+}
+

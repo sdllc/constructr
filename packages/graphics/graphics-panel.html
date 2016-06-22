@@ -1,0 +1,48 @@
+
+<dom-module id="graphics-panel">
+	<template>
+
+		<style>
+			
+			:host {
+				display: flex;
+				flex-direction: column;
+			}
+			
+			:host>div {
+				flex-grow: 1;
+				position: relative;
+			}
+			
+			#target {
+				position: absolute;
+				top: 0;
+				left: 0;
+				right: 0;
+				bottom: 0;
+				overflow: hidden;
+			}
+			
+		</style>
+
+		<panel-header close-box title="Graphics"></panel-header>
+		<div>
+			<div id='target'>
+				<content/>
+			</div>
+		</div>
+
+	</template>
+
+	<script>
+	
+		Polymer({
+			is: "graphics-panel",
+			appendChild: function(child){
+				Polymer.dom(this).appendChild(child);
+			}
+		});
+		
+	</script>
+	
+</dom-module>

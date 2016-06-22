@@ -1,0 +1,44 @@
+
+/**
+ * a bit bootstrapy... also, was mostly stolen from bootstrap
+ */
+
+button {
+	
+	font-family: inherit;
+	font-size: inherit;
+	padding: 3px;
+
+	display: inline-block;
+	padding: 6px 12px;
+	margin-bottom: 0;
+
+	font-weight: 400;
+	line-height: 1.42857143; /* FIXME: this is calculated, but from what? check bs */
+	text-align: center;
+	white-space: nowrap;
+	vertical-align: middle;
+
+	cursor: pointer;
+	-webkit-user-select: none;
+	user-select: none;
+	background: none;
+	border-radius: 3px;
+	background: #fff;
+	
+}
+
+/** these are perhaps theme-specific? */
+
+button {
+	border: 1px solid #ccc;
+}
+
+button:hover {
+	background: #eee;
+}
+
+button:active {
+	border: 1px solid #999;
+	background: #ccc;
+}

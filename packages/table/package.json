@@ -1,0 +1,9 @@
+{
+    "name": "table",
+    "version": "0.1.0",
+    "main": "table.js",
+    "packageDependencies": [
+        "stacked-pane"
+    ]
+}
+

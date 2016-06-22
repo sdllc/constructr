@@ -1,0 +1,60 @@
+{
+  "name": "constructr",
+  "productName": "ConstructR",
+  "version": "0.6.0",
+  "description": "Electron-based R shell",
+  "author": {
+    "name": "Structured Data LLC",
+    "email": "info@riskamp.com"
+  },
+  "homepage": "https://constructr-project.com/shell",
+  "license": "MIT",
+  "main": "app/main.js",
+  "scripts": {
+    "start": "electron app/main.js",
+    "postinstall": "install-app-deps",
+    "dist": "build"
+  },
+  "build": {
+    "asar": true,
+    "asar-unpack": "**/app/startup.R",
+    "asar-unpack-dir": "**/{R-3.3.0,node_modules/controlr,library}/**/*",
+    "win": {
+      "iconUrl": "http://192.168.1.98/constructr-icon.ico"
+    }
+  },
+  "dependencies": {
+    "chokidar": "^1.4.3",
+    "cmjs-shell": "^0.3.0",
+    "controlr": "^1.4.7",
+    "electron-squirrel-startup": "^1.0.0",
+    "electron-window-state": "^3.0.3",
+    "pubsub-js": "^1.5.3",
+    "untildify": "^3.0.2",
+    "xml": "^1.0.1"
+  },
+  "devDependencies": {
+    "del": "^2.2.0",
+    "electron-builder": "^3.25.0",
+    "electron-prebuilt": "^1.2.3",
+    "gulp": "^3.9.1",
+    "gulp-add-src": "^0.2.0",
+    "gulp-concat": "^2.6.0",
+    "gulp-cssnano": "^2.1.2",
+    "gulp-htmlmin": "^2.0.0",
+    "gulp-if": "^2.0.0",
+    "gulp-livereload": "^3.8.1",
+    "gulp-postcss": "^6.1.0",
+    "gulp-rename": "^1.2.2",
+    "gulp-run": "^1.6.12",
+    "gulp-sourcemaps": "^1.6.0",
+    "gulp-uglify": "^1.5.3",
+    "gulp-util": "^3.0.7",
+    "lodash.assign": "^4.0.7",
+    "postcss-import": "^8.1.0",
+    "vinyl-buffer": "^1.0.0",
+    "vinyl-source-stream": "^1.1.0",
+    "webpack": "^1.12.14",
+    "webpack-stream": "^3.1.0"
+  }
+}
