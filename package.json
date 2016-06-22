@@ -3,6 +3,10 @@
   "productName": "ConstructR",
   "version": "0.6.0",
   "description": "Electron-based R shell",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sdllc/constructr.git"
+  },
   "author": {
     "name": "Structured Data LLC",
     "email": "info@riskamp.com"
