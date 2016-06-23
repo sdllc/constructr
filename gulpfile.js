@@ -77,8 +77,12 @@ function ensure_directories(dir, base){
 gulp.task('jsclientlib', function(cb){
 
 	// FIXME: nonversioned package?
-	var win_package = "https://github.com/sdllc/jsclientlib/releases/download/1.10.4/jsClientLib_1.10.4.zip";
-	var url = "https://github.com/sdllc/jsclientlib.git";
+	// OR: get version from GH
+
+	var win_version = "1.10.4";
+	var win_package = `https://github.com/sdllc/jsclientlib/releases/download/${win_version}/jsClientLib_${win_version}.zip`;
+
+	var git_url = "https://github.com/sdllc/jsclientlib.git";
 	var libdir = path.join( "app", "library" );
 	var tmpdir = null;
 	var composite = null;
@@ -106,7 +110,10 @@ gulp.task('jsclientlib', function(cb){
 					});
 				});
 			}).then( function(){
-				cb();
+				gutil.log( "cleaning up...");
+				fs.unlink( filename, function( err ){
+					cb(err);
+				});
 			}).catch( function( err ){
 				cb(err);
 			});
@@ -124,8 +131,8 @@ gulp.task('jsclientlib', function(cb){
 		}).then( function( dir ){
 			tmpdir = dir;
 			composite = path.join( tmpdir, "jsclientlib" );
-			gutil.log( `cloning ${url} into ${tmpdir}...` );
-			let cmd = `git clone ${url} ${composite}`;
+			gutil.log( `cloning ${git_url} into ${tmpdir}...` );
+			let cmd = `git clone ${git_url} ${composite}`;
 			return new Promise( function( resolve, reject ){
 				child_process.exec( cmd, function( err, stdout, stderr ){
 					if( err ) reject(err);

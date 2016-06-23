@@ -835,59 +835,63 @@ var set_console_width = function(){
 
 };
 
+/**
+ * find R_HOME and return it. precedence:
+ * 
+ *  (1) command-line argument 
+ *  (2) environment variable 
+ *  (3) local (in app/)
+ *  (4) Rscript on PATH
+ * 
+ * resolves to the value of R_HOME, or undefined. 
+ */
 var ensure_r_home = function(){
 
 	// for the purposes of this function, we either 
-	// set an environment variable or not, but we 
-	// never reject.
+	// return a variable or not, but we never reject.
+
+	// ?: why?
 
 	return new Promise( function( resolve, reject ){
 
-		// set the R_HOME environment variable.  precedence:
-		//
-		// (1) command-line argument 
-		// (2) environment variable 
-		// (3) local (in app/)
-		// (4) Rscript on PATH
-		//
-
-		// check command line
+		// 1: check command line
 		remote.getCurrentWindow().main_process_args.forEach( function( arg ){
 			var m = arg.match( /--r-home=(.*?)$/ );
 			if( m ){
 				var p = path.resolve(untildify(m[1]));
-				process.env.R_HOME = p;
+				resolve( p );
+				return;
 			}
 		});
 
-		// resolve if command line OR env var
+		// 2: env var
 		if( process.env.R_HOME ){
-			resolve();
+			resolve(process.env.R_HOME);
 			return;
 		}
 
-		// check local
+		// 3: check local
 		var paths = fs.readdirSync( Utils.patch_asar_path( __dirname ));
 		if( paths.some( function( p ){
 			if( p.match( /^R-[\d\.]+$/ )){
-				process.env.R_HOME = path.join(__dirname, p);
+				resolve( path.join(__dirname, p));
 				return true;
 			}
 			return false;
 		})){
-			resolve();
-			return;
+			return; // we already resolved
 		}
 
-		// try system if Rscript is executable
+		// 4: try system if Rscript is executable 
 		try {
-			exec( "Rscript -e 'R.home();'", function( err, stdout, stderr ){
+			// NOTE: windows requires double-quote for -e
+			exec( `Rscript -e "cat(R.home());"`, function( err, stdout, stderr ){
 				if( !err && stdout ){
-					var m = stdout.match( /\s\"(.*?)\"/ ); // REMOVE quotes
-					if( m ) process.env.R_HOME = m[1];
-					// console.info( "R_HOME", process.env.R_HOME )
+					console.info( "STDOUT", "``" + stdout + "''" );
+					if( stdout.length ) resolve( stdout );
+					console.info( "R_HOME", stdout )
 				}
-				resolve();
+				else resolve();
 				return;
 			});
 		}
@@ -897,18 +901,18 @@ var ensure_r_home = function(){
 }
 
 
-var init_r = function(){
+var init_r = function( rhome ){
 
-	if( !process.env.R_HOME ){
+	if( !rhome ){
 		PubSub.publish( Constants.SHELL_MESSAGE, [
-			"\nWe can't initialize R because R_HOME is not set. "
-			+ "Either set an environment variable R_HOME, or use "
+			"\nWe can't initialize R because R_HOME is not set.\n\n"
+			+ "Either set an environment variable R_HOME, or use\n "
 			+ "the command line argument --r-home=/path/to/R/\n\n", "shell-system-information", true ]);
 		return Promise.resolve();
 	}
 
-	console.info( "starting; have R_HOME=", process.env.R_HOME )	
-	process.env.R_HOME = Utils.patch_asar_path( process.env.R_HOME );
+	console.info( "starting; have R_HOME=", rhome )	
+	rhome = Utils.patch_asar_path( rhome );
 
 	// there's a hook to allow for the browser panel, but default
 	// to electron's openExternal method (so it will work if you 
@@ -1076,7 +1080,7 @@ var init_r = function(){
 		R.init({
 			debug: false,
 			basedir: basedir,
-			rhome: process.env.R_HOME,
+			rhome: rhome,
 			permissive: true,
 			'sync-request-promise': sync_request_func_p,
 			connection_type: PREFERRED_IPC
@@ -1505,10 +1509,10 @@ document.addEventListener("DOMContentLoaded", function(event) {
 
 	var init_status = false;
 
-	ensure_r_home().then( function(){
+	ensure_r_home().then( function( rhome ){
 
-		return init_r();
-
+		return init_r( rhome );
+		
 	}).then( function( rslt ){
 
 		init_status = rslt;
