@@ -24,7 +24,9 @@
 
 const fs = require("fs");
 const PubSub = require( "pubsub-js" );
+const untildify = require( "untildify" );
 const Chokidar = require( "chokidar" );
+
 const DEBOUNCE_TIMEOUT = 250;
 
 const debounce_id = {};
@@ -66,6 +68,8 @@ var FileWatcher = function(){
 				console.info( data );	
 				if( data.$data.command === "watch" ){
 					console.info( "watch", data.$data.path );
+					data.$data.path = untildify( data.$data.path );
+
 					if( watches[data.$data.path] ) watches[data.$data.path].close();
 					watches[data.$data.path] = Chokidar.watch( data.$data.path );
 					if( opts.change_callback )
@@ -121,11 +125,13 @@ module.exports = {
 	 * we have a separate file watcher for internal operations
 	 */
 	watch_internal: function(opts){
+		opts.path = untildify( opts.path );
 		internal_watches[ opts.path ] = Chokidar.watch( opts.path );
 		internal_watches[ opts.path ].on( 'change', listener.bind( null, opts.change, opts.path ));
 	},
 
 	unwatch_internal: function(opts){
+		opts.path = untildify( opts.path );
 		internal_watches[ opts.path ].close();
 		delete internal_watches[ opts.path ];
 	}

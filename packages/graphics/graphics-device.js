@@ -643,7 +643,8 @@ module.exports = {
 					notify_callback: function(msg){
 						PubSub.publish( core.Constants.SHELL_MESSAGE, [msg, "shell-system-information" ]);
 					}
-				})
+				});
+				
 			}).then( function(){
 
 				console.info( "GD", graphics_devices );
