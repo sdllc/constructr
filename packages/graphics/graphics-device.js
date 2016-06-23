@@ -545,12 +545,10 @@ function show_graphics_panel( core ){
  * factory method wraps up js and R calls
  */
 const create_graphics_device = function(core, opts){
-	console.info( "CDG:", opts.name );
 	return new Promise( function( resolve, reject ){
 		opts.size = opts.size || { width: 600, height: 400 };
 		core.R.queued_internal( `jsClientLib:::device( name="json-${opts.name}", width=${opts.size.width}`
 			+ `, height=${opts.size.height}, pointsize=14 )` ).then( function(rsp){	
-			console.info( " CDG: device", rsp.response );
 			if( !rsp.response ) throw( rsp );
 			graphics_devices[opts.name] = new GraphicsDevice(core, {
 				device_number: rsp.response,
