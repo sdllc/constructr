@@ -5,6 +5,13 @@ ConstructR
 
 Electron-based R shell.
 
+Install
+=======
+
+To install and run without building from scratch, grab an installer
+for your platform from the [releases][5] page.
+
+
 Build
 =====
 
@@ -85,5 +92,5 @@ REM * node_modules\.bin\gulp watch
 [2]: https://github.com/sdllc/jsclientlib
 [3]: https://cran.r-project.org/bin/windows/Rtools/
 [4]: https://git-scm.com
-
+[5]: https://github.com/sdllc/constructr/releases
 
