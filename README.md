@@ -78,4 +78,4 @@ REM * node_modules\.bin\gulp watch
 ```
 
 
-[logo]: https://raw.githubusercontent.com/sdllc/constructr/master/build/icon.svg
+[logo]: https://cdn.rawgit.com/sdllc/constructr/master/build/icon.svg
