@@ -1,6 +1,8 @@
 ConstructR
 ==========
 
+![ConstructR Logo][logo]
+
 Electron-based R shell.
 
 Build
@@ -30,9 +32,9 @@ Build
 Note: on Windows, these instructions will work if you are using a 
 unix-like shell (like [Git bash](https://git-scm.com/)).  If you are 
 using the Windows shell ("Command Prompt"), you have to turn around
-the slashes.
+the slashes.  See below.
 
-```sh
+```bash
 # download
 git clone https://github.com/sdllc/constructr.git
 
@@ -53,3 +55,27 @@ node_modules/.bin/electron app
 # node_modules/.bin/gulp watch
 ```
 
+Windows shell version:
+```dos
+REM * download
+git clone https://github.com/sdllc/constructr.git
+
+REM * install packages
+cd constructr
+npm install
+
+REM * install modules and build.  
+node_modules\.bin\gulp
+
+REM * build and install the `jsclientlib` R library
+node_modules\.bin\gulp jsclientlib
+
+REM * now run
+node_modules\.bin\electron app
+
+REM * alternatively, run with livereload:
+REM * node_modules\.bin\gulp watch
+```
+
+
+[logo]: https://raw.githubusercontent.com/sdllc/constructr/master/build/icon.svg
