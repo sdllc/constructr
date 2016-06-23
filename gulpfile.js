@@ -195,6 +195,7 @@ const packages_source = [ 'packages/**/*' ];
 // only process the main css file; it must include (@import) any
 // required components.  FIXME: use topleve/subdirectories?
 var style_source = [ 'postcss/main.css' ];
+var style_source_all = [ 'postcss/**/*.css' ];
 
 gulp.task('plugin', function(){
 	return gulp.src( plugin_source )
@@ -362,7 +363,7 @@ gulp.task( 'watch-flags', function(){
 gulp.task('watch', ['watch-flags', 'default'], function () {
 	livereload.listen();
 	gulp.watch( html_source, ['html']);
-	gulp.watch( style_source, ['styles']);
+	gulp.watch( style_source_all, ['styles']);
 	gulp.watch( core_source, ['core']);
 	gulp.watch( plugin_source, ['plugin']);
 	gulp.watch( main_source, ['main']);
