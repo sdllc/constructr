@@ -347,7 +347,6 @@ function GraphicsDevice( core, opts ){
 			break;
 		
 		case 'text':
-			// console.info(obj);
 			context.fillStyle = obj.data.fill;
 			context.font = obj.data.font = translate_font(core, obj.data.font);
 			if( obj.data.rot ){
