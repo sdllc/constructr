@@ -261,7 +261,11 @@ function GraphicsDevice( core, opts ){
 		// active.  filtering on special channels might work, would 
 		// save one filter pass.
 		
-		if( obj.device !== instance.device_number ) return;
+		// + also ignoring events before we have been configured 
+		//   (before there's a device number).  FIXME: use sync calls
+		//   so that state is not possible.
+
+		if( obj.device !== instance.device_number || !instance.device_number ) return;
 	
 		// yes, R saves the graphics command stack, and yes, this can
 		// be a waste of space; but, if we want to allow conversion to
@@ -488,8 +492,10 @@ function show_graphics_panel( core ){
 				if( !panel.cachedSize || panel.cachedSize.width !== width || panel.cachedSize.height !== height ){
 					panel.cachedSize = { width: width, height: height };
 					requestAnimationFrame( function(){
-						let cmd = `jsClientLib:::device.resize( ${graphics_devices.Panel.device_number}, ${width}, ${height}, T );`;
-						core.R.queued_internal( cmd, "graphics.panel.resize" );
+						if( graphics_devices.Panel && graphics_devices.Panel.device_number ){
+							let cmd = `jsClientLib:::device.resize( ${graphics_devices.Panel.device_number}, ${width}, ${height}, T );`;
+							core.R.queued_internal( cmd, "graphics.panel.resize" );
+						}
 					});
 				}
 
@@ -580,21 +586,34 @@ module.exports = {
 			PubSub.subscribe( core.Constants.SETTINGS_CHANGE, function(channel, obj){
 				switch( obj.key ){
 				case "graphics.target":
-					core.R.queued_internal( `dev.set(${ graphics_devices[obj.val].device_number })`)
+					if( graphics_devices[obj.val] && graphics_devices[obj.val].device_number ){
+						core.R.queued_internal( `dev.set(${ graphics_devices[obj.val].device_number })`)
+					}
 					break;			
 
 				case "inline.graphics.size":
-					let cmd = `jsClientLib:::device.resize( ${graphics_devices.Inline.device_number}, ${obj.val.width}, ${obj.val.height}, F)`;
-					core.R.queued_internal( cmd );
+
+					// this may get called if we're setting defaults, say on the first run,
+					// before the graphics device is initialized.  watch out for that and 
+					// don't call it.
+
+					if( graphics_devices.Inline && graphics_devices.Inline.device_number ){
+						let cmd = `jsClientLib:::device.resize( ${graphics_devices.Inline.device_number}, ${obj.val.width}, ${obj.val.height}, F)`;
+						core.R.queued_internal( cmd );
+					}
 					break;
 				};
 			});
 
 			graphics_devices.Inline.size = core.Settings[ "inline.graphics.size" ] || default_inline_graphics_size;        
+
+			// this is calling new() twice for some reason? ...
 			core.R.queued_internal( `jsClientLib:::device( name="json-inline", width=${graphics_devices.Inline.size.width}`
 				+ `, height=${graphics_devices.Inline.size.height}, pointsize=14 )` )
-				.then( function( rsp ){
+			.then( function( rsp ){
 				if( rsp.response ) graphics_devices.Inline.device_number = rsp.response;
+
+				// but this one seems to only call once
 				return core.R.queued_internal( `jsClientLib:::device( name="json-panel", width=600, height=400, pointsize=14 )` );
 			}).then( function( rsp ){
 				if( rsp.response ) graphics_devices.Panel.device_number = rsp.response;
