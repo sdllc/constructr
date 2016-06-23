@@ -24,6 +24,8 @@ var bower = require('bower');
 var child_process = require( 'child_process');
 var fs = require('fs');
 var os = require('os');
+var URL = require('url');
+var request = require('request');
 
 /** flag for watching: controls some compilation features */
 var watching = false;
@@ -68,105 +70,92 @@ function ensure_directories(dir, base){
 }
 
 /** 
- * build and install the jsclientlib to app/library.
- * you need build tools on your path, so this will probably
- * not work on windows. 
+ * on linux, download the library, build and install.
+ * on windows, download a prebuilt binary package and install.
+ * requires R on the path.
  **/
 gulp.task('jsclientlib', function(cb){
 
+	// FIXME: nonversioned package?
+	var win_package = "https://github.com/sdllc/jsclientlib/releases/download/1.10.4/jsClientLib_1.10.4.zip";
 	var url = "https://github.com/sdllc/jsclientlib.git";
 	var libdir = path.join( "app", "library" );
 	var tmpdir = null;
 	var composite = null;
+	var filename;
 
-	ensure_directories( libdir ).then( function(){
-		return new Promise( function( resolve, reject ){
-			fs.mkdtemp( path.join( os.tmpdir(), "js-install-tmp-" ), 
-				function( err, dir ){
-					if( err ) reject( err );
-					else resolve( dir );
+	if( process.platform === "win32" ){
+
+		ensure_directories( libdir ).then( function(){
+			return new Promise(function( resolve, reject ){
+				var parsed = URL.parse( win_package );
+				filename = path.basename(parsed.pathname);
+
+				gutil.log( `downloading ${win_package}` );
+				var download = request(win_package).pipe(fs.createWriteStream(filename));
+				download.on( 'finish', function(){
+					resolve();
 				});
-		});
-	}).then( function( dir ){
-		tmpdir = dir;
-		composite = path.join( tmpdir, "jsclientlib" );
-		gutil.log( `cloning ${url} into ${tmpdir}...` );
-		let cmd = `git clone ${url} ${composite}`;
-		return new Promise( function( resolve, reject ){
-			child_process.exec( cmd, function( err, stdout, stderr ){
-				if( err ) reject(err);
-				else resolve();
-			});
-		});
-	}).then( function(){
-		gutil.log( "building library...");
-		let cmd = `R CMD build ${composite} && R CMD INSTALL ${composite} -l app/library`		
-		return new Promise( function( resolve, reject ){
-			child_process.exec( cmd, function( err, stdout, stderr ){
-				if( err ) reject(err);
-				else resolve();
-			});
-		});
-	}).then( function(){
-		gutil.log( "cleaning up...");
-		let cmd = `rm -fr ${tmpdir}`;
-		return new Promise( function( resolve, reject ){
-			child_process.exec( cmd, function( err, stdout, stderr ){
-				if( err ) reject(err);
-				else resolve();
-			});
-		});
-	}).then( function(){
-		cb();
-	}).catch( function( err ){
-		cb( err );
-	});
-	/*
-
-	fs.mkdtemp( path.join( os.tmpdir(), "js-install-tmp-" ), function( err, tmpdir ){
-		if( err ) cb(err);
-		else {
-			console.info( `cloning ${url} into ${tmpdir}` );
-			var composite = path.join( tmpdir, "jsclientlib" );
-			var cmd = `git clone ${url} ${composite}`;
-			child_process.exec( cmd, function( err, stdout, stderr ){
-				if( err ) cb( err );
-				else {
-					console.info( "building library...");
-					cmd = `R CMD build ${composite} && R CMD INSTALL ${composite} -l app/library`
+			}).then(function(){
+				gutil.log( `installing ${filename}` );
+				let cmd = `R CMD INSTALL ${filename} -l app/library`;
+				return new Promise( function( resolve, reject ){
 					child_process.exec( cmd, function( err, stdout, stderr ){
-						if( err ) cb(err);
-						else {
-							console.info( "cleaning up...");
-							cmd = `rm -fr ${composite}`
-							child_process.exec( cmd, function( err, stdout, stderr ){
-								cb(err);
-							});
-						}
+						if( err ) reject(err);
+						else resolve();
 					});
-				}
-			});
-		}
-	});
-	*/
-
-	/*
-	console.info( "cloning", url );
-	var cmd = "git clone " + url;
-
-	child_process.exec( cmd, function( err, stdout, stderr ){
-		if( !err ){
-
-			console.info( "building library...");
-			cmd = "R CMD build jsclientlib && R CMD INSTALL jsclientlib -l app/library"
-			child_process.exec( cmd, function( err, stdout, stderr ){
-				fs.rmdir( "jsclientlib" );
+				});
+			}).then( function(){
+				cb();
+			}).catch( function( err ){
 				cb(err);
 			});
-		}
-		else cb(err);
-	});
-	*/
+		});
+	}
+	else {
+		ensure_directories( libdir ).then( function(){
+			return new Promise( function( resolve, reject ){
+				fs.mkdtemp( path.join( os.tmpdir(), "js-install-tmp-" ), 
+					function( err, dir ){
+						if( err ) reject( err );
+						else resolve( dir );
+					});
+			});
+		}).then( function( dir ){
+			tmpdir = dir;
+			composite = path.join( tmpdir, "jsclientlib" );
+			gutil.log( `cloning ${url} into ${tmpdir}...` );
+			let cmd = `git clone ${url} ${composite}`;
+			return new Promise( function( resolve, reject ){
+				child_process.exec( cmd, function( err, stdout, stderr ){
+					if( err ) reject(err);
+					else resolve();
+				});
+			});
+		}).then( function(){
+			gutil.log( "building library...");
+			let cmd = `R CMD build ${composite} && R CMD INSTALL ${composite} -l app/library`		
+			return new Promise( function( resolve, reject ){
+				child_process.exec( cmd, function( err, stdout, stderr ){
+					if( err ) reject(err);
+					else resolve();
+				});
+			});
+		}).then( function(){
+			gutil.log( "cleaning up...");
+			let cmd = `rm -fr ${tmpdir}`;
+			return new Promise( function( resolve, reject ){
+				child_process.exec( cmd, function( err, stdout, stderr ){
+					if( err ) reject(err);
+					else resolve();
+				});
+			});
+		}).then( function(){
+			cb();
+		}).catch( function( err ){
+			cb( err );
+		});
+	}
 });
 
 gulp.task('reload', function () {
