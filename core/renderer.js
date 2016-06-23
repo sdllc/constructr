@@ -1638,9 +1638,6 @@ PubSub.subscribe( "menu-click", function(){
 	case "developer-tools":
 		if (data.focusedWindow) data.focusedWindow.toggleDevTools();
 		break;
-//	case "graphics-panel":
-//		show_graphics_panel();
-//		break;
 	case "full-screen":
 		if (data.focusedWindow) data.focusedWindow.setFullScreen(
 			!data.focusedWindow.isFullScreen());

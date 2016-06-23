@@ -43,9 +43,7 @@ const path = require( 'path' );
 const PubSub = require( 'pubsub-js' );
 
 const default_inline_graphics_size = { width: 600, height: 400 };
-const available_graphics_devices = [ "Inline", "Panel" ];
-
-let graphics_devices = {};
+const graphics_devices = {};
 
 /**
  * render as svg (for export).  FIXME: this is not finished; line caps
@@ -149,7 +147,6 @@ function context_menu(target){
 	
 	menu.append(new MenuItem({ type: 'separator' }));
 	menu.append(new MenuItem({ label: 'Save as PNG', click: function() { 
-		console.info(arguments); 
 		let dataURL = target.toDataURL('image/png');
 		let a = document.createElement( "a" );
 		a.href = dataURL;
@@ -220,6 +217,8 @@ function GraphicsDevice( core, opts ){
 	this.update_target = function(target){
 		opts.target = target;
 	};
+
+	this.device_number = opts.device_number;
 
 	/** set (or reset, or unset) event source */
 	this.set_source = function( source ){
@@ -300,7 +299,7 @@ function GraphicsDevice( core, opts ){
 				context.fillStyle = obj.data.background ;
 				context.fillRect( 0, 0, obj.data.width, obj.data.height );
 			}
-			if(( opts.target === "Inline" || opts.target === "Panel" ) && opts.inline_callback ){
+			if(( opts.target === "inline" || opts.target === "panel" ) && opts.inline_callback ){
 				opts.inline_callback.call( this, active_node );
             } 			
             // window.active_node = active_node;
@@ -492,8 +491,8 @@ function show_graphics_panel( core ){
 				if( !panel.cachedSize || panel.cachedSize.width !== width || panel.cachedSize.height !== height ){
 					panel.cachedSize = { width: width, height: height };
 					requestAnimationFrame( function(){
-						if( graphics_devices.Panel && graphics_devices.Panel.device_number ){
-							let cmd = `jsClientLib:::device.resize( ${graphics_devices.Panel.device_number}, ${width}, ${height}, T );`;
+						if( graphics_devices.panel && graphics_devices.panel.device_number ){
+							let cmd = `jsClientLib:::device.resize( ${graphics_devices.panel.device_number}, ${width}, ${height}, T );`;
 							core.R.queued_internal( cmd, "graphics.panel.resize" );
 						}
 					});
@@ -542,6 +541,29 @@ function show_graphics_panel( core ){
 	
 }
 
+/**
+ * factory method wraps up js and R calls
+ */
+const create_graphics_device = function(core, opts){
+	console.info( "CDG:", opts.name );
+	return new Promise( function( resolve, reject ){
+		opts.size = opts.size || { width: 600, height: 400 };
+		core.R.queued_internal( `jsClientLib:::device( name="json-${opts.name}", width=${opts.size.width}`
+			+ `, height=${opts.size.height}, pointsize=14 )` ).then( function(rsp){	
+			console.info( " CDG: device", rsp.response );
+			if( !rsp.response ) throw( rsp );
+			graphics_devices[opts.name] = new GraphicsDevice(core, {
+				device_number: rsp.response,
+				source: core.R,
+				target: opts.target || opts.name,
+				inline_callback: opts.inline_callback,
+				notify_callback: opts.notify_callback 
+			});
+			resolve();
+		});
+	});
+};
+
 module.exports = {
 	
 	init: function( core ){
@@ -549,102 +571,98 @@ module.exports = {
 		let html = path.join( "packages", "graphics", "graphics-panel.html" );
 		core.Utils.install_html_component( html );
 
+		// this may get called if we're setting defaults, say on the first run,
+		// before a graphics device is initialized.  watch out for that and 
+		// don't call it if the device isn't available.
+
+		PubSub.subscribe( core.Constants.SETTINGS_CHANGE, function(channel, obj){
+			switch( obj.key ){
+			case "graphics.target":
+				if( graphics_devices[obj.val] && graphics_devices[obj.val].device_number ){
+					core.R.queued_internal( `dev.set(${ graphics_devices[obj.val].device_number })`)
+				}
+				break;			
+
+			case "inline.graphics.size":
+				if( graphics_devices.inline && graphics_devices.inline.device_number ){
+					let cmd = `jsClientLib:::device.resize( ${graphics_devices.inline.device_number}, ${obj.val.width}, ${obj.val.height}, F)`;
+					core.R.queued_internal( cmd );
+				}
+				break;
+			};
+		});
+
+		PubSub.subscribe( "menu-click", function(){
+			var data = arguments[1];
+			switch( data.message ){
+			case "graphics-panel":
+				show_graphics_panel(core);
+				break;
+			}
+		});
+
+		// these hooks call static functions
+
+		core.Hooks.install( "sync-request-p", function(hook, req){
+			let cmd = req.command ? req.command : req.$data ? req.$data.command : null;
+			if( cmd === "measure-text" ){
+				let size = GraphicsDevice.prototype.measure_text_canvas( req.text, req.font );
+				return Promise.resolve( size.width );
+			}
+			if( cmd === "font-metrics" ){
+				let size = GraphicsDevice.prototype.measure_text_canvas( req.text, req.font );
+				let ascent = Math.abs( size.actualBoundingBoxAscent ) + .5 ;
+				let descent = 0;
+				return Promise.resolve( `${ascent},${descent},${size.width}` );
+			}
+			return null;
+		});
+
 		return new Promise( function( resolve, reject ){
 
-			// graphics catches its own events.  create all 
-			// devices, then just hook up the active one 
-			
-			graphics_devices.Inline = new GraphicsDevice(core, {
-				source: core.R,
-				target: "Inline",
+			create_graphics_device(core, {
+				name: "inline",
+				size: core.Settings[ "inline.graphics.size" ] || default_inline_graphics_size,
 				inline_callback: function(node){
 					PubSub.publish(core.Constants.SHELL_INSERT_NODE, [node, true]);
 				},
 				notify_callback: function(msg){
 					PubSub.publish(core.Constants.SHELL_MESSAGE, [msg, "shell-system-information" ]);
-				},
-				save: false
-			});
+				}
+			}).then( function(){
 
-			graphics_devices.Panel = new GraphicsDevice(core, {
-				source: core.R,
-				target: "Panel",
-				inline_callback: function(node){
-					show_graphics_panel(core).then( function(panel){
-						let container = panel.querySelector( ".panel-graphics-container" );
-						let previous = container.querySelector( "canvas" );
-						if( previous ) container.removeChild( previous );
-						container.appendChild(node);
-					});
-				},
-				notify_callback: function(msg){
-					PubSub.publish( core.Constants.SHELL_MESSAGE, [msg, "shell-system-information" ]);
-				},
-				save: false
-			});
-			
-			PubSub.subscribe( core.Constants.SETTINGS_CHANGE, function(channel, obj){
-				switch( obj.key ){
-				case "graphics.target":
-					if( graphics_devices[obj.val] && graphics_devices[obj.val].device_number ){
-						core.R.queued_internal( `dev.set(${ graphics_devices[obj.val].device_number })`)
+				return create_graphics_device(core, {
+					name: "panel",
+					size: default_inline_graphics_size,
+					inline_callback: function(node){
+						show_graphics_panel(core).then( function(panel){
+							let container = panel.querySelector( ".panel-graphics-container" );
+							let previous = container.querySelector( "canvas" );
+							if( previous ) container.removeChild( previous );
+							container.appendChild(node);
+						});
+					},
+					notify_callback: function(msg){
+						PubSub.publish( core.Constants.SHELL_MESSAGE, [msg, "shell-system-information" ]);
 					}
-					break;			
+				})
+			}).then( function(){
 
-				case "inline.graphics.size":
+				console.info( "GD", graphics_devices );
 
-					// this may get called if we're setting defaults, say on the first run,
-					// before the graphics device is initialized.  watch out for that and 
-					// don't call it.
-
-					if( graphics_devices.Inline && graphics_devices.Inline.device_number ){
-						let cmd = `jsClientLib:::device.resize( ${graphics_devices.Inline.device_number}, ${obj.val.width}, ${obj.val.height}, F)`;
-						core.R.queued_internal( cmd );
-					}
-					break;
-				};
-			});
-
-			graphics_devices.Inline.size = core.Settings[ "inline.graphics.size" ] || default_inline_graphics_size;        
-
-			// this is calling new() twice for some reason? ...
-			core.R.queued_internal( `jsClientLib:::device( name="json-inline", width=${graphics_devices.Inline.size.width}`
-				+ `, height=${graphics_devices.Inline.size.height}, pointsize=14 )` )
-			.then( function( rsp ){
-				if( rsp.response ) graphics_devices.Inline.device_number = rsp.response;
-
-				// but this one seems to only call once
-				return core.R.queued_internal( `jsClientLib:::device( name="json-panel", width=600, height=400, pointsize=14 )` );
-			}).then( function( rsp ){
-				if( rsp.response ) graphics_devices.Panel.device_number = rsp.response;
-				let current = core.Settings['graphics.target'] || "Inline";
+				let current = core.Settings['graphics.target'] || "inline";
 				if( graphics_devices[current] ){
 					let currentDevice = graphics_devices[current].device_number;
 					return core.R.queued_internal( `dev.set(${currentDevice})` );
 				}
 				else return Promise.resolve();
-			}).catch( function( e ){
-				console.error( "ERR initializing inline graphics device", e );	
+
+				}).then( function(){
+				resolve();
 			});
-
-			core.Hooks.install( "sync-request-p", function(hook, req){
-				let cmd = req.command ? req.command : req.$data ? req.$data.command : null;
-				if( cmd === "measure-text" ){
-					let size = GraphicsDevice.prototype.measure_text_canvas( req.text, req.font );
-					return Promise.resolve( size.width );
-				}
-				if( cmd === "font-metrics" ){
-					let size = GraphicsDevice.prototype.measure_text_canvas( req.text, req.font );
-					let ascent = Math.abs( size.actualBoundingBoxAscent ) + .5 ;
-					let descent = 0;
-					return Promise.resolve( `${ascent},${descent},${size.width}` );
-				}
-				return null;
-			});
-
-			resolve();
-
+			      
 		});
+
 	},
 
 	get_graphics_targets: function(){
