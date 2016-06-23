@@ -63,11 +63,15 @@ var PackageManager = function(){
         opts = opts || {};
         if( !Array.isArray( list )) list = [list];
 
+        let platformkey = "default." + process.platform;
         let default_settings = function( prefs ){
             for( let key in prefs ){
-                if( typeof core.Settings[key] === "undefined" 
-                    && typeof prefs[key].default !== "undefined" ){
-                    core.Settings[key] = prefs[key].default;
+                if( typeof core.Settings[key] === "undefined" )
+                {
+                    if( typeof prefs[key][platformkey] !== "undefined" )
+                        core.Settings[key] = prefs[key][platformkey];
+                    else if( typeof prefs[key].default !== "undefined" )
+                        core.Settings[key] = prefs[key].default;
                 }
             }
         };

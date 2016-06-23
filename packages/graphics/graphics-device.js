@@ -171,6 +171,16 @@ function context_menu(target){
 
 }
 
+const translate_font = function(core, font){
+    if( core.Settings['font.map.sans'] )
+        font = font.replace(/ sans-serif$/, ' ' + core.Settings['font.map.sans']);
+    if( core.Settings['font.map.serif'] )
+        font = font.replace(/ serif$/, ' ' + core.Settings['font.map.serif']);
+    if( core.Settings['font.map.mono'] )
+        font = font.replace(/ monospace$ /, ' ' + core.Settings['font.map.mono']);
+    return font;
+}
+
 /**
  * constructor({
  *   node_callback,
@@ -265,16 +275,7 @@ function GraphicsDevice( core, opts ){
 		//   so that state is not possible.
 
 		if( obj.device !== instance.device_number || !instance.device_number ) return;
-	
-		// yes, R saves the graphics command stack, and yes, this can
-		// be a waste of space; but, if we want to allow conversion to
-		// svg, and in particular if we want to do that once the graphic
-		// is "finished", we need to save our own stack.
-		
-		if( instance.save && active_node && obj.cmd !== "new-page" ){
-			active_node.commands.push( obj );
-		}
-        
+	        
         if( opts.target === "Window" ){
             ipcRenderer.send( "graphics", obj );
             return;
@@ -348,7 +349,7 @@ function GraphicsDevice( core, opts ){
 		case 'text':
 			// console.info(obj);
 			context.fillStyle = obj.data.fill;
-			context.font = obj.data.font;
+			context.font = obj.data.font = translate_font(core, obj.data.font);
 			if( obj.data.rot ){
 				context.translate( obj.data.x, obj.data.y );
 				context.rotate( -obj.data.rot / 180 * Math.PI );
@@ -399,6 +400,17 @@ function GraphicsDevice( core, opts ){
 			console.info( "(Graphics) unhandled packet:", obj );
 		}
 		
+        // yes, R saves the graphics command stack, and yes, this can
+		// be a waste of space; but, if we want to allow conversion to
+		// svg, and in particular if we want to do that once the graphic
+		// is "finished", we need to save our own stack.
+		
+        // moved to end to capture (and persist) font mapping
+
+		if( instance.save && active_node && obj.cmd !== "new-page" ){
+			active_node.commands.push( obj );
+		}
+
 	}
   
 };
@@ -646,8 +658,6 @@ module.exports = {
 				});
 				
 			}).then( function(){
-
-				console.info( "GD", graphics_devices );
 
 				let current = core.Settings['graphics.target'] || "inline";
 				if( graphics_devices[current] ){
