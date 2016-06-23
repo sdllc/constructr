@@ -10,6 +10,8 @@ Build
 
 ### Prerequisites ###
 
+ * git https://git-scm.com
+
  * node (and npm) https://nodejs.org
 
  * R https://www.r-project.org/
@@ -21,16 +23,16 @@ Build
 
    R must be visible on your PATH for the build to succeed.
 
- * Build tools: the commands below will build a native node add-on.
-   and a binary R package.  You need standard build tools for C/C++. 
-   On Windows, the R package will be installed as a prebuilt binary, 
-   so you don't need the [Rtools](https://cran.r-project.org/bin/windows/Rtools/) 
-   package.
+ * Build tools: the commands below will build a native node add-on
+   ([controlr][1]) and a binary R package ([jsclientlib][2]).  You 
+   need standard build tools for C/C++.  On Windows, the R package 
+   will be installed as a prebuilt binary, so you don't need the 
+   [Rtools][3] package.
 
-### Download, Build and Install ###
+### Download, Build and Run ###
 
 Note: on Windows, these instructions will work if you are using a 
-unix-like shell (like [Git bash](https://git-scm.com/)).  If you are 
+unix-like shell (like [Git bash][4]).  If you are 
 using the Windows shell ("Command Prompt"), you have to turn around
 the slashes.  See below.
 
@@ -78,4 +80,10 @@ REM * node_modules\.bin\gulp watch
 ```
 
 [logo]: https://cdn.rawgit.com/sdllc/constructr/47e7c8e2c79034da883ca713149dd8ef0357b0d5/build/icon.svg
+
+[1]: https://github.com/sdllc/controlr
+[2]: https://github.com/sdllc/jsclientlib
+[3]: https://cran.r-project.org/bin/windows/Rtools/
+[4]: https://git-scm.com
+
 
