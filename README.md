@@ -1,7 +1,7 @@
 ConstructR
 ==========
 
-![ConstructR Logo][logo]
+![ConstructR logo][logo]
 
 Electron-based R shell.
 
@@ -77,5 +77,5 @@ REM * alternatively, run with livereload:
 REM * node_modules\.bin\gulp watch
 ```
 
+[logo]: https://cdn.rawgit.com/sdllc/constructr/47e7c8e2c79034da883ca713149dd8ef0357b0d5/build/icon.svg
 
-[logo]: https://cdn.rawgit.com/sdllc/constructr/master/build/icon.svg
