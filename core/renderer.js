@@ -887,9 +887,7 @@ var ensure_r_home = function(){
 			// NOTE: windows requires double-quote for -e
 			exec( `Rscript -e "cat(R.home());"`, function( err, stdout, stderr ){
 				if( !err && stdout ){
-					console.info( "STDOUT", "``" + stdout + "''" );
 					if( stdout.length ) resolve( stdout );
-					console.info( "R_HOME", stdout )
 				}
 				else resolve();
 				return;
@@ -904,14 +902,11 @@ var ensure_r_home = function(){
 var init_r = function( rhome ){
 
 	if( !rhome ){
-		PubSub.publish( Constants.SHELL_MESSAGE, [
-			"\nWe can't initialize R because R_HOME is not set.\n\n"
-			+ "Either set an environment variable R_HOME, or use\n "
-			+ "the command line argument --r-home=/path/to/R/\n\n", "shell-system-information", true ]);
+		PubSub.publish( Constants.SHELL_MESSAGE, [ Messages.R_HOME_NOT_FOUND, "shell-system-information", true ]);
 		return Promise.resolve();
 	}
 
-	console.info( "starting; have R_HOME=", rhome )	
+	console.info( "starting; R_HOME=" + rhome )	
 	rhome = Utils.patch_asar_path( rhome );
 
 	// there's a hook to allow for the browser panel, but default
@@ -1266,7 +1261,7 @@ var init_r = function( rhome ){
 
 			// load startup file
 			if( libloaded ){
-				console.info( "Loading startup file" );
+				// console.info( "Loading startup file" );
 				let startup_path = Utils.patch_asar_path( path.join( __dirname, "startup.R" ));
 				return R.internal( `source('${Utils.escape_backslashes(startup_path,2)}')` );
 			}
@@ -1323,7 +1318,6 @@ function update_user_stylesheet(){
 					style.setAttribute( "type", "text/css" );
 					style.setAttribute( "data-id", "user" );
 					style.textContent = contents;
-					console.info( style );
 					document.head.appendChild( style );
 				}
 				resolve();
@@ -1616,64 +1610,6 @@ help_styles.list_styles();
 
 //////////////
 
-/*
-function show_graphics_panel(){
-
-	return new Promise( function( resolve, reject ){
-		
-		var panel = document.querySelector( "graphics-panel" );
-
-		var resize_to_panel = function(){
-			if( panel.graphics_events ){
-				var width = panel.$.target.clientWidth;
-				var height = panel.$.target.clientHeight;
-				if( !panel.cachedSize || panel.cachedSize.width !== width || panel.cachedSize.height !== height ){
-					panel.cachedSize = { width: width, height: height };
-					requestAnimationFrame( function(){
-						var cmd = `jsClientLib:::device.resize( ${graphics_devices.Panel.device_number}, ${width}, ${height}, T );`;
-						R.queued_internal( cmd, "graphics.panel.resize" );
-					});
-				}
-			}
-		};
-
-		if( !panel ){
-
-			panel = document.createElement( "graphics-panel" );
-			panel.setAttribute( "data-preserve", true );
-			panel.classList.add( "panel" );
-			
-			panel.addEventListener( "close", function(e){
-				console.info( "close graphics" );
-				PubSub.publish( Constants.STACKED_PANE_REMOVE, panel );
-			});
-			
-			var container = document.createElement( "div" );
-			container.className = "panel-graphics-container";
-			panel.appendChild( container );
-			window.addEventListener('resize', resize_to_panel );
-			
-			panel._onShow = function(){
-				panel.graphics_events = true;
-			}
-
-			panel._onHide = function(){
-				panel.graphics_events = false;
-			};
-			panel._onUnload = function(){
-				panel.graphics_events = false;
-			};
-			
-		}
-		
-		open_stacked_pane( panel, 1 );
-		resolve( panel );
-		
-	});
-	
-}
-*/
-
 function quit(){
 	
 	global.__quit = true;
@@ -1731,12 +1667,6 @@ PubSub.subscribe( "menu-click", function(){
 	case "learn-more":
 		electron.shell.openExternal(LEARN_MORE_URL);
 		break;
-//	case "install-packages":
-//		open_package_chooser_if();
-//		break;
-//	case "choose-mirror":
-//		open_mirror_chooser();
-//		break;
 	case "close":
 		quit();
 		break;

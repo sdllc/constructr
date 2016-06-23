@@ -24,7 +24,6 @@
 
 const path = require( 'path' );
 const fs = require( 'fs' );
-
 const X = eval( 'require' ); // !webpack
 
 window.fs = fs;
@@ -44,7 +43,6 @@ var PackageManager = function(){
      * list packages, concatenate name
      */
     this.list_packages = function( package_dir ){
-        console.info( "LP", package_dir );
         return new Promise( function( resolve, reject ){
             fs.readdir( package_dir, function(err, files){
                 resolve(files.map( function( file ){
