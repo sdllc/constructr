@@ -23,6 +23,26 @@
                 "default": { "width": 600, "height": 400 },
                 "min": { "width": 50, "height": 50 }
             }
+        },
+        "Font Mapping": {
+            "font.map.sans": {
+                "type": "input",
+                "placeholder": "sans-serif",
+                "default.win32": "Segoe UI",
+                "default.darwin": "Helvetica Neue"
+            },
+            "font.map.serif": {
+                "type": "input",
+                "placeholder": "serif",
+                "default.win32": "Palatino",
+                "default.darwin": "Georgia"
+            },
+            "font.map.mono": {
+                "type": "input",
+                "placeholder": "monospace",
+                "default.win32": "Consolas",
+                "default.darwin": "Menlo"
+            }
         }
     }
 }

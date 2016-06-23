@@ -769,6 +769,19 @@ var open_shell_preferences = function(toggle){
 					var subpref = pgroup[subkey];
 					switch( subpref.type ){
 
+                    case "input":
+                        let inputfield = new PreferencesInput({
+                            file: false,
+                            placeholder: subpref.placeholder || "",
+                            setting: subkey,
+                            className: "list-entry",
+                            Settings: Settings });
+                        if( subpref.file ){
+                            // ...
+                        }
+                        group.appendChild( inputfield );
+                        break;
+
 					case "size":
 						var size = Settings[subkey] || subpref.default;
 						var sizer = document.createElement( "preferences-size" );
