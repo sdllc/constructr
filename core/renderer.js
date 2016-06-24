@@ -857,6 +857,11 @@ var set_console_width = function(){
  *  (4) Rscript on PATH
  * 
  * resolves to the value of R_HOME, or undefined. 
+ * UPDATE: resolves to an object 
+ * {
+ *  rhome: /path/to/r/home
+ *  located: [ "command-line", "environment", "local", "rscript" ]
+ * }
  */
 var ensure_r_home = function(){
 
@@ -872,14 +877,14 @@ var ensure_r_home = function(){
 			var m = arg.match( /--r-home=(.*?)$/ );
 			if( m ){
 				var p = path.resolve(untildify(m[1]));
-				resolve( p );
+				resolve({ rhome: p, located: "command-line" });
 				return;
 			}
 		});
 
 		// 2: env var
 		if( process.env.R_HOME ){
-			resolve(process.env.R_HOME);
+			resolve({ rhome: process.env.R_HOME, located: "envrionment" });
 			return;
 		}
 
@@ -887,7 +892,7 @@ var ensure_r_home = function(){
 		var paths = fs.readdirSync( Utils.patch_asar_path( __dirname ));
 		if( paths.some( function( p ){
 			if( p.match( /^R-[\d\.]+$/ )){
-				resolve( path.join(__dirname, p));
+				resolve({ rhome: path.join(__dirname, p), located: "local" });
 				return true;
 			}
 			return false;
@@ -900,7 +905,7 @@ var ensure_r_home = function(){
 			// NOTE: windows requires double-quote for -e
 			exec( `Rscript -e "cat(R.home());"`, function( err, stdout, stderr ){
 				if( !err && stdout ){
-					if( stdout.length ) resolve( stdout );
+					if( stdout.length ) resolve({ rhome: stdout, located: "rscript" });
 				}
 				else resolve();
 				return;
@@ -912,14 +917,17 @@ var ensure_r_home = function(){
 }
 
 
-var init_r = function( rhome ){
+var init_r = function(opts = {}){
+
+    let rhome = opts.rhome;
+    let located = opts.located;
 
 	if( !rhome ){
 		PubSub.publish( Constants.SHELL_MESSAGE, [ Messages.R_HOME_NOT_FOUND, "shell-system-information", true ]);
 		return Promise.resolve();
 	}
 
-	console.info( "starting; R_HOME=" + rhome )	
+	console.info( `starting; R_HOME=${rhome} (${located})` );	
 	rhome = Utils.patch_asar_path( rhome );
 
 	// there's a hook to allow for the browser panel, but default
@@ -1123,6 +1131,20 @@ var init_r = function( rhome ){
 			if( rslt && rslt.response ){
 				versions.jsClientLib = rslt.response.Version;
 			}
+
+            // there's a case on windows where we are bundling R, but the way
+            // the installer works additional libraries will get wiped on re-install.
+            // we want to set a specific libdir that will last longer.  
+
+            // we should do this only if R is local -- set flag?
+
+            if( process.platform === "win32" && located === "local" ){
+                return R.internal( `dir.create( file.path( Sys.getenv( "APPDATA" ), "constructr-libs" ), showWarnings=F ); `
+                    + `.libPaths( file.path( Sys.getenv( "APPDATA" ), "constructr-libs" ));` );
+            }
+            else return Promise.resolve();
+
+		}).then( function(){ 
 
 			if( libloaded ){
 
@@ -1516,9 +1538,9 @@ document.addEventListener("DOMContentLoaded", function(event) {
 
 	var init_status = false;
 
-	ensure_r_home().then( function( rhome ){
+	ensure_r_home().then( function( rslt ){
 
-		return init_r( rhome );
+		return init_r( rslt );
 		
 	}).then( function( rslt ){
 
