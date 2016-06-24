@@ -24,7 +24,7 @@
                 "min": { "width": 50, "height": 50 }
             }
         },
-        "Font Mapping": {
+        "Graphics Font Mapping": {
             "font.map.sans": {
                 "type": "input",
                 "placeholder": "sans-serif",

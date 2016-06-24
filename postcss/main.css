@@ -223,12 +223,6 @@ body.ubuntu {
 	margin-left: 1em;
 }
 
-#shell-toolbar {
-	 &.hidden { 
-		display: none;
-	 }
-}
-
 /* --- for inline --- */
 
 .CodeMirror .graphics-device {
