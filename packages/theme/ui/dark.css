@@ -106,6 +106,14 @@ input[type=checkbox]:disabled, input[type=radio]:disabled {
 	color: rgb(0, 168, 198);
 }
 
+/* --- inputs ---------------------------------- */
+
+input[type=text]{
+	background: rgba( 255,255,255,.125 ) !important;
+	border-color: #333;
+	color: #fff;
+}
+
 /* --- dialog ---------------------------------- */
 
 html-dialog .dialog-chrome {
