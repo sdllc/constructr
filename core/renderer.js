@@ -58,6 +58,10 @@ const SCW_TIMEOUT = 500;
 const SPINNER_TIMEOUT = 250;
 const LEARN_MORE_URL = 'https://constructr-project.com/shell';
 
+if( process.platform === "darwin" ){
+    process.env.PATH = process.env.PATH + ":/usr/local/bin";
+}
+
 /**
  * constants array can be updated by packages; but we never want it to 
  * return undefined, as that might have some side-effects in message passing.
