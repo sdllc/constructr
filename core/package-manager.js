@@ -76,7 +76,7 @@ var PackageManager = function(){
             }
         };
 
-        let init_package = function( pkg ){
+        let init_package_js = function( pkg ){
 
             console.info( "Installing package", pkg.name );
 
@@ -97,15 +97,30 @@ var PackageManager = function(){
             var func = "init";
             if( pkg.init ) func = pkg.init; 
 
-            // doesn't actually have to export an init method
-            // also: init doesn't necessarily have to return 
-            // a thenable 
             if( pkg.module[func] ){
                 let rslt = pkg.module[func].call( this, core);
                 return rslt ? rslt : Promise.resolve();
             }
             else return Promise.resolve();
+            
+        };
 
+        let init_package = function( pkg, elt ){
+            return new Promise( function( resolve, reject ){
+                init_package_js( pkg ).then( function(){
+                    if( pkg.R ){ 
+                        let source_dir = core.Utils.escape_backslashes(
+                            core.Utils.patch_asar_path(elt), 2);
+                        let source_file = core.Utils.escape_backslashes(
+                            core.Utils.patch_asar_path(path.join( elt, pkg.R )), 2 );
+                        let cmd = `.dirname <- "${source_dir}"; source("${source_file}"); rm(.dirname);`;
+                        return core.R.exec( cmd );
+                    }
+                    else return Promise.resolve();
+                }).then( function(){
+                    resolve();
+                });
+            });
         };
 
         return new Promise( function( resolve, reject ){
@@ -129,8 +144,8 @@ var PackageManager = function(){
                                 return Promise.resolve();
                             }
                         }
-
-                        return init_package( pkg );
+                        return init_package( pkg, elt );
+                       
 
                     }
                     return Promise.resolve();

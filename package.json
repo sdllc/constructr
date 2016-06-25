@@ -1,7 +1,7 @@
 {
   "name": "constructr",
   "productName": "ConstructR",
-  "version": "0.6.3",
+  "version": "0.6.4",
   "description": "Electron-based R shell",
   "repository": {
     "type": "git",
@@ -20,8 +20,8 @@
   },
   "build": {
     "asar": true,
-    "asar-unpack": "**/app/startup.R",
-    "asar-unpack-dir": "**/{R-3.3.0,node_modules/controlr,library}/**/*",
+    "asar-unpack": "**/*.R",
+    "asar-unpack-dir": "**/{R-3.*,node_modules/controlr,library,R}/**/*",
     "win": {
         "iconUrl": "https://raw.githubusercontent.com/sdllc/constructr/master/build/icon.ico"
     },

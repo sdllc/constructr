@@ -153,19 +153,6 @@ override.binding( "history",
 		
 	}, "utils");
 
-#-----------------------------------------------------------------------------
-# replace win progress bar with an inline progress bar.  there's a slight
-# difference in that these functions might not exist on linux.
-#-----------------------------------------------------------------------------
-
-override.binding( "winProgressBar", jsClientLib::js.client.progress.bar, "utils");
-override.binding( "setWinProgressBar", jsClientLib::js.client.set.progress.bar, "utils");
-override.binding( "getWinProgressBar", jsClientLib::js.client.get.progress.bar, "utils");
-
-#override.binding( "txtProgressBar", jsClientLib::js.client.progress.bar, "utils");
-#override.binding( "setTxtProgressBar", jsClientLib::js.client.set.progress.bar, "utils");
-#override.binding( "getTxtProgressBar", jsClientLib::js.client.get.progress.bar, "utils");
-
 #------------------------------------------------------------------------------
 # download: add handler for download method "js", which uses built-in support 
 #------------------------------------------------------------------------------
