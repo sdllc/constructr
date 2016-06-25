@@ -27,7 +27,7 @@
     },
     "linux": {
         "depends": [
-            "r-base-core", "libappindicator1", "libnotify-bin"
+            "r-base-core", "r-base", "r-recommended", "libappindicator1", "libnotify-bin"
         ],
         "fpm": [
             "--deb-priority", "optional",
