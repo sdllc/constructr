@@ -95,7 +95,7 @@
             }
 
             :host() > .psplitter > .psplitter-mouse-target {
-                z-index: 998; /* get above HOT */
+                z-index: 997; /* get above HOT */
             }
             
             :host([direction=horizontal]) > .psplitter > .psplitter-mouse-target {
@@ -139,6 +139,22 @@
                 right: 0px;
             }
             
+            .size-display {
+                position: absolute;
+                right: 10px;
+                top: 10px;
+                background: rgba( 255, 255, 255, .7 );
+                color: #333;
+                z-index: 996;
+                padding: .5em .5em .3em .5em;
+                margin: 0;
+                border: 1px solid #888;
+                border-radius: 2px; 
+                opacity: 0;
+                transition: opacity .25s;
+                pointer-events: none;
+            }
+
             :host(.hidden) { 
                 display: none;
             }
@@ -151,6 +167,9 @@
                 
         <div class='psplitter-pane-content'>
             <div class='flex-patch'>
+                <div class='size-display'>
+                    100x100
+                </div>
                 <content id='pane_content'/>
             </div>
         </div>
@@ -161,6 +180,10 @@
         Polymer({
             is: "split-pane",
             properties: {
+                "show-resize-size": {
+                    type: Boolean,
+                    default: false
+                },
                 hide: Boolean,
                 split: {
                     type: Number,
@@ -252,7 +275,14 @@
     <script>
         
 (function(){
-    
+
+    var update_sizers = function( list ){
+        list.forEach( function( elt ){
+            let p = elt.parentElement;
+            elt.textContent = `${p.clientWidth} x ${p.clientHeight}`;
+        });
+    }
+
     var mouse_down = function( A, B, event ){
         
         event.stopPropagation();
@@ -264,6 +294,18 @@
         let a = A.split;
         let total = a + B.split;
         let w, x;
+
+        let sizerList = [];
+        let nodelist = A.parentElement.querySelectorAll( "split-pane[show-resize-size]");
+        for( let i = 0; i< nodelist.length; i++ ){
+            let sd = nodelist[i].querySelector( ".size-display" );
+            if( sd && !nodelist[i].querySelector( "split-pane" )){
+                sizerList.push( sd );
+            }
+        }
+        
+        update_sizers( sizerList );
+        sizerList.forEach( function( elt ){ elt.setAttribute( "style", "opacity: 1;" ); });
 
         if( splitter.direction === "horizontal" ){
             w = splitter.$.content.clientWidth; 
@@ -281,7 +323,7 @@
             e.stopPropagation();
             
             let z = ( splitter.direction === "horizontal" ? e.screenX : e.screenY );
-            let p = Math.round(( z - x ) / w * 400 )/4;
+            let p = Math.round(( z - x ) / w * 800 )/8;
             
             pa = a+p;
 
@@ -291,6 +333,8 @@
 
             A.split = pa;
             B.split = total-pa;
+
+            update_sizers( sizerList );
         
         };
     
@@ -307,6 +351,10 @@
             
             splitter.dragging = false;
             Polymer.dom.flush();
+
+            sizerList.forEach( function( elt ){ 
+                elt.setAttribute( "style", "opacity: 0;" ); 
+            });
             
             requestAnimationFrame( function(){
                 splitter.fire( 'resize' );

@@ -116,7 +116,7 @@ var PackageManager = function(){
                         let source_file = core.Utils.escape_backslashes(
                             core.Utils.patch_asar_path(path.join( elt, pkg.R )), 2 );
                         let cmd = `.dirname <- "${source_dir}"; source("${source_file}"); rm(.dirname);`;
-                        return core.R.exec( cmd );
+                        return core.R.queued_exec( cmd );
                     }
                     else return Promise.resolve();
                 }).then( function(){
