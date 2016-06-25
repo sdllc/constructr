@@ -55,6 +55,8 @@ var PackageManager = function(){
     /**
      * load packages, recursively, from list.
      * added dependencies.  todo: versioned deps
+     * 
+     * FIXME: this is turning into spaghetti.  refactor.
      */
     this.load_packages = function( list, core, opts ){
         
@@ -140,6 +142,7 @@ var PackageManager = function(){
                             if( deps.some( function( dep ){
                                 return !self.packages[ dep ];
                             })){
+                                pkg.__dirname = elt;
                                 self.pending.push( pkg );
                                 return Promise.resolve();
                             }
@@ -166,7 +169,7 @@ var PackageManager = function(){
                             return !!self.packages[ dep ];
                         })){
                             self.pending.splice( i, 1 );
-                            init_package( pkg ).then( function(){
+                            init_package( pkg, pkg.__dirname ).then( function(){
                                 return self.load_packages( list, core, opts );
                             }).then( function(){
                                 resolve();
