@@ -56,7 +56,7 @@ const RDATA = ".constructr-shell.rdata";
 const RESIZE_TIMEOUT = 50;
 const SCW_TIMEOUT = 500;
 const SPINNER_TIMEOUT = 250;
-const LEARN_MORE_URL = 'http://constructr-project.com/shell';
+const LEARN_MORE_URL = 'https://constructr-project.com/shell';
 
 /**
  * constants array can be updated by packages; but we never want it to 
