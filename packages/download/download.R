@@ -4,6 +4,8 @@
 # support in electron
 #------------------------------------------------------------------------------
 
+(function(){
+
 override.binding <- function( name, func, ns, assign.in.namespace=T ){
 	if( exists( name ) ){ 
 		package <- paste0( "package:", ns );
@@ -48,3 +50,6 @@ override.binding( "download.file",
 	}, "utils", T );
 
 options( download.file.method="js" );
+
+})();
+
