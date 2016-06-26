@@ -65,7 +65,7 @@ node_modules/.bin/electron app
 ```
 
 Windows shell version:
-```dos
+```bat
 REM * download
 git clone https://github.com/sdllc/constructr.git
 
