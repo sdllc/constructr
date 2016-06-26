@@ -22,6 +22,8 @@
 
 "use strict";
 
+const PubSub = require( "pubsub-js" );
+
 /**
  * progress bar(s)
  * 
@@ -134,7 +136,8 @@ module.exports = {
 
 	init: function(core){
 		core.R.on( 'progress.bar', handler.bind( this, function(node){
-			core.shell.insert_node( node, true );
+		    //core.shell.insert_node( node, true );
+            PubSub.publish( core.Constants.SHELL_INSERT_NODE, [node, true]);
 		}));
 		return Promise.resolve()
 	},
