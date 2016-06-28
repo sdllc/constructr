@@ -1397,7 +1397,6 @@ function update_user_stylesheet(){
 		Packages['file-watcher'].watch_internal({
 			path: ss,
 			change: function(){
-				console.info( "CHANGE", ss );
 				Packages['file-watcher'].unwatch_internal({path:ss});
 				update_user_stylesheet();
 			}

@@ -24,7 +24,6 @@
 
 
 var path = require( "path" );
-// const Handsontable = require( path.join( __dirname, "handsontable", "handsontable.full.min.js" ));
 
 const PubSub = require( "pubsub-js" );
 
@@ -73,8 +72,6 @@ var updateFromFrame = function(df, instance){
 
         let tstart = process.hrtime();
 
-  //      console.info( df );
-
         let len = 0;
         let names = df.$names;
         table = names.map( function( name ){
@@ -92,81 +89,35 @@ var updateFromFrame = function(df, instance){
             return arr;
         });
         
-        let header = new Array(len);
-        for( let i = 1; i< len; i++ ) header[i] = i;
-        table.unshift( header );
-
-//        console.info( table );
-
-        /*
-		if( df.$names ) cols = df.$names;
-
-		var rows = 0;
-		if( Array.isArray( data[cols[0]] )) rows = data[cols[0]].length;
-		else rows = data[cols[0]].$data.length;
-		
-		var factors = new Array( cols.length );
-		for( var c = 0; c< cols.length; c++ ){
-			factors[c] = !( Array.isArray( data[cols[c]]));
-		}
-		
-		var col_headers = [].concat(cols);
-		var table = new Array( rows );
-		
-		for( var r = 0; r< rows; r++ ){
-			var row = new Array( cols.length );
-			
-			for( var c = 0; c< cols.length; c++ ){
-				if( factors[c] ){
-					row[c] = data[cols[c]].$levels[data[cols[c]].$data[r]-1];
-				}
-				else row[c] = data[cols[c]][r];
-			}
-			table[r] = row;
-		}
-		
-		var row_headers = undefined;
-		if( df.$rownames ){
-			row_headers = df.$rownames;
-		}
-		else {
-			row_headers = new Array( rows );
-			for( var r = 0; r< rows; r++ ) row_headers[r] = r+1;
-		}
-		
-		settings = { 
-			data: table,
-			stretchH: 'all',
-			rowHeaders: row_headers,
-		    manualColumnResize: true,
-			colHeaders: col_headers,
-			readOnly: true,
-			readOnlyCellClassName: "x"
-		};
-        */
+        if( df.$rownames ){
+            df.$rownames.unshift(" ");
+            table.unshift( df.$rownames );
+        }
+        else {
+            let header = new Array(len);
+            header[0] = " ";
+            for( let i = 1; i< len; i++ ) header[i] = i;
+            table.unshift( header );
+        }
 
         let tend = process.hrtime(tstart);
 
 	}
-
-    /*
-	if( !instance.table ){
-		// instance.table = new Handsontable( instance.node, settings );
-	}
-	else {
-		//instance.table.updateSettings(settings);
-		//instance.table.render();
-	}
-	*/
     
     instance.node.updateData( table );
 
 };
 
-var createInstance = function( field ){
+var createInstance = function( field, id ){
 
     let node = document.createElement( "display-grid" );
-    let instance = { node: node, field: field };
+    let instance = { node: node, field: field, id: id || 0 };
+
+    // drop any instances with the same id (!==0)
+    instances = instances.filter( function( inst ){
+        return ( inst.id === 0 || inst.id !== id );
+    });
+
     instances.push( instance );
 
     var rslt = {
@@ -180,48 +131,6 @@ var createInstance = function( field ){
 
     return rslt;
 
-    /*
-	var parentnode = document.createElement( "div" );
-	parentnode.setAttribute( "style", "width: 100%; height: 100%; position: relative; ")
-		
-	var childnode = document.createElement( "div" );
-	childnode.setAttribute( "style", "overflow: auto; top: 0px; left: 0px; bottom: 0px; right: 0px; position: absolute; " );
-	
-	parentnode.appendChild( childnode );
-
-	var instance = {
-		node: childnode,
-		field: field	
-	};
-
-	var rslt = {
-
-		onUnload: function(){
-			if( instance.table ) instance.table.destroy();
-			instance.table = null;
-			for( var i = 0; i< instances.length; i++ ){
-				if( instances[i] === instance ){
-					instances.splice( i, 1 );
-					break;
-				}
-			}
-		},
-	
-		onShow: function(){
-			setImmediate( function(){
-				updateData.call( this, instance );
-			}, this );
-		},
-
-		node: parentnode
-	
-	};
-
-	instances.push( instance );
-
-	return rslt;
-    */
-
 };
 
 module.exports = {
@@ -234,17 +143,6 @@ module.exports = {
 		core.Utils.install_html_component( html );
         html = path.join( "packages", "table", "grid.html" );
 		core.Utils.install_html_component( html );
-
-        /*
-		// add the stylesheet if it's not already there
-		var css = "packages/table/handsontable/handsontable.full.min.css";
-		if( !document.querySelector("link[href='" + css + "']")){
-			var node = document.createElement( "link" );
-			node.setAttribute( "rel", "stylesheet" );
-			node.setAttribute( "href", css );
-			document.head.appendChild( node );
-		}
-		*/
 
 		// install hooks
 		
@@ -266,13 +164,10 @@ module.exports = {
 		var template = {
 			label: "View table",
 			click: function(){
-
-				var opts = createInstance( menu_target );
+				var opts = createInstance( menu_target, 100 );
 				opts.position = Number( core.Settings["table_panel_position"] || 3) || 3; 
 				opts.title = "Table view: " + menu_target;
-
 				PubSub.publish( core.Constants.STACKED_PANE_INSERT, opts );
-				
 			}
 		};
 
@@ -291,24 +186,6 @@ module.exports = {
 			
 		});
 
-		/*				
-		core.Hooks.install( "watch_context_menu", function( hook, menu ){
-	
-			console.info( "WCM" );
-	
-			// there's got to be a better way to install this
-			if( !menu_item2 ){
-				menu_item2 = new MenuItem(template);
-				menu.append( menu_item2 );
-				// menu.insert( 0, menu_item2 );
-			}
-			menu_target = menu.target.name;
-			menu_item2.visible = 
-				((Array.isArray( menu.target.rclass ) && menu.target.rclass.includes( "data.frame" )) 
-					|| menu.target.rclass === "data.frame" );	
-		});
-		*/
-		
 	}
 	
 };

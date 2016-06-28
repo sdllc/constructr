@@ -1,15 +1,28 @@
 
 /* =================================== */
 
+.panel .grid-cell {
+    background: #fff;
+}
+
+.panel .grid-header {
+    background: #eee;
+}
+
+.panel .grid-column-header {
+    text-align: center;
+}
+
+/*
 .grid-cell {
-    font-family: consolas;
-    font-size: 14.25px;
     color: #333;
+    cursor: text;
 }
 
 .panel .grid-list-entry {
 	background: rgb( 235, 240, 250 );
     width: 100%;
+    cursor: text;
 }
 
 .panel .grid-list-entry .grid-cell {
@@ -28,11 +41,14 @@
     position: absolute;
     left: 0px;
     right: 0px;
+    bottom: 0px;
 
-    /* 
+    z-index: 100;
+
+    / * 
      * chrome bug? or is this overflowing? background doesn't render 
      * beyond viewport width. need to set background in the header cells.
-     */
+     * /
     background: #eee;
 }
 
@@ -41,7 +57,7 @@
     border-left: 1px solid #ccc;
     text-align: center;
     background: #eee;
-    cursor: pointer;
+    cursor: text;
 }
 
 .panel .grid-list-header .grid-cell:first-child {
@@ -50,6 +66,7 @@
 
 .panel .grid-list-entry .grid-cell:first-child {
     background: #eee ;
-    cursor: pointer;
+    cursor: text;
 }
 
+*/

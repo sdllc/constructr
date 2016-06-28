@@ -44,7 +44,14 @@
 		<style>
 			:host { 
 				overflow: auto; 
+                position: relative;
 			}
+
+            #header {
+                position: relative;
+                z-index: 100;
+            }
+
 		</style>
 
             <!-- header row (fixed) -->
@@ -80,6 +87,9 @@
 
 	const repaint_internal = function(){
 	
+        // FIXME: on horizontal scrolls, no need to re-render nodes
+        // (although for this one we may have to do some header alignment)
+
 		let list = this;
 		let height = list.offsetHeight;
 		if( this.debug ) console.info( "height", height );
@@ -126,7 +136,7 @@
 			}
 			hideNode(node, false);
 			
-            node.render( list.source, index );
+            node.render( list.source, index, list.scrollLeft );
             /*
 			else if( typeof data[index] === "string" ){
 				node.textContent = data[index];
@@ -160,8 +170,8 @@
 			Polymer.dom.flush();
         }
         else header = headers[0];
-        header.render( list.source, 0 );   
-        header.setAttribute( "style", "top: " + list.scrollTop + "px;" );
+        header.render( list.source, 0, list.scrollLeft, true );   
+        header.setAttribute( "style", "top: " + list.scrollTop + "px; height: 1px;" );
 
         if( list.debug ) console.info( "rendered", rendered_nodes, rendered_height );
 

@@ -5,6 +5,7 @@
             :host {
                 display: block;
                 overflow-x: visible;
+                position: relative;
             }
 
             .grid-cell {
@@ -21,12 +22,26 @@
             .grid-cell:first-child {
                 border-left: 0;
                 flex-grow: 0;
+                position: relative;
+                display: block;
+                border-right: 1px solid #ccc;
             }
 
+            .grid-header {
+                background: #def;
+            }
+
+            .grid-cell:nth-child(2) {
+                border-left: 0;
+                flex-grow: 0;
+            }
+
+            /*
             .grid-row-header {
                 position: absolute;
                 left: 0px;
             }
+            */
 
             #row {
                 white-space: nowrap;
@@ -45,33 +60,36 @@
         Polymer({
             
             is: "display-grid-row",
-            
-            properties: {
-            },
 
             maxwidth: 90,
 
-            render: function( source, index, is_header ){
-
-                if( is_header ){
-                    console.info( "IS HEADER", arguments  );
-                    this.$.row.textContent = "I AM HEADS";
-                    return;
-                }
+            render: function( source, index, left, is_header ){
 
                 if( source.data && source.data.length ){
-
                     for( let i = 0; i< source.data.length; i++ ){
                         if( this.cols.length <= i ){
+
                             let div = document.createElement( "pre" );
-                            div.className = "grid-cell";
+                            div.className = "grid-cell watch-data";
+                            if( is_header ){
+                                div.classList.add( "grid-column-header" );
+                                div.classList.add( "grid-header" );
+                            }
                             this.cols.push( div );
                             Polymer.dom(this.$.row).appendChild(div);
+
+                            if( !this.header ){
+                                this.header = this.cols[0];
+                                this.header.classList.add( "grid-header" );
+                                this.header.classList.add( "grid-row-header" );
+                            }
                         }
                         this.cols[i].textContent = source.data[i][index];
-                        this.cols[i].style = "min-width: " + source.widths[i] + "em";
+                        this.cols[i].style["min-width"] = (source.widths[i]*3/4) + "em";
                     }
 
+                    this.header.style.left = left + "px";
+              
                     for( let i = source.data.length + 1; i< this.cols.length; i++ ){
                         this.cols[i].style= "display: none;";
                     }
@@ -109,6 +127,9 @@
             #grid-rows {
                 position: relative;
                 flex-grow: 1;
+                margin: 0;
+                padding: 0;
+                border: 0;
             }
 
             #list {
@@ -121,6 +142,9 @@
 
             #column-headers {
                 display: none;
+                margin: 0;
+                padding: 0;
+                border: 0;
             }
 
             #column-headers.visible {
@@ -145,9 +169,6 @@
         </style>
 
         <div class='grid-list'>
-            <div id='column-headers'>
-                
-            </div>
             <div id='grid-rows'>
                 <virtual-list-grid class='check' id='list' template='display-grid-row'></virtual-list>
             </div>
@@ -184,11 +205,13 @@
                             source.widths[i] = tmp;
                         }
                     }
+
                }
                 else {
                     source.length = 0;
                     source.data = null;
                     source.widths = null;
+                    this.$['grid-origin'].style.width = "0px";
                 }
 
                 this.refresh();
