@@ -311,8 +311,8 @@ var exec_function = function( original_cmd, callback ){
 	// inserted in proper order always
 
 	R.queued_exec( original_cmd ).then( function( rslt ){
-		
-		if( rslt.data && rslt.data.srcref ){
+
+		if( rslt.data && rslt.data.srcref && Object.keys( rslt.data.srcref ).length ){
 			rslt.data.prompt_class = "shell-prompt-debug";
 		}
 		if( rslt.data && !rslt.data.continuation){

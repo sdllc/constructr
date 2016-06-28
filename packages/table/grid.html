@@ -8,32 +8,61 @@
                 position: relative;
             }
 
+            :host:first-child .grid-cell {
+                margin-bottom: 0;
+            }
+
             .grid-cell {
+
+                box-sizing: border-box;
+
                 display: inline-block;
                 text-align: right;
-                padding: 3px 3px 3px 3px;
-                border-left: 1px solid #ccc;
-                border-bottom: 1px solid #ccc;
+                padding: 0; 
                 margin: 0;
                 flex-grow: 1;
                 min-width: 3em;
+                border: 3px solid rgba( 0,0,0,0 );
+                margin-right: 1px;
+                margin-bottom: 1px;
+
+            }
+
+            .grid-cell.selected {
+                border-color: yellow;
+                background: lightyellow;
+            }
+
+            .grid-cell.selected.selected-clear-top {
+                border-top-color: rgba( 0,0,0,0 );
+            }
+
+            .grid-cell.selected.selected-clear-bottom {
+                border-bottom-color: rgba( 0,0,0,0 );
+            }
+
+            .grid-cell.selected.selected-clear-left {
+                border-left-color: rgba( 0,0,0,0 );
+            }
+
+            .grid-cell.selected.selected-clear-right {
+                border-right-color: rgba( 0,0,0,0 );
             }
 
             .grid-cell:first-child {
-                border-left: 0;
                 flex-grow: 0;
                 position: relative;
                 display: block;
-                border-right: 1px solid #ccc;
+                margin-right: 1px;
+
             }
 
             .grid-header {
                 background: #def;
             }
 
-            .grid-cell:nth-child(2) {
-                border-left: 0;
-                flex-grow: 0;
+            .grid-column-header, .grid-cell.grid-column-header:first-child  {
+
             }
 
             /*
@@ -75,6 +104,10 @@
                                 div.classList.add( "grid-column-header" );
                                 div.classList.add( "grid-header" );
                             }
+                            else if( i ) {
+                                div.classList.add( "table-cell" );
+                            }
+                            div['data-col'] = i;
                             this.cols.push( div );
                             Polymer.dom(this.$.row).appendChild(div);
 
@@ -86,6 +119,34 @@
                         }
                         this.cols[i].textContent = source.data[i][index];
                         this.cols[i].style["min-width"] = (source.widths[i]*3/4) + "em";
+                        this.cols[i]['data-row'] = index;
+
+                        if( i >= source.selection.start.c 
+                            && i <= source.selection.end.c 
+                            && index >= source.selection.start.r 
+                            && index <= source.selection.end.r ){
+
+                            this.cols[i].classList.add("selected");
+
+                            if( i > source.selection.start.c )
+                                this.cols[i].classList.add('selected-clear-left'); 
+                            else this.cols[i].classList.remove('selected-clear-left'); 
+
+                            if( i < source.selection.end.c )
+                                this.cols[i].classList.add('selected-clear-right'); 
+                            else this.cols[i].classList.remove('selected-clear-right'); 
+
+                            if( index > source.selection.start.r )
+                                this.cols[i].classList.add('selected-clear-top'); 
+                            else this.cols[i].classList.remove('selected-clear-top'); 
+
+                            if( index < source.selection.end.r )
+                                this.cols[i].classList.add('selected-clear-bottom'); 
+                            else this.cols[i].classList.remove('selected-clear-bottom'); 
+
+                        }
+                        else this.cols[i].classList.remove('selected');
+
                     }
 
                     this.header.style.left = left + "px";
@@ -151,21 +212,6 @@
                 display: flex;
             }
 
-            .grid-header-cell {
-                display: inline-block;
-                text-align: center;
-                padding: 3px 3px 3px 3px;
-                border-left: 1px solid #aaa;
-                border-bottom: 1px solid #aaa;
-                margin: 0;
-                flex-grow: 1;
-                min-width: 3em;
-            }
-
-            .grid-header-cell:first-child {
-                border-left: 0;
-            }
-
         </style>
 
         <div class='grid-list'>
@@ -184,15 +230,180 @@
                 this.$.list.source.widths = null;
             },
 
+            listeners: {
+                'mousedown': 'mousedown',
+                'mouseup': 'mouseup',
+                'keydown': 'keydown'
+            },
+
+            keydown: function(e){
+                e.stopPropagation();
+                e.preventDefault();
+
+                //console.info(e);
+
+                if( e.keyCode === 27 ){ // escape
+                    this.clear_selection();
+                    this.async_refresh();
+                    return;
+                }
+                if( e.keyCode === 65 && e.ctrlKey ){
+                    this.select_all( true );
+                    this.async_refresh();
+                    return;
+                }
+                else if( e.keyCode === 67 && e.ctrlKey ){
+                    
+                    // this is one place where column-dominant is expensive
+                    let src = this.$.list.source;
+                    if( src.selection.start < 1 || src.selection.end < 1 ) return;
+
+                    console.info( src.data );
+
+                    let data = [];
+                    for( let r = src.selection.start.r; r<= src.selection.end.r; r++ ){
+                        let line = [];
+                        for( let c = src.selection.start.c; c<= src.selection.end.c; c++ ){
+                            line.push( src.data[c][r].toString());
+                        }
+                        data.push( line.join( "\t" ));
+                    }
+                    
+                    const {clipboard} = require('electron');
+                    clipboard.writeText(data.join("\n"));
+
+                    //console.info( data.join( "\n" ));
+
+                }
+
+            },
+
+            clear_selection: function(){
+                this.$.list.source.selection = {
+                    start: { r: -1, c: -1 },
+                    end: { r: -1, c: -1 }
+                }
+            },
+
+            select_range: function( r1, c1, r2, c2 ){
+                this.$.list.source.selection = {
+                    start: { r: r1, c: c1 },
+                    end: { r: r2, c: c2 }
+                }
+            },
+
+            select_all: function( state ){
+                if( !state ) this.clear_selection();
+                else {
+                    let src = this.$.list.source;
+                    let c = src.data.length - 1; 
+                    let r = src.length - 1;
+                    this.select_range( 1, 1, r, c );
+                }
+            },
+
+            select: function( row, col ){
+                this.select_range( row, col, row, col );
+            },
+
+            async_refresh: function(){
+                let instance = this
+                requestAnimationFrame( function(){
+                    instance.refresh();
+                });
+            },
+
+            mousedown: function(e){
+
+                e.stopPropagation();
+                e.preventDefault();
+
+                this.focus();
+
+                if( !e.target.className.match( /table-cell/ )){
+                    // console.info( e.target.className );
+                    return;
+                }
+
+                let row = e.target['data-row'];
+                let col = e.target['data-col'];               
+
+                // clear selection, add current, refresh.
+                // track cell, so we can limit changes 
+                // and more efficiently process deltas
+          
+                this.$.list.source.selected = [];
+                this.select( row, col );
+                this.current_selection = [ row, col ];
+                this.selection_start = [ row, col ];
+                this.async_refresh();
+
+                this.listen( this, 'mousemove', 'move' );
+
+            },
+
+            mouseup: function(e){
+                e.stopPropagation();
+                e.preventDefault();
+                
+                let row = e.target['data-row'];
+                let col = e.target['data-col'];               
+                this.unlisten( this, 'mousemove', 'move' );
+            },
+
+            move: function(e){
+                e.stopPropagation();
+                e.preventDefault();
+
+                let row = e.target['data-row'];
+                let col = e.target['data-col'];               
+
+                if( row === this.current_selection[0] && col === this.current_selection[1] ) return;
+
+                // (maybe) more efficient: flush and recreate
+                this.$.list.source.selected = [];
+                this.select_range( 
+                    Math.min( row, this.selection_start[0] ), 
+                    Math.min( col, this.selection_start[1] ), 
+                    Math.max( row, this.selection_start[0] ), 
+                    Math.max( col, this.selection_start[1] ), true );
+
+                this.current_selection = [ row, col ];
+                this.async_refresh();
+
+            },
+
+            click: function(e) {
+                // alert("Thank you for tapping");
+                e.stopPropagation();
+                let row = e.target['data-row'];
+                let col = e.target['data-col'];               
+
+                if( !this.$.list.source.selected[row] ) this.$.list.source.selected[row] = [];
+                if( !this.$.list.source.selected[row][col] ) this.$.list.source.selected[row][col] = true;
+                else this.$.list.source.selected[row][col] = false;
+
+                console.info( row, col );
+
+                let instance = this;
+                setImmediate( function(){
+                    instance.refresh();
+                });
+
+            },
+
             updateData: function(data, headers, preserve_columns){
 
                 if( !this.$.list.source ) this.$.list.source = {};
                 let source = this.$.list.source; // ref
 
+                source.selected = null
+
                 if( data ){
                     source.length = data[0].length;
                     source.data = data;
                     source.headers = headers;
+                    this.clear_selection();
 
                     if( !preserve_columns ){
                         source.widths = [];
@@ -220,6 +431,7 @@
 
             attached: function(){
                 if( !this.$.list.source ) this.$.list.source = { length: 0 };
+                this.tabIndex = 0;
             },
 
             refresh: function(){
