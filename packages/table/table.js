@@ -24,7 +24,7 @@
 
 
 var path = require( "path" );
-const Handsontable = require( path.join( __dirname, "handsontable", "handsontable.full.min.js" ));
+// const Handsontable = require( path.join( __dirname, "handsontable", "handsontable.full.min.js" ));
 
 const PubSub = require( "pubsub-js" );
 
@@ -42,27 +42,63 @@ var instances = [];
 var R = null;
 
 var updateData = function( inst ){
+
 	var set = inst ? [inst] : instances;
 	set.forEach( function( instance ){
 		if( !instance.node || !instance.field ) return;
 		R.queued_internal( instance.field ).then( function( rsp ){
-			if( rsp.response && rsp.response.$data )
+			if( rsp.response && rsp.response.$data ){
 				updateFromFrame( rsp.response, instance );
+            }
 		});
 	});
 };
 
 var updateFromFrame = function(df, instance){
 	
-	var settings = {};
+    let table;
 	
 	var data = df.$data;
 	var cols = Object.keys( data );
 	if( cols.length === 0 ) {
-		settings = {data:[[]]};
+		table = [];
 	}
 	else {
 	
+        // organize the data so that we have an array
+        // of columns.  the first entry in each column
+        // is the header.  the first column is a list 
+        // of row numbers (or row names, I guess).
+        // other than that, convert factors -> strings.
+
+        let tstart = process.hrtime();
+
+  //      console.info( df );
+
+        let len = 0;
+        let names = df.$names;
+        table = names.map( function( name ){
+            let arr = [name];
+            if( Array.isArray( df.$data[name] )){
+                arr = arr.concat( df.$data[name] );
+            }
+            else if( typeof df.$data[name] === "object" ){
+                for( let i = 0; i< df.$data[name].$data.length; i++ ){
+                    df.$data[name].$data[i] = df.$data[name].$levels[df.$data[name].$data[i]-1];
+                }
+                arr = arr.concat( df.$data[name].$data );
+            }
+            len = Math.max( len, arr.length );
+            return arr;
+        });
+        
+        let header = new Array(len);
+        for( let i = 1; i< len; i++ ) header[i] = i;
+        table.unshift( header );
+
+//        console.info( table );
+
+        /*
 		if( df.$names ) cols = df.$names;
 
 		var rows = 0;
@@ -107,20 +143,44 @@ var updateFromFrame = function(df, instance){
 			readOnly: true,
 			readOnlyCellClassName: "x"
 		};
+        */
+
+        let tend = process.hrtime(tstart);
+
 	}
 
+    /*
 	if( !instance.table ){
-		instance.table = new Handsontable( instance.node, settings );
+		// instance.table = new Handsontable( instance.node, settings );
 	}
 	else {
-		instance.table.updateSettings(settings);
-		instance.table.render();
+		//instance.table.updateSettings(settings);
+		//instance.table.render();
 	}
-	
+	*/
+    
+    instance.node.updateData( table );
+
 };
 
 var createInstance = function( field ){
 
+    let node = document.createElement( "display-grid" );
+    let instance = { node: node, field: field };
+    instances.push( instance );
+
+    var rslt = {
+        node: node,
+        onShow: function(){
+			setImmediate( function(){
+				updateData.call( this, instance );
+			}, this );
+        }
+    };
+
+    return rslt;
+
+    /*
 	var parentnode = document.createElement( "div" );
 	parentnode.setAttribute( "style", "width: 100%; height: 100%; position: relative; ")
 		
@@ -160,7 +220,8 @@ var createInstance = function( field ){
 	instances.push( instance );
 
 	return rslt;
-	
+    */
+
 };
 
 module.exports = {
@@ -169,6 +230,12 @@ module.exports = {
 		
 		R = core.R;
 
+        let html = path.join( "packages", "table", "virtual-list-grid.html" );
+		core.Utils.install_html_component( html );
+        html = path.join( "packages", "table", "grid.html" );
+		core.Utils.install_html_component( html );
+
+        /*
 		// add the stylesheet if it's not already there
 		var css = "packages/table/handsontable/handsontable.full.min.css";
 		if( !document.querySelector("link[href='" + css + "']")){
@@ -177,7 +244,8 @@ module.exports = {
 			node.setAttribute( "href", css );
 			document.head.appendChild( node );
 		}
-		
+		*/
+
 		// install hooks
 		
 		// update: data changes

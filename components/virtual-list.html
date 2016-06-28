@@ -72,7 +72,7 @@
 	
 (function(){
 
-	var hideNode = function( node, hide ){
+	const hideNode = function( node, hide ){
 		
 		// we can set arbitrary properties on nodes, so do that?
 		// it means (1) we don't have to do any regexing on the
@@ -80,9 +80,9 @@
 		
 		if( !!hide !== !!node.__hidden ){
 			
-			var template = "display:none;";
-			var style = node.getAttribute( "style" ) || "";
-			var match = style.match( template );
+			let template = "display:none;";
+			let style = node.getAttribute( "style" ) || "";
+			let match = style.match( template );
 			if( hide ) node.setAttribute( "style", template + style );
 			else node.setAttribute( "style", style.replace( template, "" ));
 			node.__hidden = !!hide;
@@ -91,26 +91,21 @@
 		
 	};
 
-	var repaint_internal = function(){
+	const repaint_internal = function(){
 	
-		var list = this;
-		var height = list.offsetHeight;
+		let list = this;
+		let height = list.offsetHeight;
 		if( this.debug ) console.info( "height", height );
 		
 		if( height <= 0 ) return;
 
-		var data = list.data || [];
-		var first = 0;
+		let data = list.data || [];
+		let first = 0;
 		
 		if( list.item_height ){
 			first = Math.floor( list.scrollTop / list.item_height );
-			var max_elements = Math.ceil( height / list.item_height );
-			var last_start = Math.max( 0, data.length - max_elements );
-			
-			//if( arguments.length && typeof arguments[0] !== "undefined" ){
-			//	first = arguments[0];
-			//}
-			
+			let max_elements = Math.ceil( height / list.item_height );
+			let last_start = Math.max( 0, data.length - max_elements );
 			if( first > last_start ) first = last_start;
 		}
 
@@ -120,15 +115,15 @@
 			first--;
 		} 
 
-		var nodes = Polymer.dom(list.$.nodes).children;
+		let nodes = Polymer.dom(list.$.nodes).children;
 
-		var rendered_height = 0;
-		var rendered_nodes = 0;
-		var index = first;
+		let rendered_height = 0;
+		let rendered_nodes = 0;
+		let index = first;
 
 		while( rendered_height < height * 2 && index < data.length ){
 			
-			var node;
+			let node;
 			
 			if( nodes.length > rendered_nodes ) node = nodes[rendered_nodes];
 			else {
@@ -146,7 +141,7 @@
 				node.textContent = data[index];
 			}
 			else {
-				for( var key in data[index] ) node[key] = data[index][key];
+				for( let key in data[index] ) node[key] = data[index][key];
 			}
 			
 			rendered_height += node.offsetHeight;
@@ -162,23 +157,16 @@
 			
 		}
 		
-		/* flush doesn't help
-		if( rendered_nodes > 0 ){
-			Polymer.dom.flush();
-			console.info( "RN1", Polymer.dom(list.$.nodes).firstChild.offsetHeight );
-		} 
-		*/
-
 		if( index >= data.length || nodes.length > data.length ){ 
-			for( var i = rendered_nodes; i< nodes.length; i++ ){
+			for( let i = rendered_nodes; i< nodes.length; i++ ){
 				hideNode(nodes[i], true);
 			}
 		}
 
 		if( this.debug ) console.info( first, index, data.length, rendered_nodes, rendered_height );
 
-		var margin_top = first * list.item_height;
-		var margin_bottom = (data.length - index) * list.item_height;
+		let margin_top = first * list.item_height;
+		let margin_bottom = (data.length - index) * list.item_height;
 		if( index >= data.length ) margin_bottom = 0;
 		
 		list.$.nodes.setAttribute( 'style', 
@@ -186,8 +174,8 @@
 		
 	};
 	
-	var repaint = function(){
-		var instance = this;
+	let repaint = function(){
+		let instance = this;
 		requestAnimationFrame( function(){
 			repaint_internal.call(instance);
 		});
@@ -228,7 +216,7 @@
 		},
 		
 		scrollTo: function(index){
-			var instance = this;
+			let instance = this;
 			requestAnimationFrame( function(){
 				instance.scrollTop = instance.item_height * index;
 			});

@@ -246,12 +246,14 @@ gulp.task('codemirror', ['bower'], function(){
 // remove non-minified js and css.  NOTE: there's also a build
 // tool which might be useful to cut out extra stuff (TODO)
 
+/*
 const handsontable_source = [ 'bower_components/handsontable/dist/*full.min*' ];
 gulp.task('handsontable', ['bower'], function(){
     return gulp.src( handsontable_source )
       .pipe( gulp.dest( path.join( target, "packages", "table", "handsontable" )))
       .pipe( gulpif(watching, livereload()));
 });
+*/
 
 /** copy external/3d party resources */
 gulp.task('ext', ['bower'], function(){
@@ -383,4 +385,4 @@ gulp.task('watch', ['watch-flags', 'default'], function () {
 	 
 });
 
-gulp.task('default', ['bower', 'ext', 'handsontable', 'codemirror', 'package.json', 'data', 'html', 'styles', 'main', 'core', 'polymer', 'components', 'themes', 'R', 'plugin', 'packages' ]);
+gulp.task('default', ['bower', 'ext', 'codemirror', 'package.json', 'data', 'html', 'styles', 'main', 'core', 'polymer', 'components', 'themes', 'R', 'plugin', 'packages' ]);

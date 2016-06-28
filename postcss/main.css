@@ -30,6 +30,7 @@
 @import "dialog.css";
 
 @import "scrollbars.css";
+@import "grid.css";
 
 html, body {
 	font-family: "Segoe UI", "Open Sans";

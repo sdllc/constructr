@@ -639,6 +639,59 @@ var open_locals = function(){
 
 };
 
+/*
+var open_test_area = function(){
+
+    // handy for dev.  create node: 
+
+    let node = document.createElement( "display-grid" );
+
+    // set opts
+
+    let opts = {
+        node: node,
+        position: 3,
+        title: "Test block"
+    };
+
+    // fake data
+    let data = [];
+    let headers = [ "Fruit" ];
+
+    let nrow = 2500;
+
+    let arr = new Array(nrow+1);
+    arr[0] = "";
+    for( let i = 1; i< nrow+1; i++ ) arr[i] = i;
+    data.push( arr );
+
+    var factor = [ "banana", "tangerine", "volkswagen", "mario goetze", "never" ];
+    arr = new Array(nrow+1);
+    arr[0] = "Fruit Type";
+    for( let j = 0; j< nrow; j++ ) arr[j+1] = 
+        factor[ Math.floor( Math.random() * factor.length ) ];
+        data.push( arr );
+
+    for( let i = 0; i< 7; i++ ){
+        let arr = new Array(nrow+1);
+        arr[0] = "V" + (i+1);
+        for( let j = 0; j< nrow; j++ ) arr[j+1] = Math.round( Math.random() * 10000 ) / 100;
+        data.push( arr );
+    }
+//    console.info( data );
+//    node.data = data;
+
+    window.setTimeout(function(){
+        node.updateData( data, headers );
+    }, 100);
+
+
+    // show
+
+    PubSub.publish( Constants.STACKED_PANE_INSERT, opts );
+};
+*/
+
 function toggle_shell_preferences(){
 	open_shell_preferences(true);
 };
@@ -1591,6 +1644,13 @@ document.addEventListener("DOMContentLoaded", function(event) {
 			if( !init_status || !init_status.prompt ) return;
 			shell.focus();
 			shell.prompt( init_status.prompt );
+
+            /*
+            setImmediate( function(){
+                open_test_area();
+            });
+            */
+
 		}
 
 		if( init_status && init_status.success ){

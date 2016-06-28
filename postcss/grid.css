@@ -1,0 +1,55 @@
+
+/* =================================== */
+
+.grid-cell {
+    font-family: consolas;
+    font-size: 14.25px;
+    color: #333;
+}
+
+.panel .grid-list-entry {
+	background: rgb( 235, 240, 250 );
+    width: 100%;
+}
+
+.panel .grid-list-entry .grid-cell {
+	background: rgb( 235, 240, 250 );
+}
+
+.panel .grid-list-entry:nth-child(even) {
+	background: #fff;
+}
+
+.panel .grid-list-entry:nth-child(even)  .grid-cell {
+	background: #fff;
+}
+
+.panel .grid-list-header {
+    position: absolute;
+    left: 0px;
+    right: 0px;
+
+    /* 
+     * chrome bug? or is this overflowing? background doesn't render 
+     * beyond viewport width. need to set background in the header cells.
+     */
+    background: #eee;
+}
+
+.panel .grid-list-header .grid-cell {
+    border-bottom: 1px solid #ccc;
+    border-left: 1px solid #ccc;
+    text-align: center;
+    background: #eee;
+    cursor: pointer;
+}
+
+.panel .grid-list-header .grid-cell:first-child {
+    border-left: 0;
+}
+
+.panel .grid-list-entry .grid-cell:first-child {
+    background: #eee ;
+    cursor: pointer;
+}
+
