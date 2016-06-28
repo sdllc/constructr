@@ -1,0 +1,210 @@
+
+<dom-module id="display-grid-row">
+    <template>
+        <style>
+            :host {
+                display: block;
+                overflow-x: visible;
+            }
+
+            .grid-cell {
+                display: inline-block;
+                text-align: right;
+                padding: 3px 3px 3px 3px;
+                border-left: 1px solid #ccc;
+                border-bottom: 1px solid #ccc;
+                margin: 0;
+                flex-grow: 1;
+                min-width: 3em;
+            }
+
+            .grid-cell:first-child {
+                border-left: 0;
+                flex-grow: 0;
+            }
+
+            .grid-row-header {
+                position: absolute;
+                left: 0px;
+            }
+
+            #row {
+                white-space: nowrap;
+                min-height: 1em;
+                display: flex;
+                overflow: visible;
+            }
+
+        </style>
+
+        <div id='row'>
+        </div>
+
+    </template>
+    <script>
+        Polymer({
+            
+            is: "display-grid-row",
+            
+            properties: {
+            },
+
+            maxwidth: 90,
+
+            render: function( source, index, is_header ){
+
+                if( is_header ){
+                    console.info( "IS HEADER", arguments  );
+                    this.$.row.textContent = "I AM HEADS";
+                    return;
+                }
+
+                if( source.data && source.data.length ){
+
+                    for( let i = 0; i< source.data.length; i++ ){
+                        if( this.cols.length <= i ){
+                            let div = document.createElement( "pre" );
+                            div.className = "grid-cell";
+                            this.cols.push( div );
+                            Polymer.dom(this.$.row).appendChild(div);
+                        }
+                        this.cols[i].textContent = source.data[i][index];
+                        this.cols[i].style = "min-width: " + source.widths[i] + "em";
+                    }
+
+                    for( let i = source.data.length + 1; i< this.cols.length; i++ ){
+                        this.cols[i].style= "display: none;";
+                    }
+
+                }
+
+            },
+
+            created: function(){
+                this.cols = [];
+            }
+
+        })
+    </script>
+</dom-module>
+
+<dom-module id="display-grid">
+    <template>
+
+        <style>
+
+            :host {
+                flex-grow: 1;
+                display: flex;
+            }
+
+            .grid-list {
+                overflow: auto;
+                flex-grow: 1;
+                position: relative;
+                display: flex;
+                flex-direction: column;
+            }
+
+            #grid-rows {
+                position: relative;
+                flex-grow: 1;
+            }
+
+            #list {
+                position: absolute;
+                top: 0px;
+                left: 0px;
+                bottom: 0px;
+                right: 0px;
+            }
+
+            #column-headers {
+                display: none;
+            }
+
+            #column-headers.visible {
+                display: flex;
+            }
+
+            .grid-header-cell {
+                display: inline-block;
+                text-align: center;
+                padding: 3px 3px 3px 3px;
+                border-left: 1px solid #aaa;
+                border-bottom: 1px solid #aaa;
+                margin: 0;
+                flex-grow: 1;
+                min-width: 3em;
+            }
+
+            .grid-header-cell:first-child {
+                border-left: 0;
+            }
+
+        </style>
+
+        <div class='grid-list'>
+            <div id='column-headers'>
+                
+            </div>
+            <div id='grid-rows'>
+                <virtual-list-grid class='check' id='list' template='display-grid-row'></virtual-list>
+            </div>
+        </div>
+
+    </template>
+    <script>
+
+        Polymer({
+            is: "display-grid",
+
+            resetWidths: function(){
+                this.$.list.source.widths = null;
+            },
+
+            updateData: function(data, headers, preserve_columns){
+
+                if( !this.$.list.source ) this.$.list.source = {};
+                let source = this.$.list.source; // ref
+
+                if( data ){
+                    source.length = data[0].length;
+                    source.data = data;
+                    source.headers = headers;
+
+                    if( !preserve_columns ){
+                        source.widths = [];
+                        for( let i = 0; i< data.length; i++ ){
+                            let s, tmp = 2;
+                            for( let r = 0; r< source.length; r++ ){
+                                s = data[i][r] || "";
+                                tmp = Math.max( tmp, s.toString().length);
+                            }
+                            source.widths[i] = tmp;
+                        }
+                    }
+               }
+                else {
+                    source.length = 0;
+                    source.data = null;
+                    source.widths = null;
+                }
+
+                this.refresh();
+
+            },
+
+            attached: function(){
+                if( !this.$.list.source ) this.$.list.source = { length: 0 };
+            },
+
+            refresh: function(){
+                this.$.list.dataChanged();
+            }            
+
+        })
+
+    </script>
+</dom-module>
+
