@@ -35,6 +35,7 @@ const MenuItem = remote.MenuItem;
 var menu_item1 = null;
 var menu_item2 = null;
 var menu_target = null;
+var menu_index = null;
 
 var instances = [];
 
@@ -45,14 +46,46 @@ var updateData = function( inst ){
 	var set = inst ? [inst] : instances;
 	set.forEach( function( instance ){
 		if( !instance.node || !instance.field || !instance.visible ) return;
-		R.queued_internal( instance.field ).then( function( rsp ){
+        let cmd;
+
+        if( inst.menutype === "watch" ){
+            let idx = instance.index + 1; // r indexing
+            cmd = `eval( jsClientLib:::.data.env$watches[[${ idx }]]$expr, envir=jsClientLib:::.data.env$watches[[${ idx }]]$envir )`;
+        }
+        else {
+            cmd = instance.field;
+        }
+
+            console.info( cmd );
+
+		R.queued_internal( cmd ).then( function( rsp ){
             console.info( rsp );
 			if( rsp.response && rsp.response.$data ){
 				updateFromFrame( rsp.response, instance );
             }
 		});
+
 	});
 };
+
+/**
+ * format an R date.  From docs:
+ * 
+ * Dates are represented as the number of days since 1970-01-01, with negative values for earlier dates. 
+ * 
+ */
+const format_date = function(days){
+
+    let date = new Date();
+    date.setTime( days * 86400000 ); 
+
+    // why is month 0-based and date 1-based?
+    let m = date.getUTCMonth() + 1;
+    let d = date.getUTCDate();
+
+    return `${date.getUTCFullYear()}-${(m<10?"0":"")+m}-${(d<10?"0":"")+d}`;
+
+}
 
 var updateFromFrame = function(df, instance){
 	
@@ -69,7 +102,9 @@ var updateFromFrame = function(df, instance){
         // of columns.  the first entry in each column
         // is the header.  the first column is a list 
         // of row numbers (or row names, I guess).
+
         // other than that, convert factors -> strings.
+        // other classes? we probably should support Date...
 
         let tstart = process.hrtime();
 
@@ -81,10 +116,18 @@ var updateFromFrame = function(df, instance){
                 arr = arr.concat( df.$data[name] );
             }
             else if( typeof df.$data[name] === "object" ){
-                for( let i = 0; i< df.$data[name].$data.length; i++ ){
-                    df.$data[name].$data[i] = df.$data[name].$levels[df.$data[name].$data[i]-1];
+                let obj = df.$data[name];
+                if( obj.$class === "factor" ){
+                    for( let i = 0; i< obj.$data.length; i++ ){
+                        obj.$data[i] = obj.$levels[obj.$data[i]-1];
+                    }
                 }
-                arr = arr.concat( df.$data[name].$data );
+                else if( obj.$class === "Date" ){
+                    for( let i = 0; i< obj.$data.length; i++ ){
+                        obj.$data[i] = format_date(obj.$data[i]);
+                    }
+                }
+                arr = arr.concat( obj.$data );
             }
             len = Math.max( len, arr.length );
             return arr;
@@ -109,12 +152,14 @@ var updateFromFrame = function(df, instance){
 
 };
 
-var createInstance = function( field, id ){
+var createInstance = function( field, id, menutype, menuindex ){
 
     let node = document.createElement( "display-grid" );
     let instance = { 
         node: node, 
         field: field, 
+        menutype: menutype,
+        index: menuindex,
         visible: true,
         id: id || 0 
     };
@@ -168,20 +213,20 @@ module.exports = {
 		});
 
         core.Hooks.install( "preferences_panel", function(){
-            console.info( "hook; tpp " + Settings["table_panel_position"]);
+            console.info( "hook; tpp " + Settings["table.panel.position"]);
             return new PreferencesSelect({
                label: "Table panel position",
-               value: Settings["table_panel_position"] || 2 ,
-               setting: "table_panel_position",
+               value: Settings["table.panel.position"] || 2 ,
+               setting: "table.panel.position",
                options: [ 2, 3, 4 ]
             });
         });
 
 		var template = {
 			label: "View table",
-			click: function(){
-				var opts = createInstance( menu_target, 100 );
-				opts.position = Number( core.Settings["table_panel_position"] || 3) || 3; 
+			click: function( menuitem ){
+				var opts = createInstance( menu_target, 100, menuitem.menutype, menu_index );
+				opts.position = Number( core.Settings["table.panel.position"] || 3) || 3; 
 				opts.title = "Table view: " + menu_target;
 				PubSub.publish( core.Constants.STACKED_PANE_INSERT, opts );
 			}
@@ -193,6 +238,7 @@ module.exports = {
 			// there's got to be a better way to install this
 			if( !menu_item1 ){
 				menu_item1 = new MenuItem(template);
+                menu_item1.menutype = "locals";
 				menu.append( menu_item1 );
 			}
 			menu_target = menu.target.name;
@@ -200,6 +246,21 @@ module.exports = {
 				((Array.isArray( menu.target.rclass ) && menu.target.rclass.includes( "data.frame" )) 
 					|| menu.target.rclass === "data.frame" );	
 			
+		});
+
+		core.Hooks.install( "watch_context_menu", function( hook, menu ){
+
+			// there's got to be a better way to install this
+			if( !menu_item2 ){
+				menu_item2 = new MenuItem(template);
+                menu_item2.menutype = "watch";
+				menu.append( menu_item2 );
+			}
+            menu_index = menu.$index;
+			menu_target = menu.target.name;
+			menu_item2.visible = 
+				((Array.isArray( menu.target.rclass ) && menu.target.rclass.includes( "data.frame" )) 
+					|| menu.target.rclass === "data.frame" );	
 		});
 
 	}
