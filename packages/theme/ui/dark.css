@@ -158,3 +158,24 @@ html-dialog .dialog-footer button:hover {
 html-dialog .dialog-footer button:active {
 	background: #444;
 }
+
+/* --- needs work ---*/
+
+.panel .grid-cell {
+	background: #444;
+}
+
+.panel .grid-header {
+	background: #333;
+}
+
+.panel .grid-cell.selected {
+	border-color: #eee;
+	background: #555;
+}
+
+.panel .grid-header.selected {
+	border-color: rgba( 0,0,0,0 );
+	background: #eee;
+	color: #000;
+}

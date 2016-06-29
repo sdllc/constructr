@@ -13,9 +13,7 @@
             }
 
             .grid-cell {
-
                 box-sizing: border-box;
-
                 display: inline-block;
                 text-align: right;
                 padding: 0; 
@@ -25,7 +23,7 @@
                 border: 3px solid rgba( 0,0,0,0 );
                 margin-right: 1px;
                 margin-bottom: 1px;
-
+                cursor: cell;
             }
 
             .grid-cell.selected {
@@ -49,6 +47,11 @@
                 border-right-color: rgba( 0,0,0,0 );
             }
 
+            .grid-header.selected {
+                border-color: rgba( 0,0,0,0 );
+                background: yellow;
+            }
+
             .grid-cell:first-child {
                 flex-grow: 0;
                 position: relative;
@@ -59,18 +62,8 @@
 
             .grid-header {
                 background: #def;
+                cursor: text;
             }
-
-            .grid-column-header, .grid-cell.grid-column-header:first-child  {
-
-            }
-
-            /*
-            .grid-row-header {
-                position: absolute;
-                left: 0px;
-            }
-            */
 
             #row {
                 white-space: nowrap;
@@ -128,7 +121,7 @@
 
                             this.cols[i].classList.add("selected");
 
-                            if( i > source.selection.start.c )
+                            if( i > 1 && i > source.selection.start.c )
                                 this.cols[i].classList.add('selected-clear-left'); 
                             else this.cols[i].classList.remove('selected-clear-left'); 
 
@@ -136,7 +129,7 @@
                                 this.cols[i].classList.add('selected-clear-right'); 
                             else this.cols[i].classList.remove('selected-clear-right'); 
 
-                            if( index > source.selection.start.r )
+                            if( index > 1 && index > source.selection.start.r )
                                 this.cols[i].classList.add('selected-clear-top'); 
                             else this.cols[i].classList.remove('selected-clear-top'); 
 
@@ -175,6 +168,7 @@
             :host {
                 flex-grow: 1;
                 display: flex;
+                outline: none;
             }
 
             .grid-list {
@@ -199,6 +193,7 @@
                 left: 0px;
                 bottom: 0px;
                 right: 0px;
+                overflow-y: scroll;
             }
 
             #column-headers {
@@ -232,8 +227,37 @@
 
             listeners: {
                 'mousedown': 'mousedown',
-                'mouseup': 'mouseup',
                 'keydown': 'keydown'
+            },
+
+            copy_selection: function(){
+
+                // this is one place where column-dominant 
+                // array is not helpful (didn't we have a fast
+                // matrix transpose at one point?)
+
+                let src = this.$.list.source;
+                if( src.selection.start < 1 || src.selection.end < 1 ) return;
+
+                let start = { 
+                    r: Math.max( 1, src.selection.start.r ),
+                    c: Math.max( 1, src.selection.start.c )
+                };
+
+                let data = [];
+                for( let r = start.r; r<= src.selection.end.r; r++ ){
+                    let line = [];
+                    for( let c = start.c; c<= src.selection.end.c; c++ ){
+                        line.push( src.data[c][r].toString());
+                    }
+                    data.push( line.join( "\t" ));
+                }
+                
+                const {clipboard} = require('electron');
+                clipboard.writeText(data.join("\n"));
+
+                //console.info( data.join( "\n" ));
+
             },
 
             keydown: function(e){
@@ -253,27 +277,7 @@
                     return;
                 }
                 else if( e.keyCode === 67 && e.ctrlKey ){
-                    
-                    // this is one place where column-dominant is expensive
-                    let src = this.$.list.source;
-                    if( src.selection.start < 1 || src.selection.end < 1 ) return;
-
-                    console.info( src.data );
-
-                    let data = [];
-                    for( let r = src.selection.start.r; r<= src.selection.end.r; r++ ){
-                        let line = [];
-                        for( let c = src.selection.start.c; c<= src.selection.end.c; c++ ){
-                            line.push( src.data[c][r].toString());
-                        }
-                        data.push( line.join( "\t" ));
-                    }
-                    
-                    const {clipboard} = require('electron');
-                    clipboard.writeText(data.join("\n"));
-
-                    //console.info( data.join( "\n" ));
-
+                    this.copy_selection();
                 }
 
             },
@@ -292,13 +296,25 @@
                 }
             },
 
+            select_columns: function( c1, c2 ){
+                let src = this.$.list.source;
+                let r = src.length - 1;
+                this.select_range( 0, c1, r, c2 );
+            },
+
+            select_rows: function( r1, r2 ){
+                let src = this.$.list.source;
+                let c = src.data.length - 1; 
+                this.select_range( r1, 0, r2, c );
+            },
+
             select_all: function( state ){
                 if( !state ) this.clear_selection();
                 else {
                     let src = this.$.list.source;
                     let c = src.data.length - 1; 
                     let r = src.length - 1;
-                    this.select_range( 1, 1, r, c );
+                    this.select_range( 0, 0, r, c );
                 }
             },
 
@@ -320,25 +336,43 @@
 
                 this.focus();
 
-                if( !e.target.className.match( /table-cell/ )){
+                if( !e.target.className.match( /grid-cell/ )){
                     // console.info( e.target.className );
                     return;
                 }
-
+                
                 let row = e.target['data-row'];
                 let col = e.target['data-col'];               
 
-                // clear selection, add current, refresh.
-                // track cell, so we can limit changes 
-                // and more efficiently process deltas
-          
-                this.$.list.source.selected = [];
-                this.select( row, col );
+                if( row === 0 && col === 0 ){
+                    clear_selection();
+                    return;
+                }
+                else if( row === 0 ){
+                    this.select_columns( col, col );
+                    this.f = this.move_columns;
+                }
+                else if( col === 0 ){
+                    this.select_rows( row, row );
+                    this.f = this.move_rows;
+                }
+                else {
+
+                    // clear selection, add current, refresh.
+                    // track cell, so we can limit changes 
+                    // and more efficiently process deltas
+            
+                    this.select( row, col );
+                    this.f = this.move_table; 
+
+                }
+
+                this.listen( this, 'mousemove', 'f' );
                 this.current_selection = [ row, col ];
                 this.selection_start = [ row, col ];
+                this.listen( this, 'mouseup', 'mouseup' );
+                this.listen( this, 'mouseleave', 'mouseup' );
                 this.async_refresh();
-
-                this.listen( this, 'mousemove', 'move' );
 
             },
 
@@ -347,21 +381,56 @@
                 e.preventDefault();
                 
                 let row = e.target['data-row'];
-                let col = e.target['data-col'];               
-                this.unlisten( this, 'mousemove', 'move' );
+                let col = e.target['data-col'];
+
+                this.unlisten( this, 'mousemove', 'f' );
+                this.unlisten( this, 'mouseup', 'mouseup' );
+                this.unlisten( this, 'mouseleave', 'mouseup' );
             },
 
-            move: function(e){
+            move_columns: function(e){
                 e.stopPropagation();
                 e.preventDefault();
 
-                let row = e.target['data-row'];
-                let col = e.target['data-col'];               
+                let row = Math.max( 1, e.target['data-row'] );
+                let col = Math.max( 1, e.target['data-col'] );
+
+                if( col === this.current_selection[1] ) return;
+                this.select_columns( Math.min( col, this.selection_start[1] ),
+                    Math.max( col, this.selection_start[1] ));
+
+                this.current_selection = [ row, col ];
+                this.async_refresh();
+
+            },
+
+            move_rows: function(e){
+                e.stopPropagation();
+                e.preventDefault();
+
+                let row = Math.max( 1, e.target['data-row'] );
+                let col = Math.max( 1, e.target['data-col'] );
+
+                if( row === this.current_selection[0] ) return;
+                this.select_rows( 
+                    Math.min( row, this.selection_start[0] ),
+                    Math.max( row, this.selection_start[0] ));
+
+                this.current_selection = [ row, col ];
+                this.async_refresh();
+
+            },
+
+            move_table: function(e){
+                e.stopPropagation();
+                e.preventDefault();
+
+                let row = Math.max( 1, e.target['data-row'] );
+                let col = Math.max( 1, e.target['data-col'] );
 
                 if( row === this.current_selection[0] && col === this.current_selection[1] ) return;
 
                 // (maybe) more efficient: flush and recreate
-                this.$.list.source.selected = [];
                 this.select_range( 
                     Math.min( row, this.selection_start[0] ), 
                     Math.min( col, this.selection_start[1] ), 
