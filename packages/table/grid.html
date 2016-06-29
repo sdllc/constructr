@@ -113,6 +113,7 @@
                         this.cols[i].textContent = source.data[i][index];
                         this.cols[i].style["min-width"] = (source.widths[i]*3/4) + "em";
                         this.cols[i]['data-row'] = index;
+                        this.cols[i].style.display = "block";
 
                         if( i >= source.selection.start.c 
                             && i <= source.selection.end.c 
@@ -144,8 +145,8 @@
 
                     this.header.style.left = left + "px";
               
-                    for( let i = source.data.length + 1; i< this.cols.length; i++ ){
-                        this.cols[i].style= "display: none;";
+                    for( let i = source.data.length; i< this.cols.length; i++ ){
+                        this.cols[i].style.display = "none";
                     }
 
                 }
@@ -308,6 +309,21 @@
                 this.select_range( r1, 0, r2, c );
             },
 
+            /**
+             * patch selection: if the table size changes,
+             * if we have a row or column (or all) selected,
+             * we want to extend to the new size.
+             */
+            patch_selection: function(){
+                let source = this.$.list.source;
+                if( source.selection.start.r === 0 ){
+                    source.selection.end.r = source.length - 1;
+                }
+                if( source.selection.start.c === 0 ){
+                    source.selection.end.c = source.data.length - 1;
+                }
+            },
+            
             select_all: function( state ){
                 if( !state ) this.clear_selection();
                 else {
@@ -461,20 +477,26 @@
 
             },
 
-            updateData: function(data, headers, preserve_columns){
+            updateData: function( data, headers, preserve_columns ){
 
                 if( !this.$.list.source ) this.$.list.source = {};
                 let source = this.$.list.source; // ref
-
-                source.selected = null
 
                 if( data ){
                     source.length = data[0].length;
                     source.data = data;
                     source.headers = headers;
-                    this.clear_selection();
 
-                    if( !preserve_columns ){
+                    if( !source.selection ){
+                        this.clear_selection();
+                    } 
+                    else {
+                        this.patch_selection();
+                    }
+
+                    let cols = source.data.length;
+                    if( cols != this.cols ){
+                        this.cols = cols;
                         source.widths = [];
                         for( let i = 0; i< data.length; i++ ){
                             let s, tmp = 2;

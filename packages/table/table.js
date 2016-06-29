@@ -44,8 +44,9 @@ var updateData = function( inst ){
 
 	var set = inst ? [inst] : instances;
 	set.forEach( function( instance ){
-		if( !instance.node || !instance.field ) return;
+		if( !instance.node || !instance.field || !instance.visible ) return;
 		R.queued_internal( instance.field ).then( function( rsp ){
+            console.info( rsp );
 			if( rsp.response && rsp.response.$data ){
 				updateFromFrame( rsp.response, instance );
             }
@@ -111,7 +112,12 @@ var updateFromFrame = function(df, instance){
 var createInstance = function( field, id ){
 
     let node = document.createElement( "display-grid" );
-    let instance = { node: node, field: field, id: id || 0 };
+    let instance = { 
+        node: node, 
+        field: field, 
+        visible: true,
+        id: id || 0 
+    };
 
     // drop any instances with the same id (!==0)
     instances = instances.filter( function( inst ){
@@ -123,9 +129,19 @@ var createInstance = function( field, id ){
     var rslt = {
         node: node,
         onShow: function(){
+            instance.visible = true;
 			setImmediate( function(){
 				updateData.call( this, instance );
 			}, this );
+        },
+        onHide: function(){
+            console.info( "table hide" );
+            instance.visible = false;
+        },
+        onUnload: function(){
+            console.info( "table unload (not really deleting yet)" );
+            instance.visible = false;
+            instance.node = null;
         }
     };
 
