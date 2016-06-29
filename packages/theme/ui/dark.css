@@ -170,7 +170,7 @@ html-dialog .dialog-footer button:active {
 }
 
 .panel .grid-cell.selected {
-	border-color: #eee;
+	border-color: rgb(255, 207, 108);
 	background: #555;
 }
 

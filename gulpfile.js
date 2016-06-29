@@ -235,25 +235,15 @@ gulp.task('polymer', ['bower'], function(){
         .pipe( gulpif(watching, livereload()));
 });
 
+// FIXME: we can remove a lot of stuff, language modes
+// in particular
+
 const codemirror_source = [ 'bower_components/codemirror/**/*' ];
 gulp.task('codemirror', ['bower'], function(){
     return gulp.src( codemirror_source )
       .pipe( gulp.dest( path.join( target, 'codemirror')))
       .pipe( gulpif(watching, livereload()));
 });
-
-// FIXME: we need to subset only required files; at a minimum,
-// remove non-minified js and css.  NOTE: there's also a build
-// tool which might be useful to cut out extra stuff (TODO)
-
-/*
-const handsontable_source = [ 'bower_components/handsontable/dist/*full.min*' ];
-gulp.task('handsontable', ['bower'], function(){
-    return gulp.src( handsontable_source )
-      .pipe( gulp.dest( path.join( target, "packages", "table", "handsontable" )))
-      .pipe( gulpif(watching, livereload()));
-});
-*/
 
 /** copy external/3d party resources */
 gulp.task('ext', ['bower'], function(){
