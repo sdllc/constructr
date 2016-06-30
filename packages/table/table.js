@@ -48,7 +48,7 @@ var updateData = function( inst ){
 		if( !instance.node || !instance.field || !instance.visible ) return;
         let cmd;
 
-        if( inst.menutype === "watch" ){
+        if( instance.menutype === "watch" ){
             let idx = instance.index + 1; // r indexing
             cmd = `eval( jsClientLib:::.data.env$watches[[${ idx }]]$expr, envir=jsClientLib:::.data.env$watches[[${ idx }]]$envir )`;
         }
@@ -56,10 +56,7 @@ var updateData = function( inst ){
             cmd = instance.field;
         }
 
-            console.info( cmd );
-
 		R.queued_internal( cmd ).then( function( rsp ){
-            console.info( rsp );
 			if( rsp.response && rsp.response.$data ){
 				updateFromFrame( rsp.response, instance );
             }
@@ -180,11 +177,9 @@ var createInstance = function( field, id, menutype, menuindex ){
 			}, this );
         },
         onHide: function(){
-            console.info( "table hide" );
             instance.visible = false;
         },
         onUnload: function(){
-            console.info( "table unload (not really deleting yet)" );
             instance.visible = false;
             instance.node = null;
         }

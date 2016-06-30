@@ -7,16 +7,10 @@ display-grid {
 
 .panel .grid-cell {
     background: #fff;
+    height: 100%;
 }
 
 .panel .grid-header {
     background: #eee;
     box-shadow: 1px 1px #ccc;
-}
-
-.panel .grid-column-header {
-    text-align: center;
-}
-
-.panel .grid-cell {
 }

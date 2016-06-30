@@ -61,8 +61,8 @@
             }
 
             .grid-header {
-                background: #def;
                 cursor: text;
+                text-align: center;
             }
 
             #row {
@@ -85,36 +85,72 @@
 
             maxwidth: 90,
 
+            prerender: function( data ){
+                let rslt = [];
+                for( let i = 0; i< data.length; i++ ){
+                    if( this.cols.length <= i ){
+                        let div = document.createElement( "pre" );
+                        div.className = "grid-cell watch-data";
+                        if( i ) {
+                            div.classList.add( "table-cell" );
+                        } 
+                        else {
+                            div.classList.add( "grid-header" );
+                            div.classList.add( "grid-row-header" );
+                        }
+                        this.cols.push( div );
+                        Polymer.dom(this.$.row).appendChild(div);
+                    }
+                    this.cols[i].textContent = data[i];
+                    this.cols[i].style.display = "block";
+
+                    // console.info( i, this.cols[i].textContent );
+                    rslt.push({ w: this.cols[i].offsetWidth, h: this.cols[i].offsetHeight });
+
+                }
+                return rslt;
+
+            },
+
             render: function( source, index, left, is_header ){
 
                 if( source.data && source.data.length ){
                     for( let i = 0; i< source.data.length; i++ ){
                         if( this.cols.length <= i ){
 
-                            let div = document.createElement( "pre" );
-                            div.className = "grid-cell watch-data";
+                            let div;
                             if( is_header ){
+                                div = document.createElement( "div" );
+                                div.className = "grid-cell";
                                 div.classList.add( "grid-column-header" );
                                 div.classList.add( "grid-header" );
                             }
                             else if( i ) {
+                                div = document.createElement( "pre" );
+                                div.className = "grid-cell watch-data";
                                 div.classList.add( "table-cell" );
                             }
+                            else {
+                                div = document.createElement( "div" );
+                                div.className = "grid-cell";
+                            }
+
                             div['data-col'] = i;
                             this.cols.push( div );
                             Polymer.dom(this.$.row).appendChild(div);
-
-                            if( !this.header ){
-                                this.header = this.cols[0];
-                                this.header.classList.add( "grid-header" );
-                                this.header.classList.add( "grid-row-header" );
-                            }
                         }
+                        if( !this.header ){
+                            this.header = this.cols[0];
+                            this.header.classList.add( "grid-header" );
+                            this.header.classList.add( "grid-row-header" );
+                        }
+
                         this.cols[i].textContent = source.data[i][index];
-                        this.cols[i].style["min-width"] = (source.widths[i]*3/4) + "em";
+                        this.cols[i].style["min-width"] = source.widths[i] + "px";
                         this.cols[i]['data-row'] = index;
                         this.cols[i].style.display = "block";
-
+                        this.cols[i].style.height = source.height + "px";
+                        
                         if( i >= source.selection.start.c 
                             && i <= source.selection.end.c 
                             && index >= source.selection.start.r 
@@ -496,16 +532,8 @@
 
                     let cols = source.data.length;
                     if( cols != this.cols ){
+                        this.$.list.measure();
                         this.cols = cols;
-                        source.widths = [];
-                        for( let i = 0; i< data.length; i++ ){
-                            let s, tmp = 2;
-                            for( let r = 0; r< source.length; r++ ){
-                                s = data[i][r] || "";
-                                tmp = Math.max( tmp, s.toString().length);
-                            }
-                            source.widths[i] = tmp;
-                        }
                     }
 
                }
