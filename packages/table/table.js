@@ -114,7 +114,7 @@ var updateFromFrame = function(df, instance){
             }
             else if( typeof df.$data[name] === "object" ){
                 let obj = df.$data[name];
-                if( obj.$class === "factor" ){
+                if( obj.$type === "factor" ){
                     for( let i = 0; i< obj.$data.length; i++ ){
                         obj.$data[i] = obj.$levels[obj.$data[i]-1];
                     }
