@@ -54,8 +54,8 @@
 
             #measurement {
                 position: absolute;
-                top: -100px;
-                left: -100px;
+                top: -110px;
+                left: -110px;
             }
 
 		</style>
@@ -247,18 +247,23 @@
     			Polymer.dom.flush();
 
                 let tmp = [];
+                let tmp_headers = [];
                 for( let i = 0; i< this.source.data.length; i++ ){
                     let x = this.source.data[i].slice(0);
                     x.sort( function( a, b ){ return b.toString().length - a.toString().length; });
                     tmp.push( " " + x[0] );
+                    tmp_headers.push( " " + this.source.data[i][0] );
                 }
 
                 let x = this.measurement_node.prerender(tmp);
-                this.source.widths = x.map( function( elt ){
-                    return elt.w;
+                let y = this.measurement_node.prerender(tmp_headers, true);
+                let h = 0;
+
+                this.source.widths = x.map( function( elt, idx ){
+                    h = Math.max( h, elt.h, y[idx].h );
+                    return Math.max( elt.w, y[idx].w );
                 });
-                this.source.height = x[0].h;
-                // console.info( "TSW", x[0].h, this.source.widths );
+                this.source.height = h;
 
             }
         },
