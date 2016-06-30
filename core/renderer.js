@@ -1043,9 +1043,7 @@ var init_r = function(opts = {}){
 		var watches = [];
 		if( msg.$data && msg.$data.fields && msg.$data.fields.$data && msg.$data.fields.$data.length ){
 			msg.$data.fields.$data.map( function( elt, index ){
-				
-				console.info( "W", elt.$data );
-				
+    			
 				var name = elt.$data.label;
 				var func = elt.$data.func;
 				

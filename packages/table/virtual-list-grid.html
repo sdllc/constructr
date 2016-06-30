@@ -52,6 +52,12 @@
                 z-index: 100;
             }
 
+            #measurement {
+                position: absolute;
+                top: -110px;
+                left: -110px;
+            }
+
 		</style>
 
             <!-- header row (fixed) -->
@@ -59,6 +65,9 @@
 
             <!-- rows (scrolling) -->
     		<div id='nodes'></div>
+
+            <!-- measurement -->
+            <div id='measurement'></div>
 
 	</template>
 
@@ -198,8 +207,8 @@
          */
 
 	};
-	
-	let repaint = function(){
+	   
+	const repaint = function(){
 		let instance = this;
 		requestAnimationFrame( function(){
 			repaint_internal.call(instance);
@@ -229,6 +238,35 @@
 			repaint.call(this);
 		},
 		
+        measure: function(){
+
+            if( !this.measurement_node ){
+                this.measurement_node = document.createElement( this.template );
+                Polymer.dom(this.$.measurement).appendChild(this.measurement_node);
+    			Polymer.dom.flush();
+
+                let tmp = [];
+                let tmp_headers = [];
+                for( let i = 0; i< this.source.data.length; i++ ){
+                    let x = this.source.data[i].slice(0);
+                    x.sort( function( a, b ){ return b.toString().length - a.toString().length; });
+                    tmp.push( " " + x[0] );
+                    tmp_headers.push( " " + this.source.data[i][0] );
+                }
+
+                let x = this.measurement_node.prerender(tmp);
+                let y = this.measurement_node.prerender(tmp_headers, true);
+                let h = 0;
+
+                this.source.widths = x.map( function( elt, idx ){
+                    h = Math.max( h, elt.h, y[idx].h );
+                    return Math.max( elt.w, y[idx].w );
+                });
+                this.source.height = h;
+
+            }
+        },
+
 		attached: function(){
 			if( !this.repaint ) this.repaint = repaint.bind(this, undefined);
 			repaint.call(this);

@@ -5,18 +5,13 @@ display-grid {
     background: #ccc;
 }
 
-.panel .grid-cell {
-    background: #fff;
-}
-
 .panel .grid-header {
     background: #eee;
     box-shadow: 1px 1px #ccc;
 }
 
-.panel .grid-column-header {
-    text-align: center;
+.panel .table-cell  {
+    display: table-cell;
+    text-align: right;
 }
 
-.panel .grid-cell {
-}
