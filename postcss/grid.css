@@ -10,3 +10,8 @@ display-grid {
     box-shadow: 1px 1px #ccc;
 }
 
+.panel .table-cell  {
+    display: table-cell;
+    text-align: right;
+}
+
