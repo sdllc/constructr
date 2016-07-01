@@ -1,9 +1,9 @@
 
 /* =================================== */
 
-
 /* alternate rows, except for selection */
 .panel grid-row:nth-child(odd) .table-cell:not(.selected) {
     background: #ecf9fe;
 }
 
+ 
