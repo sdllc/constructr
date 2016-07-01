@@ -639,6 +639,7 @@ var open_locals = function(){
 
 };
 
+/*
 var open_test_area = function(){
 
     // handy for dev.  create node: 
@@ -670,8 +671,8 @@ var open_test_area = function(){
     let data = [];
     let column_headers = [];
 
-    let nrow = 789;
-    let ncol = 48;
+    let nrow = 50;
+    let ncol = 8;
 
     let row_headers = new Array( nrow );
 
@@ -718,6 +719,7 @@ var open_test_area = function(){
 
     PubSub.publish( Constants.STACKED_PANE_INSERT, opts );
 };
+*/
 
 function toggle_shell_preferences(){
 	open_shell_preferences(true);
@@ -1670,9 +1672,11 @@ document.addEventListener("DOMContentLoaded", function(event) {
 			shell.focus();
 			shell.prompt( init_status.prompt );
 
+            /*
             setImmediate( function(){
                 open_test_area();
             });
+            */
 
 		}
 

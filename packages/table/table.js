@@ -86,31 +86,24 @@ const format_date = function(days){
 
 var updateFromFrame = function(df, instance){
 	
-    let table;
+    let table = [], column_headers = [], row_headers;
 	
 	var data = df.$data;
 	var cols = Object.keys( data );
-	if( cols.length === 0 ) {
-		table = [];
-	}
-	else {
+	if( cols.length !== 0 ) {
 	
-        // organize the data so that we have an array
-        // of columns.  the first entry in each column
-        // is the header.  the first column is a list 
-        // of row numbers (or row names, I guess).
-
-        // other than that, convert factors -> strings.
-        // other classes? we probably should support Date...
+        // convert factors -> strings. 
+        // update: +Date. other classes? 
 
         let tstart = process.hrtime();
 
         let len = 0;
         let names = df.$names;
         table = names.map( function( name ){
-            let arr = [name];
+            let arr;
+            column_headers.push( name );
             if( Array.isArray( df.$data[name] )){
-                arr = arr.concat( df.$data[name] );
+                arr = df.$data[name];
             }
             else if( typeof df.$data[name] === "object" ){
                 let obj = df.$data[name];
@@ -124,28 +117,27 @@ var updateFromFrame = function(df, instance){
                         obj.$data[i] = format_date(obj.$data[i]);
                     }
                 }
-                arr = arr.concat( obj.$data );
+                arr = obj.$data;
             }
             len = Math.max( len, arr.length );
             return arr;
         });
-        
-        if( df.$rownames ){
-            df.$rownames.unshift(" ");
-            table.unshift( df.$rownames );
-        }
-        else {
-            let header = new Array(len);
-            header[0] = " ";
-            for( let i = 1; i< len; i++ ) header[i] = i;
-            table.unshift( header );
+
+        row_headers = df.$rownames;        
+        if( !row_headers ){
+            row_headers = new Array(len);
+            for( let i = 0; i< len; i++ ) row_headers[i] = i;
         }
 
         let tend = process.hrtime(tstart);
 
 	}
     
-    instance.node.updateData( table );
+    instance.node.update({ 
+        data: table, 
+        column_headers: column_headers, 
+        row_headers: row_headers
+    });
 
 };
 
@@ -168,18 +160,29 @@ var createInstance = function( field, id, menutype, menuindex ){
 
     instances.push( instance );
 
+    let func = function(){
+        if( instance.visible ){
+			setImmediate( function(){
+				updateData.call( this, instance );
+			}, this );
+        }
+    };
+
     var rslt = {
         node: node,
         onShow: function(){
+            PubSub.subscribe( 'resize', func );
             instance.visible = true;
 			setImmediate( function(){
 				updateData.call( this, instance );
 			}, this );
         },
         onHide: function(){
+            PubSub.unsubscribe( 'resize', func );
             instance.visible = false;
         },
         onUnload: function(){
+            PubSub.unsubscribe( 'resize', func );
             instance.visible = false;
             instance.node = null;
         }

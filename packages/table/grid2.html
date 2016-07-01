@@ -198,8 +198,23 @@
                 z-index: 2;
             }
 
+            #selection-area {
+                top: 0px;
+                left: 0px;
+                bottom: 0px;
+                right: 0px;
+                position: absolute;
+                overflow: hidden;
+                background: rgba( 0, 0, 0, 0 );
+                pointer-events: none;
+            }
+
             #selection-node {
                 position: absolute;
+                top: -10px;
+                left: -10px;
+                height: 0px;
+                width: 0px;
                 box-sizing: border-box;
                 background: rgba( 0,0,0,0 );
                 border: 3px solid yellow;
@@ -221,10 +236,12 @@
             <div id='grid-columns'>
                 <div id='grid-rows'></div>
             </div>
+            <div id='selection-area'>
+                <div id='selection-node'></div>
+            </div>
         </div>
 
         <div id='measurement-node'></div>
-        <div id='selection-node'></div>
 
     </template>
     <script>
@@ -273,7 +290,46 @@
                 this.select_range( r, c, r, c );
             },
 
+            copy_selection: function(){
+
+                // this is one place where column-dominant 
+                // array is not helpful (didn't we have a fast
+                // matrix transpose at one point?)
+
+                if( this.selection.start.r < 0 || this.selection.end.r < 0 ) return;
+
+                let data = [];
+                for( let r = this.selection.start.r; r<= this.selection.end.r; r++ ){
+                    let line = [];
+                    for( let c = this.selection.start.c; c<= this.selection.end.c; c++ ){
+                        line.push( this.data[c][r].toString());
+                    }
+                    data.push( line.join( "\t" ));
+                }
+                
+                const {clipboard} = require('electron');
+                clipboard.writeText(data.join("\n"));
+
+            },
+
+
             keydown: function(e){
+
+                if( e.keyCode === 27 ){ // escape
+                    this.clear_selection();
+                    this.refresh();
+                }
+                else if( e.keyCode === 65 && e.ctrlKey ){
+                    this.select_all();
+                    this.refresh();
+                }
+                else if( e.keyCode === 67 && e.ctrlKey ){
+                    this.copy_selection();
+                }
+                else return;
+
+                e.stopPropagation();
+                e.preventDefault();
 
             },
 
@@ -546,15 +602,23 @@
                     this.nodes[index].style.display = "none";
                 }
 
+                let sn = this.$['selection-node'];
                 if( this.selection.start.r >= 0 && this.selection.start.c >= 0 ){
 
-                    let sn = this.$['selection-node'];
+                    let sa = this.$['selection-area'];
+
+                    sa.style.left = (this.row_header_width + area.scrollLeft) + "px";
+                    sa.style.width = ( area.clientWidth - this.row_header_width ) + "px";
+                    sa.style.top = (( m.max_height + m.vertical_margin ) + area.scrollTop) + "px";
+                    sa.style.height = ( area.clientHeight - ( m.max_height + m.vertical_margin ) ) + "px";
+
                     let width = 0;
-                    let left = this.row_header_width - area.scrollLeft;
-                    let top = ( this.selection.start.r + 1 ) * ( m.max_height + m.vertical_margin ) - area.scrollTop;
+                    let left = -area.scrollLeft;
+                    let top = ( this.selection.start.r ) * ( m.max_height + m.vertical_margin ) - area.scrollTop;
 
                     for( let i = 0; i<= this.selection.end.c; i++ ){
-                        let w = m.cell_widths[i] + m.horizontal_margin;
+                        //let w = m.cell_widths[i] + m.horizontal_margin;
+                        let w = this.nodes[0].children[i+1].offsetWidth + m.horizontal_margin;
                         if( i >= this.selection.start.c ) width += w;
                         else left += w;
                     }
@@ -564,6 +628,12 @@
                     sn.style.height = (( 1 + this.selection.end.r - this.selection.start.r ) * ( m.max_height + m.vertical_margin )) + "px";
                     sn.style.width = width + "px";
 
+                }
+                else {
+                    sn.style.left = "-20px"
+                    sn.style.top = "-20px";
+                    sn.style.height = "0px";
+                    sn.style.width = "0px";
                 }
 
                 let margin_bottom = m.line_height * (this.row_count - first_row);
