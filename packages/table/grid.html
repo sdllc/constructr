@@ -109,6 +109,7 @@
                 this.row_header.textContent = label;
                 this.row_header.row = row;
                 this.row_header.col = -1;
+                this.row_header.style.height = m.max_height + "px";
 
                 for( let i = first_col; i<= last_col; i++ ){
 
@@ -122,6 +123,7 @@
                     cell.style.display = "block";
                     cell.row = header ? -1 : row;
                     cell.col = i;
+                    cell.style.height = m.max_height + "px";
 
                     if( selection.start.c <= i 
                         && selection.end.c >= i
@@ -346,8 +348,6 @@
                 let row = e.target.row;
                 let col = e.target.col;
 
-                console.info( row, col );
-
                 if( row === -1 && col === -1 ){
                     clear_selection();
                     return;
@@ -495,7 +495,7 @@
                 }
 
                 m.line_height = m.max_height + m.vertical_margin;
-                m.total_height = this.row_count * m.line_height;
+                m.total_height = ( this.row_count + 1 ) * m.line_height;
                 m.total_width = (this.col_count * m.horizontal_margin) + m.row_length;
 
                 this.header_measurements = x;
@@ -537,7 +537,7 @@
 
                 // set margin
                 let margin_top = ( m.line_height * first_row );
-                grid.style.marginTop = margin_top + "px";
+                grid.style.paddingTop = margin_top + "px";
 
                 let first_col = 0;
                 let last_col = this.col_count - 1;
@@ -637,8 +637,7 @@
                     sn.style.width = "0px";
                 }
 
-                let margin_bottom = m.line_height * (this.row_count - first_row);
-                grid.style.marginBottom = margin_bottom + "px";
+                grid.style.height = m.total_height + "px";
 
             }
 
