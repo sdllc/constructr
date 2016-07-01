@@ -639,7 +639,6 @@ var open_locals = function(){
 
 };
 
-/*
 var open_test_area = function(){
 
     // handy for dev.  create node: 
@@ -648,49 +647,77 @@ var open_test_area = function(){
 
     // set opts
 
+    let rs = function(){
+        node.refresh();
+    };
+
     let opts = {
         node: node,
         position: 3,
-        title: "Test block"
+        title: "Test block",
+        onHide: function(){
+            PubSub.unsubscribe( "resize", rs );
+        },
+        onShow: function(){
+            PubSub.subscribe( "resize", rs );
+        },
+        onUnload: function(){
+            PubSub.unsubscribe( "resize", rs );
+        }
     };
 
     // fake data
     let data = [];
-    let headers = [ "Fruit" ];
+    let column_headers = [];
 
-    let nrow = 2500;
+    let nrow = 789;
+    let ncol = 48;
 
-    let arr = new Array(nrow+1);
-    arr[0] = "";
-    for( let i = 1; i< nrow+1; i++ ) arr[i] = i;
-    data.push( arr );
+    let row_headers = new Array( nrow );
 
-    var factor = [ "banana", "tangerine", "volkswagen", "mario goetze", "never" ];
-    arr = new Array(nrow+1);
-    arr[0] = "Fruit Type";
-    for( let j = 0; j< nrow; j++ ) arr[j+1] = 
+    for( let i = 0; i< nrow; i++ ) row_headers[i] = (i+1);
+
+//    column_headers.push( "X" );
+    column_headers.push( "Fruit Type" );
+    let arr = new Array(nrow);
+    for( let j = 0; j< nrow; j++ ) arr[j] = j;
+//    data.push( arr );
+
+    arr = new Array(nrow);
+    var factor = [ "banana", "tangerine", "volkswagen", "mario goetze", "never", "Quorn" ];
+    for( let j = 0; j< nrow; j++ ) arr[j] = 
         factor[ Math.floor( Math.random() * factor.length ) ];
         data.push( arr );
 
-    for( let i = 0; i< 7; i++ ){
-        let arr = new Array(nrow+1);
-        arr[0] = "V" + (i+1);
-        for( let j = 0; j< nrow; j++ ) arr[j+1] = Math.round( Math.random() * 10000 ) / 100;
+    for( let i = 0; i< ncol-1; i++ ){
+        arr = new Array(nrow);
+        if( i && (i % 7 === 0)){
+            column_headers.push( "SPOON" );
+            for( let j = 0; j< nrow; j++ ) arr[j] = "spoon";
+            arr[Math.round(arr.length/2)] = "extraspoon";
+        }
+        else {
+            column_headers.push( "V" + (i+1));
+            for( let j = 0; j< nrow; j++ ) arr[j] = Math.round( Math.random() * 10000 ) / 100;
+        }
         data.push( arr );
     }
-//    console.info( data );
-//    node.data = data;
+
+    for( let i = 0; i< data.length; i++ ){
+        data[i][0] = `COL ${i+1}/${data.length}`;
+    }
 
     window.setTimeout(function(){
-        node.updateData( data, headers );
+        node.update({
+            data: data,
+            row_headers: row_headers,
+            column_headers: column_headers });
     }, 100);
-
 
     // show
 
     PubSub.publish( Constants.STACKED_PANE_INSERT, opts );
 };
-*/
 
 function toggle_shell_preferences(){
 	open_shell_preferences(true);
@@ -1495,6 +1522,7 @@ document.addEventListener("DOMContentLoaded", function(event) {
 	// buffered resize. we err on the side of being slow (vs. lots of calls)
 	window._resize_timeout = null;
 	window.addEventListener( "resize", function(e){
+        console.info( "publish resize" );
 		PubSub.publish( "resize", e );
 		if( _resize_timeout ) window.clearTimeout( _resize_timeout );
 		_resize_timeout = window.setTimeout( resize_panes, RESIZE_TIMEOUT );
@@ -1642,11 +1670,9 @@ document.addEventListener("DOMContentLoaded", function(event) {
 			shell.focus();
 			shell.prompt( init_status.prompt );
 
-            /*
             setImmediate( function(){
                 open_test_area();
             });
-            */
 
 		}
 

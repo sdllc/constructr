@@ -195,11 +195,15 @@ module.exports = {
 		
 		R = core.R;
 
+        /*
         let html = path.join( "packages", "table", "virtual-list-grid.html" );
 		core.Utils.install_html_component( html );
         html = path.join( "packages", "table", "grid.html" );
 		core.Utils.install_html_component( html );
-
+        */
+        let html = path.join( "packages", "table", "grid2.html" );
+		core.Utils.install_html_component( html );
+        
 		// install hooks
 		
 		// update: data changes

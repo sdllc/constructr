@@ -357,7 +357,7 @@
             });
             
             requestAnimationFrame( function(){
-                splitter.fire( 'resize' );
+                splitter.fire_resize();
             })
             
         };
@@ -432,7 +432,7 @@
                         panes[opts.target].classList.add('hidden');	
                     } 
                     resolve();
-                    splitter.fire( "resize" );
+                    splitter.fire_resize;
                 };
 
                 if( opts.transition && opts.transition > 0 ){
@@ -489,7 +489,7 @@
             // fix listeners			
             this.updateResizeListeners();
             let splitter = this;
-            setImmediate( function(){ splitter.fire( "resize" ); });
+            setImmediate( function(){ splitter.fire_resize(); });
             
         },
         
@@ -529,10 +529,15 @@
             // listeners
             this.updateResizeListeners();
             let splitter = this;
-            setImmediate( function(){ splitter.fire( "resize" ); });
+            setImmediate( function(){ splitter.fire_resize(); });
             return pane;
         },
         
+        fire_resize: function(){
+            this.fire( 'resize' );
+            let panes = Polymer.dom(this).children;
+        },
+
         ready: function(){
             let direction = this.getAttribute( "direction" );
             if( !direction ) return;

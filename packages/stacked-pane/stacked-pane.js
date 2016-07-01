@@ -133,9 +133,9 @@ module.exports = {
 			panel._onShow = opts.onShow || function(){};
 			panel._onHide = opts.onHide || function(){};
 			panel._onUnload = opts.onUnload || function(){};
-			
+
 			open_stacked_pane( core, [ panel, opts.position || 0 ]);
-				
+
 		});
 
 	}

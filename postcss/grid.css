@@ -5,6 +5,8 @@ display-grid {
     background: #ccc;
 }
 
+/*
+
 .panel .grid-header {
     background: #eee;
     box-shadow: 1px 1px #ccc;
@@ -15,3 +17,22 @@ display-grid {
     text-align: right;
 }
 
+*/
+
+.panel grid-row:nth-child(odd) .table-cell {
+    background: #def;
+}
+
+.panel grid-row:nth-child(odd) .table-cell.selected {
+    background: lightyellow;
+}
+
+/*
+.panel .table-cell:nth-child(odd) {
+    background: #def;
+}
+*/
+
+.panel .grid-header {
+
+}
