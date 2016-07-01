@@ -1,38 +1,9 @@
 
 /* =================================== */
 
-display-grid {
-    background: #ccc;
+
+/* alternate rows, except for selection */
+.panel grid-row:nth-child(odd) .table-cell:not(.selected) {
+    background: #ecf9fe;
 }
 
-/*
-
-.panel .grid-header {
-    background: #eee;
-    box-shadow: 1px 1px #ccc;
-}
-
-.panel .table-cell  {
-    display: table-cell;
-    text-align: right;
-}
-
-*/
-
-.panel grid-row:nth-child(odd) .table-cell {
-    background: #def;
-}
-
-.panel grid-row:nth-child(odd) .table-cell.selected {
-    background: lightyellow;
-}
-
-/*
-.panel .table-cell:nth-child(odd) {
-    background: #def;
-}
-*/
-
-.panel .grid-header {
-
-}
