@@ -68,6 +68,37 @@
                 return elt;
             },
 
+            measure2: function( data, header ){
+
+                let m = {
+                    row_length: 0,
+                    max_height: 0,
+                    cell_widths: []
+                };
+
+                if( this.mc ) Polymer.dom(this.root).removeChild( this.mc );
+                let mc = this.create_cell( header );
+
+                for( let i = 0; i< data.length; i++ ){
+                    
+                    let w = 0, h = 0;
+                    for( let j = 0; j< data[i].length; j++ ){
+                        mc.textContent = "M" + data[i][j].toString();
+                        w = Math.max( w, mc.offsetWidth );
+                        h = Math.max( h, mc.offsetHeight );
+                    }
+
+                    m.cell_widths.push( w );
+                    m.row_length += w;
+                    m.max_height = Math.max( h, m.max_height );
+
+                }
+
+                this.mc = mc;
+                return m;
+
+            },
+
             measure: function( data, header ){
                 
                 let m = {
@@ -546,16 +577,36 @@
 
             measure: function(){
 
-                let longest = this.data.map( function( col ){
-                    let tmp = col.slice(0);
-                    tmp.sort( function( a, b ){ return b.toString().length - a.toString().length; });
-                    return tmp[0];
-                });
-
                 if( !this.measurement ){
                     this.measurement = document.createElement( this.template );
                     Polymer.dom( this.$['measurement-node'] ).appendChild( this.measurement );
                 }
+
+                // FIXME: also tallest; for longest, take into account linebreaks
+
+                let newlines = 0;
+                let hr1 = process.hrtime();
+
+                let longest = this.data.map( function( col, cindex ){
+
+                    let max = 0;
+                    if( col.toString().indexOf("\n") < 0 ){
+                        for( let i = 0; i< col.length; i++ ) max = Math.max( max, col[i].toString().length );
+                        return "X".repeat(max);
+                    }
+                    else {
+                        for( let i = 0; i< col.length; i++ ){
+                            let s = col[i].toString().split("\n" );                        
+                            for( let j = 0; j< s.length; j++ ) max = Math.max( max, s[j].length );
+                            if( s.length > 1 ) newlines = Math.max( newlines, s.length - 1 );
+                        };
+                        return "\n".repeat(newlines) + "X".repeat(max);
+                    }
+                    return tmp[0];
+                });
+
+                let hr2 = process.hrtime(hr1);
+                console.info("elapsed (2): %ds %dms", hr2[0], hr2[1]/1000000);
 
                 let m = this.measurement.measure( longest );
 
