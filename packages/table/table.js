@@ -94,6 +94,12 @@ const updateFromMatrix = function(mat, instance){
 
     console.info( rows, cols );
 
+    let colclasses = [];
+    if( mat.$data.length ){
+        if( typeof mat.$data[0] === "string" )
+            for( let i = 0; i< cols; i++ ) colclasses[i] = "string";
+    }
+
     // construct a data array: column-based
 
     let data = new Array( cols );
@@ -127,7 +133,7 @@ const updateFromMatrix = function(mat, instance){
         data: data, 
         column_headers: colnames, 
         row_headers: rownames,
-        column_classes: []
+        column_classes: colclasses
     });
 
 }
