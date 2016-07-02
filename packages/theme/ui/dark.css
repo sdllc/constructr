@@ -170,12 +170,17 @@ html-dialog .dialog-footer button:active {
 }
 
 .panel .grid-cell.selected {
-	border-color: rgb(255, 207, 108);
-	background: #555;
+	border-color: rgba(0,0,0,0);
+	background: #888;
 }
 
 .panel .grid-header.selected {
 	border-color: rgba( 0,0,0,0 );
 	background: #eee;
 	color: #000;
+}
+
+/* alternate rows, except for selection */
+.panel grid-row:nth-child(odd) .table-cell:not(.selected) {
+    background: #333;
 }

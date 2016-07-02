@@ -19,8 +19,8 @@
                 padding: 2px;
                 margin: 0 1px 1px 0;
                 text-align: right;
-                padding: 1px 0 0 0;
-                border: 3px solid rgba( 0, 0, 0, 0 );
+                padding: 4px 3px 3px 3px;
+                position: relative;
             }
 
             .table-cell {
@@ -36,30 +36,37 @@
 
             .grid-row-header {
                 position: relative;
-                z-index: 4;
+                z-index: 5;
                 flex-grow: 0;
                 box-shadow: 1px 0px #ccc;
             }
 
-            .selected {
+            .grid-cell.selected {
                 background: lightyellow;
-                border: 3px solid yellow
             }
 
-            .selected-continue-top {
-                border-top: 3px solid rgba( 0,0,0,0 );
+            .selection-border {
+                position: absolute;
+                background: lightgreen;
+                min-width: 3px;
+                min-height: 3px;
+                z-index: 3;
             }
 
-            .selected-continue-bottom {
-                border-bottom: 3px solid rgba( 0,0,0,0 );
+            .selection-border-top {
+                top: 0px; left: 0px; width: 100%;
             }
 
-            .selected-continue-left {
-                border-left: 3px solid rgba( 0,0,0,0 );
+            .selection-border-bottom {
+                bottom: 0px; left: 0px; width: 100%;
             }
 
-            .selected-continue-right {
-                border-right: 3px solid rgba( 0,0,0,0 );
+            .selection-border-left {
+                top: 0px; left: 0px; height: 100%;
+            }
+
+            .selection-border-right {
+                top: 0px; right: 0px; height: 100%;
             }
 
             .table-cell-date, .table-cell-factor, .table-cell-string {
@@ -158,20 +165,43 @@
                         && selection.end.r >= row ){
                             cell.classList.add( "selected" );
                             
-                            if( selection.start.c < i ) cell.classList.add( "selected-continue-left" );
-                            else cell.classList.remove( "selected-continue-left" );
-
-                            if( selection.end.c > i ) cell.classList.add( "selected-continue-right" );
-                            else cell.classList.remove( "selected-continue-right" );
-
-                            if( selection.start.r < row ) cell.classList.add( "selected-continue-top" );
-                            else cell.classList.remove( "selected-continue-top" );
-                            
-                            if( selection.end.r > row ) cell.classList.add( "selected-continue-bottom" );
-                            else cell.classList.remove( "selected-continue-bottom" );
+                            if( selection.start.r === row ){
+                                let cst = document.createElement( "div" );
+                                cst.className = "selection-border selection-border-top";
+                                cst.style.width = `calc(100% + ${m.horizontal_margin}px)`;
+                                Polymer.dom(cell).appendChild( cst );
+                            } 
+                            if( selection.end.r === row ){
+                                let cst = document.createElement( "div" );
+                                cst.className = "selection-border selection-border-bottom";
+                                cst.style.width = `calc(100% + ${m.horizontal_margin}px)`;
+                                cst.style.bottom = `-${m.horizontal_margin}px`;
+                                Polymer.dom(cell).appendChild( cst );
+                            } 
+                            if( selection.start.c === i ){
+                                let cst = document.createElement( "div" );
+                                cst.className = "selection-border selection-border-left";
+                                cst.style.height = `calc(100% + ${m.vertical_margin}px)`;
+                                Polymer.dom(cell).appendChild( cst );
+                            } 
+                            if( selection.end.c === i ){
+                                let cst = document.createElement( "div" );
+                                cst.className = "selection-border selection-border-right";
+                                cst.style.height = `calc(100% + ${m.vertical_margin}px)`;
+                                cst.style.right = `-${m.vertical_margin}px`;
+                                Polymer.dom(cell).appendChild( cst );
+                            } 
 
                     }
-                    else cell.classList.remove( "selected" );
+                    else{
+                        cell.classList.remove( "selected" );
+                        if( cell.select_top ){
+                            console.info( "CST2", cell.select_top, cell, Polymer.dom(cell.select_top).parentNode );
+
+                            Polymer.dom(Polymer.dom(cell.select_top).parentNode).removeChild(cell.select_top );
+                            cell.select_top = null;
+                        }
+                    }
 
                     index++;
                 }
@@ -241,33 +271,6 @@
                 z-index: 2;
             }
 
-            /*
-            #selection-area {
-                top: 0px;
-                left: 0px;
-                bottom: 0px;
-                right: 0px;
-                position: absolute;
-                overflow: hidden;
-                background: rgba( 0, 0, 0, 0 );
-                pointer-events: none;
-            }
-
-            #selection-node {
-                position: absolute;
-                top: -10px;
-                left: -10px;
-                height: 0px;
-                width: 0px;
-                box-sizing: border-box;
-                background: rgba( 0,0,0,0 );
-                border: 3px solid yellow;
-                pointer-events: none;
-                z-index: 3;
-
-            }
-            */ 
-
             .grid-column-header {
                 position: relative;
                 top: 0px;
@@ -275,11 +278,23 @@
                 background: #ccc;
             }
 
+            #grid-row-header-background {
+                position: absolute;
+                top: 0px;
+                left: 0px;
+                width: 100px;
+                height: 100%;
+                background: #ccc;
+                z-index: 4;
+            }
+
         </style>
 
         <div id='grid-area'>
             <div id='grid-columns'>
-                <div id='grid-rows'></div>
+                <div id='grid-rows'>
+                    <div id='grid-row-header-background'></div>
+                </div>
             </div>
         </div>
 
@@ -602,6 +617,8 @@
                 let grid = this.$['grid-rows'];
                 let cols = this.$['grid-columns'];
 
+                let rhb = this.$['grid-row-header-background'];
+
                 let buffer = 2;
                 let top = area.scrollTop;
                 let first_row = Math.max( 0, Math.floor( top / m.line_height ) - buffer );
@@ -676,6 +693,10 @@
                 for( ; index < this.nodes.length; index++ ){ 
                     this.nodes[index].style.display = "none";
                 }
+
+                rhb.style.left = left + "px";
+                rhb.style.top = area.scrollTop + "px";
+                rhb.style.width = ( this.row_header_width + m.horizontal_margin ) + "px";
 
                 /*
                 let sn = this.$['selection-node'];
