@@ -86,7 +86,10 @@ const format_date = function(days){
 
 var updateFromFrame = function(df, instance){
 	
-    let table = [], column_headers = [], row_headers;
+    let table = [], 
+        column_headers = [], 
+        column_classes = [],
+        row_headers;
 	
 	var data = df.$data;
 	var cols = Object.keys( data );
@@ -99,11 +102,15 @@ var updateFromFrame = function(df, instance){
 
         let len = 0;
         let names = df.$names;
-        table = names.map( function( name ){
+        table = names.map( function( name, idx ){
             let arr;
             column_headers.push( name );
+
             if( Array.isArray( df.$data[name] )){
                 arr = df.$data[name];
+                if( arr.length ){
+                    if( typeof arr[0] === "string" ) column_classes[idx] = "string";
+                }
             }
             else if( typeof df.$data[name] === "object" ){
                 let obj = df.$data[name];
@@ -111,11 +118,13 @@ var updateFromFrame = function(df, instance){
                     for( let i = 0; i< obj.$data.length; i++ ){
                         obj.$data[i] = obj.$levels[obj.$data[i]-1];
                     }
+                    column_classes[idx] = "factor";
                 }
                 else if( obj.$class === "Date" ){
                     for( let i = 0; i< obj.$data.length; i++ ){
                         obj.$data[i] = format_date(obj.$data[i]);
                     }
+                    column_classes[idx] = "date";
                 }
                 arr = obj.$data;
             }
@@ -136,7 +145,8 @@ var updateFromFrame = function(df, instance){
     instance.node.update({ 
         data: table, 
         column_headers: column_headers, 
-        row_headers: row_headers
+        row_headers: row_headers,
+        column_classes: column_classes
     });
 
 };

@@ -19,7 +19,8 @@
                 padding: 2px;
                 margin: 0 1px 1px 0;
                 text-align: right;
-                padding: 4px 3px 3px 3px;
+                padding: 1px 0 0 0;
+                border: 3px solid rgba( 0, 0, 0, 0 );
             }
 
             .table-cell {
@@ -42,6 +43,27 @@
 
             .selected {
                 background: lightyellow;
+                border: 3px solid yellow
+            }
+
+            .selected-continue-top {
+                border-top: 3px solid rgba( 0,0,0,0 );
+            }
+
+            .selected-continue-bottom {
+                border-bottom: 3px solid rgba( 0,0,0,0 );
+            }
+
+            .selected-continue-left {
+                border-left: 3px solid rgba( 0,0,0,0 );
+            }
+
+            .selected-continue-right {
+                border-right: 3px solid rgba( 0,0,0,0 );
+            }
+
+            .table-cell-date, .table-cell-factor, .table-cell-string {
+                text-align: center;
             }
 
         </style>
@@ -91,7 +113,7 @@
 
             },
 
-            render: function( selection, data, m, row, label, label_width, first_col, last_col, left, header ){
+            render: function( selection, column_classes, data, m, row, label, label_width, first_col, last_col, left, header ){
 
                 let index = 0;
 
@@ -121,11 +143,33 @@
                     cell.col = i;
                     cell.style.height = m.max_height + "px";
 
+                    if( !header ){
+                        if( column_classes[i] === "date" ) cell.classList.add( "table-cell-date" );
+                        else cell.classList.remove( "table-cell-date" );
+                        if( column_classes[i] === "string" ) cell.classList.add( "table-cell-string" );
+                        else cell.classList.remove( "table-cell-string" );
+                        if( column_classes[i] === "factor" ) cell.classList.add( "table-cell-factor" );
+                        else cell.classList.remove( "table-cell-factor" );
+                    }
+
                     if( selection.start.c <= i 
                         && selection.end.c >= i
                         && selection.start.r <= row 
                         && selection.end.r >= row ){
-                           cell.classList.add( "selected" );
+                            cell.classList.add( "selected" );
+                            
+                            if( selection.start.c < i ) cell.classList.add( "selected-continue-left" );
+                            else cell.classList.remove( "selected-continue-left" );
+
+                            if( selection.end.c > i ) cell.classList.add( "selected-continue-right" );
+                            else cell.classList.remove( "selected-continue-right" );
+
+                            if( selection.start.r < row ) cell.classList.add( "selected-continue-top" );
+                            else cell.classList.remove( "selected-continue-top" );
+                            
+                            if( selection.end.r > row ) cell.classList.add( "selected-continue-bottom" );
+                            else cell.classList.remove( "selected-continue-bottom" );
+
                     }
                     else cell.classList.remove( "selected" );
 
@@ -197,6 +241,7 @@
                 z-index: 2;
             }
 
+            /*
             #selection-area {
                 top: 0px;
                 left: 0px;
@@ -221,6 +266,7 @@
                 z-index: 3;
 
             }
+            */ 
 
             .grid-column-header {
                 position: relative;
@@ -234,9 +280,6 @@
         <div id='grid-area'>
             <div id='grid-columns'>
                 <div id='grid-rows'></div>
-            </div>
-            <div id='selection-area'>
-                <div id='selection-node'></div>
             </div>
         </div>
 
@@ -325,6 +368,41 @@
                 else if( e.keyCode === 67 && e.ctrlKey ){
                     this.copy_selection();
                 }
+                else if( e.keyCode == 33 ){ // page up
+                    let area = this.$['grid-area'];
+                    if( e.shiftKey ){
+                        area.scrollLeft = Math.max( 0, area.scrollLeft - area.clientWidth );
+                    }
+                    else {
+                        area.scrollTop = Math.max( 0, area.scrollTop - area.clientHeight );
+                    }
+                }
+                else if( e.keyCode == 34 ){ // page down
+                    let area = this.$['grid-area'];
+                    if( e.shiftKey ){
+                        area.scrollLeft = area.scrollLeft + area.clientWidth;
+                    }
+                    else {
+                        area.scrollTop = area.scrollTop + area.clientHeight;
+                    }
+                }
+                else if( e.keyCode == 37 ){ // left
+                    let area = this.$['grid-area'];
+                    area.scrollLeft = Math.max( 0, area.scrollLeft - 90 );
+                }
+                else if( e.keyCode == 38 ){ // up
+                    let area = this.$['grid-area'];
+                    area.scrollTop = Math.max( 0, area.scrollTop - this.grid_measurements.line_height );
+                }
+                else if( e.keyCode == 39 ){ // right
+                    let area = this.$['grid-area'];
+                    area.scrollLeft = area.scrollLeft + 90;
+                }
+                else if( e.keyCode == 40 ){ // down
+                    let area = this.$['grid-area'];
+                    area.scrollTop = ( area.scrollTop + this.grid_measurements.line_height );
+                }
+
                 else return;
 
                 e.stopPropagation();
@@ -576,7 +654,7 @@
                     this.header_row.style.minHeight = m.max_height + "px";
                     Polymer.dom( grid ).appendChild( this.header_row );
                 }
-                this.header_row.render( this.selection, this.column_headers, m, -1, " ", this.row_header_width, first_col, last_col, left, true );
+                this.header_row.render( this.selection, [], this.column_headers, m, -1, " ", this.row_header_width, first_col, last_col, left, true );
                 this.header_row.style.top = ( area.scrollTop - margin_top ) + "px";
 
                 this.selection.r = undefined;
@@ -587,7 +665,7 @@
                         this.nodes[index] = document.createElement( this.template );
                         Polymer.dom( grid ).appendChild( this.nodes[index] );
                     }
-                    this.nodes[index].render( this.selection, this.data, m, first_row, this.row_headers[first_row], this.row_header_width, first_col, last_col, left );
+                    this.nodes[index].render( this.selection, this.column_classes, this.data, m, first_row, this.row_headers[first_row], this.row_header_width, first_col, last_col, left );
                     this.nodes[index].style.display = "flex";
 
                     index++;
@@ -599,6 +677,7 @@
                     this.nodes[index].style.display = "none";
                 }
 
+                /*
                 let sn = this.$['selection-node'];
                 if( this.selection.start.r >= 0 && this.selection.start.c >= 0 ){
 
@@ -613,11 +692,23 @@
                     let left = -area.scrollLeft;
                     let top = ( this.selection.start.r ) * ( m.max_height + m.vertical_margin ) - area.scrollTop;
 
-                    for( let i = 0; i<= this.selection.end.c; i++ ){
-                        //let w = m.cell_widths[i] + m.horizontal_margin;
-                        let w = this.nodes[0].children[i+1].offsetWidth + m.horizontal_margin;
-                        if( i >= this.selection.start.c ) width += w;
-                        else left += w;
+                    // if it's scrolling, then it's at the default size.  the 
+                    // only time it will be larger is when the panel is wider
+                    // than the table -- and in that case, all nodes will be 
+
+                    if( first_col === 0 && last_col === this.col_count - 1 ){
+                        for( let i = 0; i<= this.selection.end.c; i++ ){
+                            let w = this.nodes[0].children[i+1].offsetWidth + m.horizontal_margin;
+                            if( i >= this.selection.start.c ) width += w;
+                            else left += w;
+                        }
+                    }
+                    else {
+                        for( let i = 0; i<= this.selection.end.c; i++ ){
+                            let w = m.cell_widths[i] + m.horizontal_margin;
+                            if( i >= this.selection.start.c ) width += w;
+                            else left += w;
+                        }
                     }
 
                     sn.style.left = left + "px";
@@ -632,6 +723,7 @@
                     sn.style.height = "0px";
                     sn.style.width = "0px";
                 }
+                */
 
                 grid.style.height = m.total_height + "px";
 
