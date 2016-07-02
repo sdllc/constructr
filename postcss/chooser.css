@@ -39,12 +39,6 @@
 	overflow: auto;
 }
 
-/* for font and sizing */
-.watch-data {
-	font-family: consolas, "Source Code Pro", monospace;
-	font-size: 10.5pt;
-}
-
 .watch-text {
 	height: 100%;
 	position: absolute;

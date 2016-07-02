@@ -106,13 +106,13 @@
             <a title='remove' on-click='remove'><i class="material-icons">close</i></a>
         </div>
         <div id='left' class='wl-left'>
-            <pre class='watch-data'>{{name}}</pre>
+            <pre class='fixed-width'>{{name}}</pre>
         </div>
         <div class='wl-splitter'>
             <div id='mouse_target' class='wl-splitter-mouse-target'></div>
         </div>
         <div id='right' class='wl-right'>
-            <pre class='watch-data'>{{value}}</pre>
+            <pre class='fixed-width'>{{value}}</pre>
         </div>
         
     </template>	  
@@ -210,7 +210,7 @@
         </style>
 
             <panel-header title="{{header}}"></panel-header>
-            <pre class='watch-data watch-content' id='selected_value' tabindex="0"><content/></pre>
+            <pre class='fixed-width watch-content' id='selected_value' tabindex="0"><content/></pre>
         
     </template>
     <script>

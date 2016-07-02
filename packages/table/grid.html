@@ -26,6 +26,7 @@
             .table-cell {
                 background: #fff;
                 cursor: cell;
+                font-size: 1em;
             }
 
             .grid-header {
@@ -41,13 +42,17 @@
                 box-shadow: 1px 0px #ccc;
             }
 
-            .grid-cell.selected {
+            .table-cell.selected {
                 background: lightyellow;
+            }
+
+            .grid-header.selected {
+                background: yellow;
             }
 
             .selection-border {
                 position: absolute;
-                background: lightgreen;
+                background: yellow;
                 min-width: 3px;
                 min-height: 3px;
                 z-index: 3;
@@ -86,7 +91,7 @@
 
             create_cell: function( header ){
                 let elt = document.createElement( header ? "div" : "pre" );
-                elt.className = header ? "grid-cell grid-header" : "grid-cell table-cell";
+                elt.className = header ? "grid-cell grid-header" : "grid-cell table-cell fixed-width";
                 Polymer.dom( this.root ).appendChild( elt );
                 return elt;
             },
@@ -136,6 +141,17 @@
                 this.row_header.col = -1;
                 this.row_header.style.height = m.max_height + "px";
 
+                if( header ){
+                    if( selection.rows && selection.columns )
+                        this.row_header.classList.add( "selected" );
+                    else this.row_header.classList.remove( "selected" );
+                }
+                else {
+                    if( selection.rows && selection.start.r <= row && selection.end.r >= row )
+                        this.row_header.classList.add( "selected" );
+                    else this.row_header.classList.remove( "selected" );
+                }
+
                 for( let i = first_col; i<= last_col; i++ ){
 
                     if( this.cells.length <= index ){
@@ -150,59 +166,65 @@
                     cell.col = i;
                     cell.style.height = m.max_height + "px";
 
-                    if( !header ){
+                    if( header ){
+                        if( selection.start.c <= i && selection.end.c >= i && selection.columns ){
+                            cell.classList.add( "selected" );
+                        }
+                        else cell.classList.remove( "selected" );
+                    }
+                    else {
+
                         if( column_classes[i] === "date" ) cell.classList.add( "table-cell-date" );
                         else cell.classList.remove( "table-cell-date" );
                         if( column_classes[i] === "string" ) cell.classList.add( "table-cell-string" );
                         else cell.classList.remove( "table-cell-string" );
                         if( column_classes[i] === "factor" ) cell.classList.add( "table-cell-factor" );
                         else cell.classList.remove( "table-cell-factor" );
-                    }
+                    
+                        if( selection.start.c <= i 
+                            && selection.end.c >= i
+                            && selection.start.r <= row 
+                            && selection.end.r >= row ){
+                                cell.classList.add( "selected" );
+                                
+                                if( selection.start.r === row ){
+                                    let cst = document.createElement( "div" );
+                                    cst.className = "selection-border selection-border-top";
+                                    cst.style.width = `calc(100% + ${m.horizontal_margin}px)`;
+                                    Polymer.dom(cell).appendChild( cst );
+                                } 
+                                if( selection.end.r === row ){
+                                    let cst = document.createElement( "div" );
+                                    cst.className = "selection-border selection-border-bottom";
+                                    cst.style.width = `calc(100% + ${m.horizontal_margin}px)`;
+                                    cst.style.bottom = `-${m.horizontal_margin}px`;
+                                    Polymer.dom(cell).appendChild( cst );
+                                } 
+                                if( selection.start.c === i ){
+                                    let cst = document.createElement( "div" );
+                                    cst.className = "selection-border selection-border-left";
+                                    cst.style.height = `calc(100% + ${m.vertical_margin}px)`;
+                                    Polymer.dom(cell).appendChild( cst );
+                                } 
+                                if( selection.end.c === i ){
+                                    let cst = document.createElement( "div" );
+                                    cst.className = "selection-border selection-border-right";
+                                    cst.style.height = `calc(100% + ${m.vertical_margin}px)`;
+                                    cst.style.right = `-${m.vertical_margin}px`;
+                                    Polymer.dom(cell).appendChild( cst );
+                                } 
 
-                    if( selection.start.c <= i 
-                        && selection.end.c >= i
-                        && selection.start.r <= row 
-                        && selection.end.r >= row ){
-                            cell.classList.add( "selected" );
-                            
-                            if( selection.start.r === row ){
-                                let cst = document.createElement( "div" );
-                                cst.className = "selection-border selection-border-top";
-                                cst.style.width = `calc(100% + ${m.horizontal_margin}px)`;
-                                Polymer.dom(cell).appendChild( cst );
-                            } 
-                            if( selection.end.r === row ){
-                                let cst = document.createElement( "div" );
-                                cst.className = "selection-border selection-border-bottom";
-                                cst.style.width = `calc(100% + ${m.horizontal_margin}px)`;
-                                cst.style.bottom = `-${m.horizontal_margin}px`;
-                                Polymer.dom(cell).appendChild( cst );
-                            } 
-                            if( selection.start.c === i ){
-                                let cst = document.createElement( "div" );
-                                cst.className = "selection-border selection-border-left";
-                                cst.style.height = `calc(100% + ${m.vertical_margin}px)`;
-                                Polymer.dom(cell).appendChild( cst );
-                            } 
-                            if( selection.end.c === i ){
-                                let cst = document.createElement( "div" );
-                                cst.className = "selection-border selection-border-right";
-                                cst.style.height = `calc(100% + ${m.vertical_margin}px)`;
-                                cst.style.right = `-${m.vertical_margin}px`;
-                                Polymer.dom(cell).appendChild( cst );
-                            } 
+                        }
+                        else{
+                            cell.classList.remove( "selected" );
+                            if( cell.select_top ){
+                                console.info( "CST2", cell.select_top, cell, Polymer.dom(cell.select_top).parentNode );
 
-                    }
-                    else{
-                        cell.classList.remove( "selected" );
-                        if( cell.select_top ){
-                            console.info( "CST2", cell.select_top, cell, Polymer.dom(cell.select_top).parentNode );
-
-                            Polymer.dom(Polymer.dom(cell.select_top).parentNode).removeChild(cell.select_top );
-                            cell.select_top = null;
+                                Polymer.dom(Polymer.dom(cell.select_top).parentNode).removeChild(cell.select_top );
+                                cell.select_top = null;
+                            }
                         }
                     }
-
                     index++;
                 }
                 for( let i = index; i< this.cells.length; i++ ){
@@ -318,29 +340,35 @@
             },
 
             clear_selection: function(){
-                this.selection = {
-                    start: { r: -1, c: -1 },
-                    end: { r: -1, c: -1 }
-                }
+                this.select( -1, -1 );
             },
 
-            select_range: function( r1, c1, r2, c2 ){
+            patch_selection: function(){
+                if( this.selection.rows ) this.selection.end.r = this.row_count;
+                if( this.selection.cols ) this.selection.end.c = this.col_count;
+            },
+
+            select_range: function( r1, c1, r2, c2, columns, rows ){
                 this.selection = {
                     start: { r: r1, c: c1 },
-                    end: { r: r2, c: c2 }
+                    end: { r: r2, c: c2 },
+                    columns: columns,
+                    rows: rows
                 }
             },
 
             select_columns: function( c1, c2 ){
-                this.select_range( 0, c1, this.row_count - 1, c2 );
+                this.select_range( 0, c1, this.row_count - 1, c2, true, false );
             },
 
             select_rows: function( r1, r2 ){
-                this.select_range( r1, 0, r2, this.col_count - 1 );
+                this.select_range( r1, 0, r2, this.col_count - 1, false, true );
             },
 
             select_all: function(){
                 this.select_range( 0, 0, this.row_count-1, this.col_count - 1 );
+                this.selection.columns = true;
+                this.selection.rows = true;
             },
 
             select: function( r, c ){
@@ -523,7 +551,7 @@
                     Math.min( row, this.selection_start[0] ), 
                     Math.min( col, this.selection_start[1] ), 
                     Math.max( row, this.selection_start[0] ), 
-                    Math.max( col, this.selection_start[1] ), true );
+                    Math.max( col, this.selection_start[1] ));
 
                 this.current_selection = [ row, col ];
                 this.refresh();
@@ -542,7 +570,8 @@
                     this.clear_selection();
                     this.measure();
                 }
-                
+
+                this.patch_selection();
                 this.refresh();
             },
 
@@ -697,54 +726,6 @@
                 rhb.style.left = left + "px";
                 rhb.style.top = area.scrollTop + "px";
                 rhb.style.width = ( this.row_header_width + m.horizontal_margin ) + "px";
-
-                /*
-                let sn = this.$['selection-node'];
-                if( this.selection.start.r >= 0 && this.selection.start.c >= 0 ){
-
-                    let sa = this.$['selection-area'];
-
-                    sa.style.left = (this.row_header_width + area.scrollLeft) + "px";
-                    sa.style.width = ( area.clientWidth - this.row_header_width ) + "px";
-                    sa.style.top = (( m.max_height + m.vertical_margin ) + area.scrollTop) + "px";
-                    sa.style.height = ( area.clientHeight - ( m.max_height + m.vertical_margin ) ) + "px";
-
-                    let width = 0;
-                    let left = -area.scrollLeft;
-                    let top = ( this.selection.start.r ) * ( m.max_height + m.vertical_margin ) - area.scrollTop;
-
-                    // if it's scrolling, then it's at the default size.  the 
-                    // only time it will be larger is when the panel is wider
-                    // than the table -- and in that case, all nodes will be 
-
-                    if( first_col === 0 && last_col === this.col_count - 1 ){
-                        for( let i = 0; i<= this.selection.end.c; i++ ){
-                            let w = this.nodes[0].children[i+1].offsetWidth + m.horizontal_margin;
-                            if( i >= this.selection.start.c ) width += w;
-                            else left += w;
-                        }
-                    }
-                    else {
-                        for( let i = 0; i<= this.selection.end.c; i++ ){
-                            let w = m.cell_widths[i] + m.horizontal_margin;
-                            if( i >= this.selection.start.c ) width += w;
-                            else left += w;
-                        }
-                    }
-
-                    sn.style.left = left + "px";
-                    sn.style.top = top + "px";
-                    sn.style.height = (( 1 + this.selection.end.r - this.selection.start.r ) * ( m.max_height + m.vertical_margin )) + "px";
-                    sn.style.width = width + "px";
-
-                }
-                else {
-                    sn.style.left = "-20px"
-                    sn.style.top = "-20px";
-                    sn.style.height = "0px";
-                    sn.style.width = "0px";
-                }
-                */
 
                 grid.style.height = m.total_height + "px";
 

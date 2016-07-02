@@ -72,22 +72,22 @@ body.ubuntu {
 	opacity: 0;
 }
 
-.CodeMirror, .watch-data { 
+.CodeMirror, .fixed-width { 
 	font-family: consolas, monospace;
 	font-size: 14.25px;
 	height: 100%;
 }
 
-.linux .CodeMirror, .linux .watch-data  {
+.linux .CodeMirror, .linux .fixed-width  {
 	font-family: "Liberation Mono";
 }
 
-.ubuntu .CodeMirror, .ubuntu .watch-data {
+.ubuntu .CodeMirror, .ubuntu .fixed-width {
 	font-family: "Ubuntu Mono";
 	font-size: 13pt;
 }
 
-.osx .CodeMirror, .osx .watch-data {
+.osx .CodeMirror, .osx .fixed-width {
 	font-family: "Menlo";
 	font-size: 13px;
 }
