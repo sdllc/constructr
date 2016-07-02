@@ -58,7 +58,8 @@ var updateData = function( inst ){
 
 		R.queued_internal( cmd ).then( function( rsp ){
 			if( rsp.response && rsp.response.$data ){
-				updateFromFrame( rsp.response, instance );
+                if( rsp.response.$type === "matrix" ) updateFromMatrix( rsp.response, instance );
+				else updateFromFrame( rsp.response, instance );
             }
 		});
 
@@ -84,7 +85,54 @@ const format_date = function(days){
 
 }
 
-var updateFromFrame = function(df, instance){
+const updateFromMatrix = function(mat, instance){
+
+    console.info( mat );
+
+    let rows = mat.$nrows;
+    let cols = mat.$ncols;
+
+    console.info( rows, cols );
+
+    // construct a data array: column-based
+
+    let data = new Array( cols );
+    for( let i = 0; i< cols; i++ ){
+        data[i] = mat.$data.splice( 0, rows );
+    }
+
+    // dimnames: 0=rows, 1=cols (always? Y)
+
+    // console.info( data );
+
+    let rownames = null;
+    let colnames = null;
+
+    if( mat.$dimnames && mat.$dimnames.$data ){
+        if( mat.$dimnames.$data[0] ) rownames = mat.$dimnames.$data[0];
+        if( mat.$dimnames.$data[1] ) colnames = mat.$dimnames.$data[1];
+    }
+
+    if( !rownames ){
+        rownames = new Array( rows );
+        for( let i = 0; i< rows; i++ ) rownames[i] = i+1;
+    }
+
+    if( !colnames ){
+        colnames = new Array( cols );
+        for( let i = 0; i< rows; i++ ) colnames[i] = "V" + (i+1);
+    }
+
+    instance.node.update({ 
+        data: data, 
+        column_headers: colnames, 
+        row_headers: rownames,
+        column_classes: []
+    });
+
+}
+
+const updateFromFrame = function(df, instance){
 	
     let table = [], 
         column_headers = [], 
@@ -202,18 +250,19 @@ var createInstance = function( field, id, menutype, menuindex ){
 
 };
 
+const hasClass = function(rclass, target){
+    if( !Array.isArray( target )) target = [target];
+    return target.some( function( test ){
+        return ( Array.isArray( rclass ) && rclass.includes( test )) || rclass === test;
+    });
+}
+
 module.exports = {
 
 	init: function(core){
 		
 		R = core.R;
 
-        /*
-        let html = path.join( "packages", "table", "virtual-list-grid.html" );
-		core.Utils.install_html_component( html );
-        html = path.join( "packages", "table", "grid.html" );
-		core.Utils.install_html_component( html );
-        */
         let html = path.join( "packages", "table", "grid.html" );
 		core.Utils.install_html_component( html );
         
@@ -254,9 +303,7 @@ module.exports = {
 				menu.append( menu_item1 );
 			}
 			menu_target = menu.target.name;
-			menu_item1.visible = 
-				((Array.isArray( menu.target.rclass ) && menu.target.rclass.includes( "data.frame" )) 
-					|| menu.target.rclass === "data.frame" );	
+			menu_item1.visible = hasClass( menu.target.rclass, [ 'data.frame', 'matrix' ]);
 			
 		});
 
@@ -270,9 +317,8 @@ module.exports = {
 			}
             menu_index = menu.$index;
 			menu_target = menu.target.name;
-			menu_item2.visible = 
-				((Array.isArray( menu.target.rclass ) && menu.target.rclass.includes( "data.frame" )) 
-					|| menu.target.rclass === "data.frame" );	
+			menu_item2.visible = hasClass( menu.target.rclass, [ 'data.frame', 'matrix' ]);
+
 		});
 
 	}
