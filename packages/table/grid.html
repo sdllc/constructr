@@ -18,21 +18,8 @@
                 display: block;
                 padding: 2px;
                 margin: 0 1px 1px 0;
-                text-align: right;
                 padding: 4px 3px 3px 3px;
                 position: relative;
-            }
-
-            .table-cell {
-                background: #fff;
-                cursor: cell;
-                font-size: 1em;
-            }
-
-            .grid-header {
-                background: #eee;
-                text-align: center;
-                cursor: text;
             }
 
             .grid-row-header {
@@ -41,20 +28,9 @@
                 flex-grow: 0;
                 box-shadow: 1px 0px #ccc;
             }
-
-            .table-cell.selected {
-                background: lightyellow;
-            }
-
-            .grid-header.selected {
-                background: yellow;
-            }
-
+            
             .selection-border {
                 position: absolute;
-                background: yellow;
-                min-width: 3px;
-                min-height: 3px;
                 z-index: 3;
             }
 
@@ -72,10 +48,6 @@
 
             .selection-border-right {
                 top: 0px; right: 0px; height: 100%;
-            }
-
-            .table-cell-date, .table-cell-factor, .table-cell-string {
-                text-align: center;
             }
 
         </style>
@@ -254,7 +226,6 @@
                 border: 0;
                 padding: 0;
                 margin: 0;
-                background: #ccc;
             }
 
             #grid-area {
@@ -293,11 +264,10 @@
                 z-index: 2;
             }
 
-            .grid-column-header {
+            #grid-column-header {
                 position: relative;
                 top: 0px;
                 z-index: 7;
-                background: #ccc;
             }
 
             #grid-row-header-background {
@@ -306,7 +276,6 @@
                 left: 0px;
                 width: 100px;
                 height: 100%;
-                background: #ccc;
                 z-index: 4;
             }
 
@@ -696,7 +665,8 @@
                 // render column header
                 if( !this.header_row ){
                     this.header_row = document.createElement( this.template );
-                    this.header_row.classList.add( "grid-column-header" );
+                    //this.header_row.classList.add( "grid-column-header" );
+                    this.header_row.setAttribute("id", "grid-column-header" );
                     this.header_row.style.minHeight = m.max_height + "px";
                     Polymer.dom( grid ).appendChild( this.header_row );
                 }

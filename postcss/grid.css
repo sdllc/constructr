@@ -1,8 +1,56 @@
 
 /* =================================== */
 
+display-grid {
+    background: #ccc;
+}
+
+#grid-column-header {
+    background: #ccc;
+}
+
+#grid-row-header-background {
+    background: #ccc;
+}
+
+.grid-header {
+    background: #eee;
+    text-align: center;
+    cursor: text;
+}
+
+.table-cell {
+    background: #fff;
+    cursor: cell;
+    text-align: right;
+}
+
+.table-cell-date, .table-cell-factor, .table-cell-string {
+    text-align: center;
+}
+
+
+.table-cell.fixed-width {
+    font-size: 1em;
+}
+
 /* alternate rows, except for selection */
-.panel grid-row:nth-child(odd) .table-cell:not(.selected) {
+grid-row:nth-child(odd) .table-cell:not(.selected) {
     background: #ecf9fe;
 }
 
+/* === selections =============================== */
+
+.table-cell.selected {
+    background: lightyellow;
+}
+
+.grid-header.selected {
+    background: yellow;
+}
+
+.selection-border {
+    background: yellow;   
+    min-width: 3px;
+    min-height: 3px;
+}
