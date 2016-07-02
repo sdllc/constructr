@@ -121,6 +121,8 @@
                     m.row_length += w;
                     m.max_height = Math.max( h, m.max_height );
 
+                    m.last_height = h; // allows for proper calculation of the margin
+
                 }
 
                 this.mc = mc;
@@ -610,7 +612,7 @@
 
                 let m = this.measurement.measure( longest );
 
-                m.vertical_margin = this.measurement.offsetHeight - m.max_height;
+                m.vertical_margin = this.measurement.offsetHeight - m.last_height;
                 m.horizontal_margin = this.measurement.offsetWidth - m.cell_widths[this.col_count-1];
 
                 let tmp = this.row_headers.slice(0);
@@ -619,7 +621,7 @@
                 this.row_header_width = x.cell_widths[0];
 
                 x = this.measurement.measure( this.column_headers, true );
-                x.vertical_margin = this.measurement.offsetHeight - x.max_height;
+                x.vertical_margin = this.measurement.offsetHeight - x.last_height;
                 x.horizontal_margin = this.measurement.offsetWidth - x.cell_widths[this.column_headers.length-1];
 
                 if( x.max_height > m.max_height ){
@@ -638,6 +640,8 @@
 
                 this.header_measurements = x;
                 this.grid_measurements = m;
+
+                console.info( x, m );
 
             },
 
