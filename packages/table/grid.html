@@ -130,31 +130,35 @@
 
             },
 
-            render: function( selection, column_classes, data, m, row, label, label_width, first_col, last_col, left, header ){
+            render: function( selection, column_classes, data, m, row, row_headers, label_width, first_col, last_col, left, header ){
 
                 let index = 0;
 
-                if( !this.row_header ){
-                    this.row_header = this.create_cell( true );
-                    this.row_header.classList.add( "grid-row-header");
+                if( row_headers ){
+
+                    if( !this.row_header ){
+                        this.row_header = this.create_cell( true );
+                        this.row_header.classList.add( "grid-row-header");
+                    }
+
                     this.row_header.style.minWidth = label_width + "px";
-                }
+                    this.row_header.style.left = left + "px";
+                    this.row_header.textContent = header ? " " : row_headers[row];
+                    this.row_header.row = row;
+                    this.row_header.col = -1;
+                    this.row_header.style.height = m.max_height + "px";
 
-                this.row_header.style.left = left + "px";
-                this.row_header.textContent = label;
-                this.row_header.row = row;
-                this.row_header.col = -1;
-                this.row_header.style.height = m.max_height + "px";
+                    if( header ){
+                        if( selection.rows && selection.columns )
+                            this.row_header.classList.add( "selected" );
+                        else this.row_header.classList.remove( "selected" );
+                    }
+                    else {
+                        if( selection.rows && selection.start.r <= row && selection.end.r >= row )
+                            this.row_header.classList.add( "selected" );
+                        else this.row_header.classList.remove( "selected" );
+                    }
 
-                if( header ){
-                    if( selection.rows && selection.columns )
-                        this.row_header.classList.add( "selected" );
-                    else this.row_header.classList.remove( "selected" );
-                }
-                else {
-                    if( selection.rows && selection.start.r <= row && selection.end.r >= row )
-                        this.row_header.classList.add( "selected" );
-                    else this.row_header.classList.remove( "selected" );
                 }
 
                 for( let i = first_col; i<= last_col; i++ ){
@@ -179,13 +183,15 @@
                     }
                     else {
 
-                        if( column_classes[i] === "date" ) cell.classList.add( "table-cell-date" );
-                        else cell.classList.remove( "table-cell-date" );
-                        if( column_classes[i] === "string" ) cell.classList.add( "table-cell-string" );
-                        else cell.classList.remove( "table-cell-string" );
-                        if( column_classes[i] === "factor" ) cell.classList.add( "table-cell-factor" );
-                        else cell.classList.remove( "table-cell-factor" );
-                    
+                        if( column_classes ){
+                            if( column_classes[i] === "date" ) cell.classList.add( "table-cell-date" );
+                            else cell.classList.remove( "table-cell-date" );
+                            if( column_classes[i] === "string" ) cell.classList.add( "table-cell-string" );
+                            else cell.classList.remove( "table-cell-string" );
+                            if( column_classes[i] === "factor" ) cell.classList.add( "table-cell-factor" );
+                            else cell.classList.remove( "table-cell-factor" );
+                        }
+
                         if( selection.start.c <= i 
                             && selection.end.c >= i
                             && selection.start.r <= row 
@@ -563,17 +569,51 @@
             update: function(opts){
 
                 Object.keys(opts).forEach( function( key ){
-                    this[key] = opts[key];
+                    if( key !== "row_headers" && key !== "column_headers" )
+                        this[key] = opts[key];
                 }, this);
-                
-                if( this.col_count !== this.data.length ){
+
+                if( opts.row_headers && typeof opts.row_headers === "boolean" ){
+                    if( !this.row_headers || this.row_headers.length !== this.data[0].length ){
+                        this.row_headers = new Array( this.data[0].length );
+                        for( let i = 0; i< this.row_headers.length; i++ ) this.row_headers[i] = i+1;
+                    }
+                }
+                else this.row_headers = opts.row_headers;
+
+                if( opts.column_headers && typeof opts.column_headers === "boolean" ){
+                    if( !this.column_headers || this.column_headers.length !== this.data.length ){
+                        this.column_headers = new Array( this.data.length );
+                        for( let i = 0; i< this.column_headers.length; i++ ) this.column_headers[i] = "V" + (i+1);
+                    }
+                }
+                else this.column_headers = opts.column_headers;
+
+                // how expensive is this?
+                /*
+                let ch = opts.column_headers ? opts.column_headers.toString() : "";
+                let rh = opts.row_headers ? opts.row_headers.toString() : "";
+                */
+
+                if( this.col_count !== this.data.length 
+                        //|| this.ch_cache !== ch 
+                        //|| this.rh_cache !== rh 
+                            ){
+
                     this.col_count = this.data.length; 
                     this.row_count = this.data[0].length;
                     this.clear_selection();
                     this.measure();
+
+                    //this.ch_cache = ch;
+                    //this.rh_cache = rh;
                 }
 
                 this.patch_selection();
+
+                this.$['grid-row-header-background'].style.display = 
+                    this.row_headers ? "block" : "none";
+
                 this.refresh();
             },
 
@@ -587,7 +627,7 @@
                 // FIXME: also tallest; for longest, take into account linebreaks
 
                 let newlines = 0;
-                let hr1 = process.hrtime();
+                //let hr1 = process.hrtime();
 
                 let longest = this.data.map( function( col, cindex ){
 
@@ -607,41 +647,47 @@
                     return tmp[0];
                 });
 
-                let hr2 = process.hrtime(hr1);
-                console.info("elapsed (2): %ds %dms", hr2[0], hr2[1]/1000000);
+                // let hr2 = process.hrtime(hr1);
+                // console.info("elapsed (2): %ds %dms", hr2[0], hr2[1]/1000000);
 
                 let m = this.measurement.measure( longest );
 
                 m.vertical_margin = this.measurement.offsetHeight - m.last_height;
                 m.horizontal_margin = this.measurement.offsetWidth - m.cell_widths[this.col_count-1];
 
-                let tmp = this.row_headers.slice(0);
-                tmp.sort( function( a, b ){ return b.toString().length - a.toString().length; });
-                let x = this.measurement.measure( [tmp[0]], true );
-                this.row_header_width = x.cell_widths[0];
+                let tmp, x;
 
-                x = this.measurement.measure( this.column_headers, true );
-                x.vertical_margin = this.measurement.offsetHeight - x.last_height;
-                x.horizontal_margin = this.measurement.offsetWidth - x.cell_widths[this.column_headers.length-1];
-
-                if( x.max_height > m.max_height ){
-                    m.max_height = x.max_height;
+                if( this.row_headers ){
+                    tmp = this.row_headers.slice(0);
+                    tmp.sort( function( a, b ){ return b.toString().length - a.toString().length; });
+                    x = this.measurement.measure( [tmp[0]], true );
+                    this.row_header_width = x.cell_widths[0];
                 }
+                else this.row_header_width = 0;
 
-                m.row_length = 0;
-                for( let i = 0; i< this.col_count; i++ ){
-                    m.cell_widths[i] = Math.max( m.cell_widths[i], x.cell_widths[i] );
-                    m.row_length += m.cell_widths[i];
+                if( this.column_headers ){
+
+                    x = this.measurement.measure( this.column_headers, true );
+                    x.vertical_margin = this.measurement.offsetHeight - x.last_height;
+                    x.horizontal_margin = this.measurement.offsetWidth - x.cell_widths[this.column_headers.length-1];
+
+                    if( x.max_height > m.max_height ){
+                        m.max_height = x.max_height;
+                    }
+
+                    m.row_length = 0;
+                    for( let i = 0; i< this.col_count; i++ ){
+                        m.cell_widths[i] = Math.max( m.cell_widths[i], x.cell_widths[i] );
+                        m.row_length += m.cell_widths[i];
+                    }
+                    this.header_measurements = x;
                 }
 
                 m.line_height = m.max_height + m.vertical_margin;
-                m.total_height = ( this.row_count + 1 ) * m.line_height;
+                m.total_height = ( this.row_count + ( this.column_headers ? 1 : 0 )) * m.line_height;
                 m.total_width = (this.col_count * m.horizontal_margin) + m.row_length;
 
-                this.header_measurements = x;
                 this.grid_measurements = m;
-
-                console.info( x, m );
 
             },
 
@@ -653,6 +699,7 @@
             },
 
             attached: function(){
+                console.info( "Attached" );
                 this.nodes = [];
                 if( !this.repaint ) this.repaint = this.refresh.bind(this);
     			this.$['grid-area'].addEventListener('scroll', this.repaint);
@@ -660,6 +707,7 @@
 	    	},
 		
             detached: function(){
+                console.info( "Detached" );
                 this.$['grid-area'].removeEventListener('scroll', this.repaint);
             },
 
@@ -669,8 +717,6 @@
                 let area = this.$['grid-area'];
                 let grid = this.$['grid-rows'];
                 let cols = this.$['grid-columns'];
-
-                let rhb = this.$['grid-row-header-background'];
 
                 let buffer = 2;
                 let top = area.scrollTop;
@@ -717,16 +763,20 @@
 
                 left = area.scrollLeft - padding_left;
 
-                // render column header
-                if( !this.header_row ){
-                    this.header_row = document.createElement( this.template );
-                    //this.header_row.classList.add( "grid-column-header" );
-                    this.header_row.setAttribute("id", "grid-column-header" );
-                    this.header_row.style.minHeight = m.max_height + "px";
-                    Polymer.dom( grid ).appendChild( this.header_row );
+                if( this.column_headers ){
+
+                    // render column header
+                    if( !this.header_row ){
+                        this.header_row = document.createElement( this.template );
+                        this.header_row.setAttribute("id", "grid-column-header" );
+                        this.header_row.style.minHeight = m.max_height + "px";
+                        Polymer.dom( grid ).appendChild( this.header_row );
+                    }
+
+                    this.header_row.render( this.selection, [], this.column_headers, m, -1, this.row_headers ? " " : null, this.row_header_width, first_col, last_col, left, true );
+                    this.header_row.style.top = ( area.scrollTop - margin_top ) + "px";
+
                 }
-                this.header_row.render( this.selection, [], this.column_headers, m, -1, " ", this.row_header_width, first_col, last_col, left, true );
-                this.header_row.style.top = ( area.scrollTop - margin_top ) + "px";
 
                 this.selection.r = undefined;
 
@@ -736,7 +786,7 @@
                         this.nodes[index] = document.createElement( this.template );
                         Polymer.dom( grid ).appendChild( this.nodes[index] );
                     }
-                    this.nodes[index].render( this.selection, this.column_classes, this.data, m, first_row, this.row_headers[first_row], this.row_header_width, first_col, last_col, left );
+                    this.nodes[index].render( this.selection, this.column_classes, this.data, m, first_row, this.row_headers, this.row_header_width, first_col, last_col, left );
                     this.nodes[index].style.display = "flex";
 
                     index++;
@@ -748,9 +798,14 @@
                     this.nodes[index].style.display = "none";
                 }
 
-                rhb.style.left = left + "px";
-                rhb.style.top = area.scrollTop + "px";
-                rhb.style.width = ( this.row_header_width + m.horizontal_margin ) + "px";
+                if( this.row_headers ){
+                    
+                    let rhb = this.$['grid-row-header-background'];
+
+                    rhb.style.left = left + "px";
+                    rhb.style.top = area.scrollTop + "px";
+                    rhb.style.width = ( this.row_header_width + m.horizontal_margin ) + "px";
+                }
 
                 grid.style.height = m.total_height + "px";
 

@@ -87,12 +87,12 @@ const format_date = function(days){
 
 const updateFromMatrix = function(mat, instance){
 
-    console.info( mat );
+//    console.info( mat );
 
     let rows = mat.$nrows;
     let cols = mat.$ncols;
 
-    console.info( rows, cols );
+//    console.info( rows, cols );
 
     let colclasses = [];
     if( mat.$data.length ){
@@ -111,22 +111,12 @@ const updateFromMatrix = function(mat, instance){
 
     // console.info( data );
 
-    let rownames = null;
-    let colnames = null;
-
+    let rownames = true;
+    let colnames = true;
+    
     if( mat.$dimnames && mat.$dimnames.$data ){
         if( mat.$dimnames.$data[0] ) rownames = mat.$dimnames.$data[0];
         if( mat.$dimnames.$data[1] ) colnames = mat.$dimnames.$data[1];
-    }
-
-    if( !rownames ){
-        rownames = new Array( rows );
-        for( let i = 0; i< rows; i++ ) rownames[i] = i+1;
-    }
-
-    if( !colnames ){
-        colnames = new Array( cols );
-        for( let i = 0; i< rows; i++ ) colnames[i] = "V" + (i+1);
     }
 
     instance.node.update({ 
@@ -186,11 +176,7 @@ const updateFromFrame = function(df, instance){
             return arr;
         });
 
-        row_headers = df.$rownames;        
-        if( !row_headers ){
-            row_headers = new Array(len);
-            for( let i = 0; i< len; i++ ) row_headers[i] = i;
-        }
+        row_headers = df.$rownames || true;        
 
         let tend = process.hrtime(tstart);
 
