@@ -691,10 +691,10 @@
 
             },
 
-            refresh: function(){
+            refresh: function(force_update){
                 let instance = this;
                 requestAnimationFrame(function(){
-                    instance.render();
+                    instance.render(force_update);
                 });
             },
 
@@ -704,14 +704,41 @@
                 if( !this.repaint ) this.repaint = this.refresh.bind(this);
     			this.$['grid-area'].addEventListener('scroll', this.repaint);
                 this.tabIndex = 0;
+                if( this.grid_measurements ){
+                    this.refresh( true );
+                }
 	    	},
 		
             detached: function(){
+
                 console.info( "Detached" );
                 this.$['grid-area'].removeEventListener('scroll', this.repaint);
+
+                // dump some nodes that get "lost" to force a rebuild
+                // if we come back
+
+                let grid = this.$['grid-rows'];
+                console.info( "FU" );
+                Polymer.dom( grid ).children.forEach( function( child ){
+                    Polymer.dom( grid ).removeChild( child );
+                });
+                this.nodes = [];
+
+                if( this.measurement )
+                    Polymer.dom( this.$['measurement-node'] ).removeChild( this.measurement );
+                this.measurement = null;
+
+                // ??
+                if( this.header_row ){
+                    //console.info( "HR parent (1)?", Polymer.dom(this.header_row).parentNode );
+                    //console.info( "HR parent (2)?", this.header_row.parentNode );
+                    //Polymer.dom( grid ).removeChild( this.header_row );
+                }
+                this.header_row = null;
+                
             },
 
-            render: function(){
+            render: function( ){
 
                 let m = this.grid_measurements;
                 let area = this.$['grid-area'];
