@@ -699,7 +699,7 @@
             },
 
             attached: function(){
-                console.info( "Attached" );
+                //console.info( "Attached" );
                 this.nodes = [];
                 if( !this.repaint ) this.repaint = this.refresh.bind(this);
     			this.$['grid-area'].addEventListener('scroll', this.repaint);
@@ -711,14 +711,14 @@
 		
             detached: function(){
 
-                console.info( "Detached" );
+                //console.info( "Detached" );
                 this.$['grid-area'].removeEventListener('scroll', this.repaint);
 
                 // dump some nodes that get "lost" to force a rebuild
                 // if we come back
 
                 let grid = this.$['grid-rows'];
-                console.info( "FU" );
+                
                 Polymer.dom( grid ).children.forEach( function( child ){
                     Polymer.dom( grid ).removeChild( child );
                 });
