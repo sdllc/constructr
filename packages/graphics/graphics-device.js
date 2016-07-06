@@ -45,6 +45,8 @@ const PubSub = require( 'pubsub-js' );
 const default_inline_graphics_size = { width: 600, height: 400 };
 const graphics_devices = {};
 
+let copy_inline_to_panel;
+
 /**
  * render as svg (for export).  FIXME: this is not finished; line caps
  * and joins are not implemented, graphics are not implemented, and there
@@ -136,7 +138,7 @@ function renderSVG(target){
 
 };
 
-function context_menu(target){
+function context_menu(target, copyable){
 
 	let menu = new Menu();
 	menu.append(new MenuItem({ label: 'Copy', click: function() { 
@@ -164,7 +166,14 @@ function context_menu(target){
 			a.href = window.URL.createObjectURL(blob);
 			a.click();
 		}}));
-		 
+
+    menu.append( new MenuItem({ label: 'Copy to Panel',
+        enabled: copyable,
+        click: function(){
+            copy_inline_to_panel();
+        }    
+    }));		 
+
 	menu.append(new MenuItem({ type: 'separator' }));
 	menu.append(new MenuItem({ label: 'Cancel' }));
 	menu.popup(remote.getCurrentWindow());
@@ -291,7 +300,7 @@ function GraphicsDevice( core, opts ){
 			active_node.setAttribute( "width", obj.data.width );
 			active_node.setAttribute( "height", obj.data.height );
 			active_node.id = "R-Plot-" + (node_index++);
-			
+
 			if( instance.save ) active_node.commands = [obj]; 
 						
 			context = active_node.getContext("2d");
@@ -308,7 +317,10 @@ function GraphicsDevice( core, opts ){
 			active_node.addEventListener('contextmenu', function (e) {
 				e.preventDefault();
 				e.stopPropagation();
-				context_menu( e.target );
+
+                let copyable = ( opts.target === "inline" && active_node === e.target );
+				context_menu( e.target, copyable );
+
 			}, false);
 			
 			break;
@@ -579,6 +591,14 @@ module.exports = {
 
 		let html = path.join( "packages", "graphics", "graphics-panel.html" );
 		core.Utils.install_html_component( html );
+
+        copy_inline_to_panel = function(){
+            if(graphics_devices.panel.device_number){
+                let i = graphics_devices.inline.device_number;
+                let p = graphics_devices.panel.device_number;
+                core.R.queued_internal( `(function(){ x <- dev.cur(); dev.set(${i}); dev.copy(which=${p}); dev.set(x); })()` );
+            }
+        };
 
 		// this may get called if we're setting defaults, say on the first run,
 		// before a graphics device is initialized.  watch out for that and 
