@@ -22,6 +22,16 @@
 
 -->
 
+<!-- 
+
+grid is a rewrite of the virtual list component for spreadsheet-like grids; 
+that is, two dimensional lists or matrices.  virtual scrolling is implemented
+in both dimensions.
+
+FIXME: back-merge in list so we don't have multiple components
+
+-->
+
 <dom-module id="grid-row">
     <template>
         <style>
@@ -74,6 +84,16 @@
                 top: 0px; right: 0px; height: 100%;
             }
 
+            .grid-resize-target {
+                position: absolute;
+                z-index: 10;
+                cursor: col-resize;
+                height: 100%;
+                left: -5px;
+                width: 9px;
+                top: 0px;
+            }
+
         </style>
 
     </template>
@@ -89,38 +109,10 @@
                 let elt = document.createElement( header ? "div" : "pre" );
                 elt.className = header ? "grid-cell grid-header" : "grid-cell table-cell fixed-width";
                 Polymer.dom( this.root ).appendChild( elt );
+
+                // capture class now, because polymer has appended scope
+                elt.baseClass = elt.className;
                 return elt;
-            },
-
-            measure2: function( data, header ){
-
-                let m = {
-                    row_length: 0,
-                    max_height: 0,
-                    cell_widths: []
-                };
-
-                if( this.mc ) Polymer.dom(this.root).removeChild( this.mc );
-                let mc = this.create_cell( header );
-
-                for( let i = 0; i< data.length; i++ ){
-                    
-                    let w = 0, h = 0;
-                    for( let j = 0; j< data[i].length; j++ ){
-                        mc.textContent = "M" + data[i][j].toString();
-                        w = Math.max( w, mc.offsetWidth );
-                        h = Math.max( h, mc.offsetHeight );
-                    }
-
-                    m.cell_widths.push( w );
-                    m.row_length += w;
-                    m.max_height = Math.max( h, m.max_height );
-
-                }
-
-                this.mc = mc;
-                return m;
-
             },
 
             measure: function( data, header ){
@@ -154,7 +146,7 @@
 
             },
 
-            render: function( selection, column_classes, data, m, row, row_headers, label_width, first_col, last_col, left, header ){
+            render: function( selection, column_classes, data, m, row, row_headers, label_width, first_col, last_col, left, header, resizable ){
 
                 let index = 0;
 
@@ -193,34 +185,55 @@
                     let cell = this.cells[index];
 
                     cell.style.minWidth = m.cell_widths[i] + "px";
+                    cell.style.flexBasis = ( m.cell_widths[i] + m.drag_delta[i] ) + "px";
+
+                    // this is an interesting effect, and might be worth using.  it allocates
+                    // free space according to the calculated column widths.  the effect is 
+                    // a little strange in one case: the 10x10 null matrix with all zeros, because
+                    // column 10 has a wider header it gets more space, while the expected 
+                    // layout has all columns even.
+
+                    // something to thing about.  disabled atm.
+
+                    // cell.style.flexGrow = m.cell_widths[i] ;
+                    
                     cell.textContent = ( header ? data[i] : data[i][row] ).toString();
                     cell.style.display = "block";
                     cell.row = header ? -1 : row;
                     cell.col = i;
                     cell.style.height = m.max_height + "px";
 
+                    if( header && resizable && i ){
+                        let target = document.createElement( "div" );
+                        target.className = "grid-resize-target";
+                        target.dataColumn = i;
+                        Polymer.dom(cell).appendChild( target );
+                    }
+
+                    // rather than manipulate classes via the list API we'll build 
+                    // Q: is this actually more efficient?
+
+                    let className = cell.baseClass;
+
                     if( header ){
                         if( selection.start.c <= i && selection.end.c >= i && selection.columns ){
-                            cell.classList.add( "selected" );
+                            className += " selected";
                         }
-                        else cell.classList.remove( "selected" );
                     }
                     else {
 
                         if( column_classes ){
-                            if( column_classes[i] === "date" ) cell.classList.add( "table-cell-date" );
-                            else cell.classList.remove( "table-cell-date" );
-                            if( column_classes[i] === "string" ) cell.classList.add( "table-cell-string" );
-                            else cell.classList.remove( "table-cell-string" );
-                            if( column_classes[i] === "factor" ) cell.classList.add( "table-cell-factor" );
-                            else cell.classList.remove( "table-cell-factor" );
+                            if( column_classes[i] === "date" ) className += " table-cell-date";
+                            if( column_classes[i] === "string" ) className += " table-cell-string";
+                            if( column_classes[i] === "factor" ) className += " table-cell-factor";
                         }
 
                         if( selection.start.c <= i 
                             && selection.end.c >= i
                             && selection.start.r <= row 
                             && selection.end.r >= row ){
-                                cell.classList.add( "selected" );
+                                
+                                className += " selected";
                                 
                                 if( selection.start.r === row ){
                                     let cst = document.createElement( "div" );
@@ -250,16 +263,8 @@
                                 } 
 
                         }
-                        else{
-                            cell.classList.remove( "selected" );
-                            if( cell.select_top ){
-                                console.info( "CST2", cell.select_top, cell, Polymer.dom(cell.select_top).parentNode );
-
-                                Polymer.dom(Polymer.dom(cell.select_top).parentNode).removeChild(cell.select_top );
-                                cell.select_top = null;
-                            }
-                        }
                     }
+                    cell.className = className;
                     index++;
                 }
                 for( let i = index; i< this.cells.length; i++ ){
@@ -363,13 +368,23 @@
                 template: {
                     type: String,
                     value: "grid-row"
+                },
+                resizeColumns: {
+                    type: Boolean,
+                    value: true // false
+                },
+                selectCells: {
+                    type: Boolean, 
+                    value: true
                 }
             },
 
+            /*
             listeners: {
                 'mousedown': 'mousedown',
                 'keydown': 'keydown'
             },
+            */
 
             clear_selection: function(){
                 this.select( -1, -1 );
@@ -485,7 +500,103 @@
 
             },
 
+            resize_column: function( target, dx ){
+
+                let m = this.grid_measurements;
+                let x = this.col_count-target;
+                
+                for( let i = target; i< this.col_count; i++ ){
+                    m.drag_delta[i] -= dx/x;
+                }
+                
+                m.drag_delta[target-1] += dx;
+                this.refresh();
+                return true;
+                
+            },
+
+            column_drag: function(e){
+                e.stopPropagation();
+                e.preventDefault();
+
+                if( null === this.pos ){
+                    this.pos = e.clientX;
+                    return;
+                }
+
+                let dx = e.clientX - this.pos;
+                if( this.table.resize_column( this.col, dx ))
+                    this.pos = e.clientX;
+
+            },
+
+            column_end_drag: function(e){
+
+                e.stopPropagation();
+                e.preventDefault();
+
+                this.removeEventListener( "mousemove", this.table.column_drag );
+                this.removeEventListener( "mouseup", this.table.column_end_drag );
+                this.removeEventListener( "mouseleave", this.table.column_end_drag );
+
+                this.table = null;
+                this.style.display = "none";
+
+            },
+
+            start_column_resize: function(e){
+
+                // console.info( "Resize column", e.target.dataColumn );
+
+                // resizers are set to the LEFT side of a column header, and
+                // skip the first column.  so for resizer set on column X, adjust
+                // columns X and X-1.
+
+                let col = e.target.dataColumn;
+
+                this.current_width = [];
+                let first_row = this.querySelector( "grid-row" );
+                let children = first_row.children;
+                for( let i = 0; i< children.length; i++ ){
+                    if( children[i].col === col || children[i].col === col-1 ){
+                        this.current_width[ children[i].col ] = children[i].offsetWidth;
+                    }
+                }
+                // console.info( "CW", this.current_width );
+
+                let mouse_target = document.querySelector( "#shared-mouse-target" );
+
+                if( !mouse_target ){
+                    mouse_target = document.createElement( "div" );
+                    mouse_target.id = "shared-mouse-target";
+                    mouse_target.setAttribute( "style", "position: absolute; left: 0px; top: 0px; bottom: 0px; right: 0px; z-index: 999; " );
+                    document.body.appendChild( mouse_target );
+                }
+                mouse_target.style.display = "block";
+
+                // this doesn't work for some reason?
+                // mouse_target.style.cursor = e.target.style.cursor;
+                mouse_target.style.cursor = "col-resize";
+
+                mouse_target.table = this;
+                mouse_target.col = col;
+                mouse_target.pos = null;
+
+                mouse_target.addEventListener( "mousemove", this.column_drag );
+                mouse_target.addEventListener( "mouseup", this.column_end_drag );
+                mouse_target.addEventListener( "mouseleave", this.column_end_drag );
+
+            },
+
             mousedown: function(e){
+
+                if( e.target.className.match( /grid-resize-target/ )){
+                    e.stopPropagation();
+                    e.preventDefault();
+                    return this.start_column_resize(e);
+                }
+                if( !this.selectCells ) return;
+                
                 e.stopPropagation();
                 e.preventDefault();
                 this.focus();
@@ -649,6 +760,7 @@
                 }
 
                 // FIXME: also tallest; for longest, take into account linebreaks
+                // FIXME: there's no need for column headers to be multiple lines to match rows
 
                 let newlines = 0;
                 //let hr1 = process.hrtime();
@@ -675,6 +787,8 @@
                 // console.info("elapsed (2): %ds %dms", hr2[0], hr2[1]/1000000);
 
                 let m = this.measurement.measure( longest );
+                m.drag_delta = new Array( this.data.length );
+                for( let i = 0; i< m.drag_delta.length; i++ ) m.drag_delta[i] = 0;
 
                 m.vertical_margin = this.measurement.offsetHeight - m.last_height;
                 m.horizontal_margin = this.measurement.offsetWidth - m.cell_widths[this.col_count-1];
@@ -731,12 +845,28 @@
                 if( this.grid_measurements ){
                     this.refresh( true );
                 }
+
+                if( this.selectCells || this.resizeColumns ){
+                    this.listen( this, 'mousedown', 'mousedown' );
+                }
+
+                if( this.selectCells ){
+                    this.listen( this, 'keydown', 'keydown' );
+                }
+
 	    	},
 		
             detached: function(){
 
                 //console.info( "Detached" );
                 this.$['grid-area'].removeEventListener('scroll', this.repaint);
+
+                if( this.selectCells || this.resizeColumns ){
+                    this.unlisten( this, 'mousedown', 'mousedown' );
+                }
+                if( this.selectCells ){
+                    this.unlisten( this, 'keydown', 'keydown' );
+                }
 
                 // dump some nodes that get "lost" to force a rebuild
                 // if we come back
@@ -824,7 +954,7 @@
                         Polymer.dom( grid ).appendChild( this.header_row );
                     }
 
-                    this.header_row.render( this.selection, [], this.column_headers, m, -1, this.row_headers ? " " : null, this.row_header_width, first_col, last_col, left, true );
+                    this.header_row.render( this.selection, [], this.column_headers, m, -1, this.row_headers ? " " : null, this.row_header_width, first_col, last_col, left, true, this.resizeColumns );
                     this.header_row.style.top = ( area.scrollTop - margin_top ) + "px";
 
                 }

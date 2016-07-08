@@ -639,12 +639,12 @@ var open_locals = function(){
 
 };
 
-/*
 var open_test_area = function(){
 
     // handy for dev.  create node: 
 
     let node = document.createElement( "display-grid" );
+    node.resizeColumns = true;
 
     // set opts
 
@@ -719,7 +719,7 @@ var open_test_area = function(){
 
     PubSub.publish( Constants.STACKED_PANE_INSERT, opts );
 };
-*/
+
 
 function toggle_shell_preferences(){
 	open_shell_preferences(true);
@@ -1677,7 +1677,7 @@ document.addEventListener("DOMContentLoaded", function(event) {
                 open_test_area();
             });
             */
-
+            
 		}
 
 		if( init_status && init_status.success ){
