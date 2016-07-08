@@ -289,13 +289,23 @@ module.exports = {
 
 		// CM: add a menu item if it's a frame (or descends from frame)
 		core.Hooks.install( "locals_context_menu", function( hook, menu ){
-
-			menu.append( menuitem );
+			menu.insert( 3, menuitem );
             menuitem.menutype = "locals";
 			menu_target = menu.target.name;
 			menuitem.visible = hasClass( menu.target.rclass, [ 'data.frame', 'matrix' ]);
-			
 		});
+
+        // (optionally) override default click on locals
+		core.Hooks.install( "locals_click", function( hook, opts ){
+            if( core.Settings["locals.click.view"] !== "table" 
+                || !hasClass( opts.rclass, [ 'data.frame', 'matrix' ])) return false;
+
+            var inst = createInstance( opts.name, 100, "locals", 0 );
+            inst.position = Number( core.Settings["table.panel.position"] || 3) || 3; 
+            inst.title = "Table view: " + opts.name;
+            PubSub.publish( core.Constants.STACKED_PANE_INSERT, inst );
+            return true;
+        });
 
         /*
 		core.Hooks.install( "watch_context_menu", function( hook, menu ){

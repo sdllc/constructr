@@ -595,14 +595,23 @@ var open_locals = function(){
 
             let key = keys[row];
             let val = data[key];
+            let cls = val.$data['class'];
 		    let text = val.$data.value;
 			if( !Array.isArray(text)) text = [text];
 
-            show_details({
+            let opts = {
                 name: key,
+                rclass: cls,
                 key: key,
                 fulltext: text.join( "\n" )
-            });
+            };
+
+            let rslt = Hooks.exec( "locals_click", opts );
+            if( rslt && rslt.some( function(x){
+                return x;
+            })) return;
+
+            show_details(opts);
 
         };
 

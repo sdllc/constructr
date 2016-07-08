@@ -231,10 +231,8 @@ FIXME: back-merge in list so we don't have multiple components
                             className += " table-cell-" + column_classes[i];
                         }
 
-                        if( selection.start.c <= i 
-                            && selection.end.c >= i
-                            && selection.start.r <= row 
-                            && selection.end.r >= row ){
+                        if( selection.start.c <= i && selection.end.c >= i
+                            && selection.start.r <= row && selection.end.r >= row ){
                                 
                                 className += " selected";
                                 
@@ -398,8 +396,12 @@ FIXME: back-merge in list so we don't have multiple components
             },
 
             patch_selection: function(){
-                if( this.selection.rows ) this.selection.end.r = this.row_count;
-                if( this.selection.cols ) this.selection.end.c = this.col_count;
+                if( this.selection.columns ){
+                    this.selection.end.r = this.row_count-1;
+                }
+                if( this.selection.rows ){
+                    this.selection.end.c = this.col_count-1;
+                }
             },
 
             select_range: function( r1, c1, r2, c2, columns, rows ){
@@ -420,9 +422,7 @@ FIXME: back-merge in list so we don't have multiple components
             },
 
             select_all: function(){
-                this.select_range( 0, 0, this.row_count-1, this.col_count - 1 );
-                this.selection.columns = true;
-                this.selection.rows = true;
+                this.select_range( 0, 0, this.row_count-1, this.col_count - 1, true, true );
             },
 
             select: function( r, c ){
