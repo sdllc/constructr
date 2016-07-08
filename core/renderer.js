@@ -568,76 +568,130 @@ var open_locals = function(){
 	var panel = document.getElementById( "locals-panel" );
 	if( !panel ) {
 
-		panel = document.createElement( "watch-list-panel" );
-		panel.id = "locals-panel";
-		panel.className = "panel";
-		panel['node-class-list'] = "locals-entry";
-		panel.setAttribute( "data-preserve", true );
-		panel.addEventListener( 'close', function(e){ 
-			PubSub.publish( Constants.STACKED_PANE_REMOVE, panel );
-		});
+        panel = document.createElement( "div" );
+        panel.className = "panel";
+        panel.setAttribute( "id", "locals-panel" );
+        panel.header = document.createElement( "panel-header" );
+        panel.header.title = "Locals";
+				
+        var closelistener = function(){
+            panel.header.removeEventListener( "close", closelistener );
+            panel.header.removeEventListener( "click", click );
+            panel.header.removeEventListener( "contextmenu", context );
+            PubSub.publish( Constants.STACKED_PANE_REMOVE, panel );
+        };
 
-		panel.addEventListener( 'select-field', function(e){
-			show_details( e.detail );
-		});
+        panel.header.addEventListener( "close", closelistener );
+        panel.appendChild( panel.header );
 
-		panel.addEventListener( 'contextmenu', function(e){
-			var target = e.target;
-			while( target && target.tagName !== "WATCH-LIST-ENTRY" ) target = target.parentNode;
-			if( target ){
-				var elt = target.querySelector( '#left pre' );
-				if( elt ){
-					locals_context_menu.target = target;
-					Hooks.exec( "locals_context_menu", locals_context_menu );
-					locals_context_menu.popup(remote.getCurrentWindow());
-				}
-			}
-		});
+        let keys, data;
+        let click = function(e){
 
-		var on_locals = function(msg, locals){
+            e.stopPropagation();
+            e.preventDefault();
+
+            let row = e.target.row;
+            if( typeof row === "undefined" ) return;
+
+            let key = keys[row];
+            let val = data[key];
+		    let text = val.$data.value;
+			if( !Array.isArray(text)) text = [text];
+
+            show_details({
+                name: key,
+                key: key,
+                fulltext: text.join( "\n" )
+            });
+
+        };
+
+        panel.addEventListener( "click", click );
+
+        let context = function(e){
+            e.stopPropagation();
+            e.preventDefault();
+            let row = e.target.row;
+            if( typeof row === "undefined" ) return;
+
+            let key = keys[row];
+            let val = data[key];
+            let cls = val.$data['class'];
+            let text = val.$data.value;
+			if( !Array.isArray(text)) text = [text];
+
+            let menu = Menu.buildFromTemplate([
+                { label: "Field: " + key, enabled: false },
+                { type: "separator" },
+                {
+                    label: "Details", click: function(){
+                        show_details({ name: key, key: key,
+                            fulltext: text.join( "\n" )
+                        });
+                    }
+                },
+                {
+                    label: "Add Watch", click: function(){
+                        console.info( "EIMPL" );
+                    }
+                }
+            ]);
+
+            menu.target = { name: key, rclass: cls };
+            Hooks.exec( "locals_context_menu", menu );
+            menu.popup(remote.getCurrentWindow());
+        };
+
+        panel.addEventListener( "contextmenu", context );
+
+        panel.node = document.createElement( "display-grid" );
+        panel.node.selectCells = false;
+        panel.node.selectRows = true;
+        panel.appendChild( panel.node );
+        
+        panel._onHide = function(){ delete( locals_registry.locals ); };
+		panel._onShow = function(){ locals_registry.locals = 1; };
+		panel._onUnload = function(){ delete( locals_registry.locals ); };
+
+        let on_locals = function(msg, locals){
 		
 			// FIXME: don't send in empty data; OR, handle empty data in a more useful way.
 
 			locals = locals || { $data: { fields: {}, envir: "(unknown)"}};
 			
-			panel.header = "Locals " + locals.$data.envir;
+			panel.header.title = "Locals " + locals.$data.envir;
 			
-			var data = locals.$data.fields && locals.$data.fields.$data ? locals.$data.fields.$data : {};
-			var keys = locals.$data.fields && locals.$data.fields.$names ? locals.$data.fields.$names : [];
+			keys = locals.$data.fields && locals.$data.fields.$names ? locals.$data.fields.$names : [];
+			data = locals.$data.fields && locals.$data.fields.$data ? locals.$data.fields.$data : {};
 
-			panel.data = keys.map( function( key ){
-				var val = data[key];
-				var text = val.$data.value;
-				if( !Array.isArray(text)) text = [text];
-				return { 
-					name: key,
-					rclass: val.$data['class'],
-					value: text[0],
-					fulltext: text.join( "\n" )
-				};
-			}, this);
-			
+            let table_data = [
+                keys, 
+                keys.map( function( key ){
+    				var val = data[key];
+	    			var text = val.$data.value;
+    				if( Array.isArray(text)) text = text[0];
+                    if( text.length > 64 ) text = text.substring( 0, 61 ) + "...";
+                    return text;
+                })
+            ];
+
+            panel.node.update({
+                data: table_data,
+                column_classes: [ "string", "left" ],
+                column_headers: [ "Field", "Value" ]
+            })
+
 		};
-	
-		//Bus.on( 'locals', onlocals );
-		PubSub.subscribe( "locals", on_locals );
-		
-		panel._onHide = function(){
-			delete( locals_registry.locals );
-		};
-		panel._onShow = function(){
-			locals_registry.locals = 1;
-		};
-		panel._onUnload = function(){
-			delete( locals_registry.locals );
-		};
-		
+
+        PubSub.subscribe( "locals", on_locals );
+
 	}
 
 	PubSub.publish( Constants.STACKED_PANE_SHOW, [ panel, 2 ]);
 	get_locals();
 
 };
+
 
 var open_test_area = function(){
 
@@ -1677,7 +1731,7 @@ document.addEventListener("DOMContentLoaded", function(event) {
                 open_test_area();
             });
             */
-            
+
 		}
 
 		if( init_status && init_status.success ){
@@ -1810,16 +1864,24 @@ var details_context_menu = Menu.buildFromTemplate([
 ]);
 
 /**
- * context menu for locals: add watch only
+ * context menu for locals.  this has changed slightly because
+ * menu labels can't change dynamically; therefore we construct
+ * it on the fly.
  */
-var locals_context_menu = Menu.buildFromTemplate([
+var locals_context_menu_template = [
+    { label: 'Field', enabled: false },
+    { type: 'separator' },
 	{ 
 		label: 'Add watch', click: function(e){
 			var field = locals_context_menu.target.name;
 			add_watch( field, undefined, undefined, true );
 		}
 	}
-]);
+];
+
+// FIXME: REMOVE (legacy)
+var locals_context_menu = Menu.buildFromTemplate(locals_context_menu_template);
+
 
 /**
  * context menu for watches: delete

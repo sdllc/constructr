@@ -223,9 +223,12 @@ FIXME: back-merge in list so we don't have multiple components
                     else {
 
                         if( column_classes ){
+                            /*
                             if( column_classes[i] === "date" ) className += " table-cell-date";
                             if( column_classes[i] === "string" ) className += " table-cell-string";
                             if( column_classes[i] === "factor" ) className += " table-cell-factor";
+                            */
+                            className += " table-cell-" + column_classes[i];
                         }
 
                         if( selection.start.c <= i 
@@ -376,6 +379,10 @@ FIXME: back-merge in list so we don't have multiple components
                 selectCells: {
                     type: Boolean, 
                     value: true
+                },
+                selectRows: {
+                    type: Boolean, 
+                    value: false
                 }
             },
 
@@ -452,6 +459,9 @@ FIXME: back-merge in list so we don't have multiple components
                     this.refresh();
                 }
                 else if( e.keyCode === 65 && e.ctrlKey ){
+                    
+                    if( !this.selectCells ) return;
+
                     this.select_all();
                     this.refresh();
                 }
@@ -512,7 +522,7 @@ FIXME: back-merge in list so we don't have multiple components
                 m.drag_delta[target-1] += dx;
                 this.refresh();
                 return true;
-                
+
             },
 
             column_drag: function(e){
@@ -595,6 +605,20 @@ FIXME: back-merge in list so we don't have multiple components
                     e.preventDefault();
                     return this.start_column_resize(e);
                 }
+                if( this.selectRows ){
+
+                    let r = e.target.row;
+                    if( typeof r === "undefined" ) return;
+
+                    e.stopPropagation();
+                    e.preventDefault();
+
+                    this.select_rows(r, r);
+                    this.refresh();
+
+                    return;
+                }
+
                 if( !this.selectCells ) return;
                 
                 e.stopPropagation();
@@ -743,7 +767,11 @@ FIXME: back-merge in list so we don't have multiple components
                     //this.ch_cache = ch;
                     //this.rh_cache = rh;
                 }
-
+                else {
+                    this.col_count = this.data.length; 
+                    this.row_count = this.data[0].length;
+                }
+                
                 this.patch_selection();
 
                 this.$['grid-row-header-background'].style.display = 
@@ -846,13 +874,8 @@ FIXME: back-merge in list so we don't have multiple components
                     this.refresh( true );
                 }
 
-                if( this.selectCells || this.resizeColumns ){
-                    this.listen( this, 'mousedown', 'mousedown' );
-                }
-
-                if( this.selectCells ){
-                    this.listen( this, 'keydown', 'keydown' );
-                }
+                this.listen( this, 'mousedown', 'mousedown' );
+                this.listen( this, 'keydown', 'keydown' );
 
 	    	},
 		
@@ -861,12 +884,8 @@ FIXME: back-merge in list so we don't have multiple components
                 //console.info( "Detached" );
                 this.$['grid-area'].removeEventListener('scroll', this.repaint);
 
-                if( this.selectCells || this.resizeColumns ){
-                    this.unlisten( this, 'mousedown', 'mousedown' );
-                }
-                if( this.selectCells ){
-                    this.unlisten( this, 'keydown', 'keydown' );
-                }
+                this.unlisten( this, 'mousedown', 'mousedown' );
+                this.unlisten( this, 'keydown', 'keydown' );
 
                 // dump some nodes that get "lost" to force a rebuild
                 // if we come back

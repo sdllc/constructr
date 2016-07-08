@@ -255,8 +255,9 @@ module.exports = {
 		
 		R = core.R;
 
-        let html = path.join( "packages", "table", "grid.html" );
-		core.Utils.install_html_component( html );
+        // grid moved to core
+        //let html = path.join( "packages", "table", "grid.html" );
+		//core.Utils.install_html_component( html );
         
 		// install hooks
 		
@@ -275,7 +276,7 @@ module.exports = {
             });
         });
 
-		var template = {
+		let menuitem = new MenuItem({
 			label: "View table",
 			click: function( menuitem ){
 				var opts = createInstance( menu_target, 100, menuitem.menutype, menu_index );
@@ -283,22 +284,20 @@ module.exports = {
 				opts.title = "Table view: " + menu_target;
 				PubSub.publish( core.Constants.STACKED_PANE_INSERT, opts );
 			}
-		};
+		});
+
 
 		// CM: add a menu item if it's a frame (or descends from frame)
 		core.Hooks.install( "locals_context_menu", function( hook, menu ){
 
-			// there's got to be a better way to install this
-			if( !menu_item1 ){
-				menu_item1 = new MenuItem(template);
-                menu_item1.menutype = "locals";
-				menu.append( menu_item1 );
-			}
+			menu.append( menuitem );
+            menuitem.menutype = "locals";
 			menu_target = menu.target.name;
-			menu_item1.visible = hasClass( menu.target.rclass, [ 'data.frame', 'matrix' ]);
+			menuitem.visible = hasClass( menu.target.rclass, [ 'data.frame', 'matrix' ]);
 			
 		});
 
+        /*
 		core.Hooks.install( "watch_context_menu", function( hook, menu ){
 
 			// there's got to be a better way to install this
@@ -312,7 +311,8 @@ module.exports = {
 			menu_item2.visible = hasClass( menu.target.rclass, [ 'data.frame', 'matrix' ]);
 
 		});
-
+        */
+        
 	}
 	
 };
