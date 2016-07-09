@@ -32,8 +32,6 @@ const remote = electron.remote;
 const Menu = remote.Menu;
 const MenuItem = remote.MenuItem;
 
-var menu_item1 = null;
-var menu_item2 = null;
 var menu_target = null;
 var menu_index = null;
 
@@ -266,6 +264,7 @@ module.exports = {
 			updateData();
 		});
 
+        /*
         core.Hooks.install( "preferences_panel", function(){
             console.info( "hook; tpp " + Settings["table.panel.position"]);
             return new PreferencesSelect({
@@ -275,7 +274,8 @@ module.exports = {
                options: [ 2, 3, 4 ]
             });
         });
-
+        */
+        
 		let menuitem = new MenuItem({
 			label: "View table",
 			click: function( menuitem ){

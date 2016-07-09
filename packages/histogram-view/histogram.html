@@ -1,0 +1,120 @@
+
+<dom-module id="histogram-bar">
+    <template>
+         <style>
+            :host {
+                flex-grow: 1;
+                box-sizing: border-box;
+                margin-left: 1px;
+                height: 100%;
+                position: relative;
+            }
+
+            #bar {
+                box-sizing: border-box;
+                position: absolute;
+                height: 0px;
+                width: 100%;
+                background: lightblue;
+                bottom: 0px;
+            }
+
+            #break-label {
+                position: absolute;
+                bottom: -1.5em;
+                left: -50%;
+                width: 100%;
+                overflow: visible;
+                text-align: center;
+                font-size: .8em;
+            }
+
+        </style>
+        <div id='bar' style$='height: {{height}}'>
+            <div id='break-label'>{{breakLabel}}</div>
+        </div>
+    </template>
+    <script>
+        Polymer({
+            is: "histogram-bar",
+            properties: {
+                height: "String",
+                breakLabel: "String"
+            }
+        });
+    </script>
+</dom-module>
+
+<dom-module id="histogram-view">
+	<template>
+        <style>
+            :host {
+                display: flex;
+                position: relative;
+                top: 0px;
+                left: 0px;
+                bottom: 0px;
+                right: 0px;
+                height: 100%;
+                box-sizing: border-box;
+                padding: 3em;
+                background: white;
+                flex-direction: row;
+            }
+
+            .break {
+                box-sizing: border-box;
+                position: absolute;
+                text-align: center;
+                border: 1px solid green;
+            }
+
+        </style>
+
+    </template>
+    <script>
+        Polymer({
+            is: 'histogram-view',
+            
+            properties: {
+                data: {
+                    type: Object,
+                    observer: 'dataChanged'
+                }
+            },
+
+            dataChanged: function(){
+
+                let count = 0;
+
+                if( null !== this.data ){
+                    count = this.data.$data.breaks.length;
+                }
+
+                let children = Polymer.dom(this.root).children;
+
+                for( let i = children.length; i< count; i++ ){
+                    let bar = document.createElement( "histogram-bar" );
+                    Polymer.dom(this.root).appendChild( bar );
+                }
+
+                if( children.length > count ){
+                    for( let i = count; i< children.length; i++ ){
+                        Polymer.dom(this.root).removeChild( children[i] );
+                    }
+                }
+
+                children = Polymer.dom(this.root).children;
+                let max = count ? Math.max.apply(0, this.data.$data.counts) : 0;
+                for( let i = 0; i< count; i++ ){
+                    let child = children[i];
+                    child.height = ( 100 * this.data.$data.counts[i] / max ) + "%";
+                    child.breakLabel =  i%2 ? this.data.$data.breaks[i] : "";
+                    child.setAttribute( 'title', this.data.$data.counts[i] );
+                }
+
+            }
+
+        });
+    </script>
+</dom-module>

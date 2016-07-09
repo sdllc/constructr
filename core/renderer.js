@@ -779,7 +779,7 @@ var open_locals = function(){
                 }
             ]);
 
-            menu.target = { name: key, rclass: cls };
+            menu.target = { name: key, rclass: cls, data: val };
             Hooks.exec( "locals_context_menu", menu );
             menu.popup(remote.getCurrentWindow());
         };
@@ -803,7 +803,7 @@ var open_locals = function(){
 			// FIXME: don't send in empty data; OR, handle empty data in a more useful way.
 
 			locals = locals || { $data: { fields: {}, envir: "(unknown)"}};
-			
+
 			panel.header.title = "Locals " + locals.$data.envir;
 			
 			keys = locals.$data.fields && locals.$data.fields.$names ? locals.$data.fields.$names : [];

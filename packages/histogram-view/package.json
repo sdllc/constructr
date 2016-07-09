@@ -1,0 +1,9 @@
+{
+    "name": "histogram-view",
+    "version": "0.1.0",
+    "main": "histogram-view.js",
+    "packageDependencies": [
+        "stacked-pane"
+    ]
+}
+
