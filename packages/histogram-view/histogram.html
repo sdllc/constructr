@@ -86,9 +86,12 @@
             dataChanged: function(){
 
                 let count = 0;
+                let counts = [];
 
                 if( null !== this.data ){
-                    count = this.data.$data.breaks.length;
+                    counts = Array.isArray( this.data.$data.counts ) ? 
+                        this.data.$data.counts : [this.data.$data.counts];
+                    count = counts.length;
                 }
 
                 let children = Polymer.dom(this.root).children;
@@ -105,12 +108,14 @@
                 }
 
                 children = Polymer.dom(this.root).children;
-                let max = count ? Math.max.apply(0, this.data.$data.counts) : 0;
+                let max = 0;
+                if( count ) max = Math.max.apply(0, counts);
+
                 for( let i = 0; i< count; i++ ){
                     let child = children[i];
-                    child.height = ( 100 * this.data.$data.counts[i] / max ) + "%";
+                    child.height = ( 100 * counts[i] / max ) + "%";
                     child.breakLabel =  i%2 ? this.data.$data.breaks[i] : "";
-                    child.setAttribute( 'title', this.data.$data.counts[i] );
+                    child.setAttribute( 'title', counts[i] );
                 }
 
             }
