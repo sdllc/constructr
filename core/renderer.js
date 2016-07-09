@@ -574,7 +574,7 @@ var open_watch = function(){
         panel.className = "panel";
         panel.setAttribute( "id", "watches-panel" );
         panel.header = document.createElement( "panel-header" );
-        panel.header.title = "Watches";
+        panel.header.title = Messages.WATCHES;
 				
         let closelistener = function(){
             panel.header.removeEventListener( "close", closelistener );
@@ -629,16 +629,16 @@ var open_watch = function(){
             watches[row].index = row;
 
             let menu = Menu.buildFromTemplate([
-                { label: "Watch: " + watches[row].name + " (" + watches[row].func + ")", enabled: false },
+                { label: Messages.WATCH + ": " + watches[row].name + " (" + watches[row].func + ")", enabled: false },
                 { type: "separator" },
                 {
-                    label: "Details",
+                    label: Messages.DETAILS,
                     click: function(){
                         show_details( watches[row] );
                     }
                 },
                 { 
-                    label: 'Remove watch', click: function(e){
+                    label: Messages.REMOVE_WATCH, click: function(e){
                         remove_watch( row );
                     }
                 }
@@ -677,7 +677,7 @@ var open_watch = function(){
                 values.push( text );
             });
 
-            let headers = watch.length ? [ "Field", "Value" ] : false;
+            let headers = watch.length ? [ Messages.FIELD, Messages.VALUE ] : false;
 
             panel.node.update({
                 data: [ names, values ],
@@ -705,7 +705,7 @@ var open_locals = function(){
         panel.className = "panel";
         panel.setAttribute( "id", "locals-panel" );
         panel.header = document.createElement( "panel-header" );
-        panel.header.title = "Locals";
+        panel.header.title = Messages.LOCALS;
 				
         var closelistener = function(){
             panel.header.removeEventListener( "close", closelistener );
@@ -763,18 +763,18 @@ var open_locals = function(){
 			if( !Array.isArray(text)) text = [text];
 
             let menu = Menu.buildFromTemplate([
-                { label: "Field: " + key, enabled: false },
+                { label: Messages.FIELD + ": " + key, enabled: false },
                 { type: "separator" },
                 {
-                    label: "Details", click: function(){
+                    label: Messages.DETAILS, click: function(){
                         show_details({ name: key, key: key,
                             fulltext: text.join( "\n" )
                         });
                     }
                 },
                 {
-                    label: "Add Watch", click: function(){
-                        console.info( "EIMPL" );
+                    label: Messages.ADD_WATCH, click: function(){
+            			add_watch( key, undefined, undefined, true );
                     }
                 }
             ]);
@@ -823,7 +823,7 @@ var open_locals = function(){
             panel.node.update({
                 data: table_data,
                 column_classes: [ "string", "left" ],
-                column_headers: [ "Field", "Value" ]
+                column_headers: [ Messages.FIELD, Messages.VALUE ]
             })
 
 		};

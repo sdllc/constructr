@@ -38,6 +38,15 @@
 	"TRYING_URL": "Trying URL",
 	"DOWNLOADING": "Downloading",
 	"DOWNLOAD_COMPLETE": "Download complete",
-	"DOWNLOAD_FAILED": "Download failed"
+	"DOWNLOAD_FAILED": "Download failed",
+
+    "FIELD": "Field",
+    "DETAILS": "Details",
+    "ADD_WATCH": "Add Watch",
+    "WATCHES": "Watches",
+    "LOCALS": "Locals",
+    "WATCH": "Watch",
+    "REMOVE_WATCH": "Remove watch"
+
 }
 
