@@ -39,16 +39,13 @@ const createInstance = function(opts, src){
     node.data = opts.data.$data.histogram;
 
     let on_locals = function(ch, locals){
-        console.info( opts, locals );
         let name = opts.name;
-
         if( !locals.$data.fields.$data[name] 
             || !locals.$data.fields.$data[name].$data    
             || !locals.$data.fields.$data[name].$data.histogram ){
                 node.data = null;
                 return;
         }
-
         node.data = locals.$data.fields.$data[name].$data.histogram;
     }
 
