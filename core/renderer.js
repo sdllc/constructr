@@ -486,81 +486,133 @@ var add_watch = function( field, func, envir, show ){
 
 var open_watch = function(){
 
-	var panel = document.getElementById( "watch-panel" );
-	if( !panel ) {
-	
-		panel = document.createElement( "watch-list-panel" );
-		panel.id = "watch-panel";
-		panel.header = "Watches";
-		panel.className = "panel";
-		panel['node-class-list'] = "watch-entry";
-		panel.setAttribute( "data-preserve", true );
-		panel.setAttribute( "data-display", "watch" );
-		panel.watches = true;
-		panel.addEventListener( "add-watch", function(e){
-			var node = document.createElement( "add-watch-form" );
-			PubSub.publish( Constants.DIALOG_SHOW, {
-				title: "Add Watch",
-				content: node,
-				validate: function(dialog){
-					return node.$.field.value.trim() !== "";
-				},
-				complete: function( accept ){
-					if( accept ){
-						add_watch( node.$.field.value, node.$.func.value );
-					}
-				}
-			});
-		});
-		
-		panel.addEventListener( 'contextmenu', function(e){
-			var target = e.target;
-			while( target && target.tagName !== "WATCH-LIST-ENTRY" ) target = target.parentNode;
-			if( target ){
-				watches_context_menu.$index = Number( target.getAttribute( "index" ));
-				watches_context_menu.target = target;
-				Hooks.exec( "watch_context_menu", watches_context_menu );
-				watches_context_menu.popup(remote.getCurrentWindow());
-			}
-		});
-		
-		panel.addEventListener( 'close', function(e){ 
-			PubSub.publish( Constants.STACKED_PANE_REMOVE, panel );
-		});
+    var panel = document.getElementById( "watches-panel" );
+	if( !panel ) {   
 
-		panel.addEventListener( 'select-field', function(e){
-			show_details( e.detail );
-		});
-		
-		panel.addEventListener( 'remove-watch', function(e){
-			var cmd = `js.client.remove.watch(${e.detail.index+1});`;
-			R.queued_exec( cmd ).then( function(){
-				get_watches();
-			})
-		});
-		
-		var on_watch = function(msg, watch){
-			panel.data = watch;
+        panel = document.createElement( "div" );
+        panel.className = "panel";
+        panel.setAttribute( "id", "watches-panel" );
+        panel.header = document.createElement( "panel-header" );
+        panel.header.title = "Watches";
+				
+        let closelistener = function(){
+            panel.header.removeEventListener( "close", closelistener );
+            panel.header.removeEventListener( "click", click );
+            panel.header.removeEventListener( "contextmenu", context );
+            PubSub.publish( Constants.STACKED_PANE_REMOVE, panel );
+        };
+
+        panel.header.addEventListener( "close", closelistener );
+        panel.appendChild( panel.header );
+
+        let watches;
+
+        let click = function(e){
+            e.stopPropagation();
+            e.preventDefault();
+            let row = e.target.row;
+            if( typeof row === "undefined" ) return;
+
+            let rslt = Hooks.exec( "watches_click", watches[row] );
+            if( rslt && rslt.some( function(x){
+                return x;
+            })) return;
+
+            show_details( watches[row] );
+        };
+        panel.addEventListener( "click", click );
+
+        panel.addEventListener( "keydown", function(e){
+            if( e.keyCode === 46 ){ // delete
+
+                e.stopPropagation();
+                e.preventDefault();
+
+                let sel = panel.node.get_selection();
+                let row = sel.start.r;
+                if( row < 0 ) return;
+
+                remove_watch( row );
+
+            }
+        });
+
+        let context = function(e){
+            e.stopPropagation();
+            e.preventDefault();
+
+            let sel = panel.node.get_selection();
+            let row = sel.start.r;
+            if( typeof row === "undefined" ) return;
+
+            watches[row].index = row;
+
+            let menu = Menu.buildFromTemplate([
+                { label: "Watch: " + watches[row].name + " (" + watches[row].func + ")", enabled: false },
+                { type: "separator" },
+                {
+                    label: "Details",
+                    click: function(){
+                        show_details( watches[row] );
+                    }
+                },
+                { 
+                    label: 'Remove watch', click: function(e){
+                        remove_watch( row );
+                    }
+                }
+            ]);
+
+            menu.target = watches[row];
+            Hooks.exec( "watches_context_menu", menu );
+            menu.popup(remote.getCurrentWindow());
+        };
+
+        panel.addEventListener( "contextmenu", context );
+
+        panel.node = document.createElement( "display-grid" );
+        panel.node.selectCells = false;
+        panel.node.selectRows = true;
+        panel.appendChild( panel.node );
+        
+        panel._onHide = function(){ delete( watches_registry.watch ); };
+		panel._onShow = function(){ watches_registry.watch = 1; };
+		panel._onUnload = function(){ 
+    		PubSub.unsubscribe( "watch", on_watch );
+            delete( watches_registry.watch ); 
+        };
+
+		let on_watch = function(msg, watch){
+
+            let names = [];
+            let values = [];
+
+            watches = watch;
+
+            watch.forEach( function( w ){
+                names.push( w.name );
+                let text = w.value;
+                if( text.length > 64 ) text = text.substring( 0, 61 ) + "...";
+                values.push( text );
+            });
+
+            let headers = watch.length ? [ "Field", "Value" ] : false;
+
+            panel.node.update({
+                data: [ names, values ],
+                column_classes: [ "string", "left" ],
+                column_headers: headers
+            }, true, true );
+
 		};
 		
-		//Bus.on( "watch", on_watch );
 		PubSub.subscribe( "watch", on_watch );
 		
-		panel._onHide = function(){
-			delete( watches_registry.watch );
-		};
-		panel._onShow = function(){
-			watches_registry.watch = 1;
-		};
-		panel._onUnload = function(){
-			delete( watches_registry.watch );
-		};
-		
-	}
 
+    }
 	PubSub.publish( Constants.STACKED_PANE_SHOW, [ panel, 2 ]);
 	get_watches();
-
+     
 }
 
 var open_locals = function(){
@@ -660,7 +712,10 @@ var open_locals = function(){
         
         panel._onHide = function(){ delete( locals_registry.locals ); };
 		panel._onShow = function(){ locals_registry.locals = 1; };
-		panel._onUnload = function(){ delete( locals_registry.locals ); };
+		panel._onUnload = function(){ 
+            PubSub.unsubscribe( "locals", on_locals );
+            delete( locals_registry.locals ); 
+        };
 
         let on_locals = function(msg, locals){
 		

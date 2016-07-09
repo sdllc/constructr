@@ -307,21 +307,26 @@ module.exports = {
             return true;
         });
 
-        /*
-		core.Hooks.install( "watch_context_menu", function( hook, menu ){
-
-			// there's got to be a better way to install this
-			if( !menu_item2 ){
-				menu_item2 = new MenuItem(template);
-                menu_item2.menutype = "watch";
-				menu.append( menu_item2 );
-			}
-            menu_index = menu.$index;
+        core.Hooks.install( "watches_context_menu", function( hook, menu ){
+            menu.insert( 3, menuitem );
+            menuitem.menutype = "watch";
 			menu_target = menu.target.name;
-			menu_item2.visible = hasClass( menu.target.rclass, [ 'data.frame', 'matrix' ]);
+            menu_index = menu.target.index;
+			menuitem.visible = hasClass( menu.target.rclass, [ 'data.frame', 'matrix' ]);
+        });
 
-		});
-        */
+        core.Hooks.install( "watches_click", function( hook, opts ){
+
+            if( core.Settings["watches.click.view"] !== "table" 
+                || !hasClass( opts.rclass, [ 'data.frame', 'matrix' ])) return false;
+
+            var opts = createInstance( opts.name, 100, "watch", opts.index );
+            opts.position = Number( core.Settings["table.panel.position"] || 3) || 3; 
+            opts.title = "Table view: " + opts.name;
+            PubSub.publish( core.Constants.STACKED_PANE_INSERT, opts );
+            return true;
+
+        });
         
 	}
 	

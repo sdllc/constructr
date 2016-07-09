@@ -603,6 +603,7 @@ FIXME: back-merge in list so we don't have multiple components
                 if( e.target.className.match( /grid-resize-target/ )){
                     e.stopPropagation();
                     e.preventDefault();
+                    this.focus();
                     return this.start_column_resize(e);
                 }
                 if( this.selectRows ){
@@ -613,6 +614,7 @@ FIXME: back-merge in list so we don't have multiple components
                     e.stopPropagation();
                     e.preventDefault();
 
+                    this.focus();
                     this.select_rows(r, r);
                     this.refresh();
 
@@ -725,7 +727,15 @@ FIXME: back-merge in list so we don't have multiple components
 
             },
 
-            update: function(opts){
+            get_selection: function(){
+
+                let copy = {};
+                for( let i in this.selection ){ copy[i] = this.selection[i]; }
+                return copy;
+
+            },
+
+            update: function(opts, force, preserve_selection ){
 
                 Object.keys(opts).forEach( function( key ){
                     if( key !== "row_headers" && key !== "column_headers" )
@@ -757,11 +767,12 @@ FIXME: back-merge in list so we don't have multiple components
                 if( this.col_count !== this.data.length 
                         //|| this.ch_cache !== ch 
                         //|| this.rh_cache !== rh 
-                            ){
+                          || force  ){
 
                     this.col_count = this.data.length; 
                     this.row_count = this.data[0].length;
-                    this.clear_selection();
+                    
+                    if( !preserve_selection || !this.selection ) this.clear_selection();
                     this.measure();
 
                     //this.ch_cache = ch;
@@ -975,7 +986,10 @@ FIXME: back-merge in list so we don't have multiple components
 
                     this.header_row.render( this.selection, [], this.column_headers, m, -1, this.row_headers ? " " : null, this.row_header_width, first_col, last_col, left, true, this.resizeColumns );
                     this.header_row.style.top = ( area.scrollTop - margin_top ) + "px";
-
+                    this.header_row.style.display = null;
+                }
+                else if( this.header_row ){
+                    this.header_row.style.display = "none";
                 }
 
                 this.selection.r = undefined;
