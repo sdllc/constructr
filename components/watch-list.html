@@ -1,0 +1,508 @@
+<!--
+
+ Copyright (c) 2016 Structured Data, LLC
+
+ Permission is hereby granted, free of charge, to any person obtaining a copy
+ of this software and associated documentation files (the "Software"), to 
+ deal in the Software without restriction, including without limitation the 
+ rights to use, copy, modify, merge, publish, distribute, sublicense, and/or 
+ sell copies of the Software, and to permit persons to whom the Software is 
+ furnished to do so, subject to the following conditions:
+
+ The above copyright notice and this permission notice shall be included in 
+ all copies or substantial portions of the Software.
+
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+ IN THE SOFTWARE.
+
+-->
+<!-- 
+    single entry in a watch list
+  -->
+<dom-module id="watch-list-entry">
+
+    <template>
+        <style>
+            :host {
+                display: flex;
+                flex-direction: row;
+                align-items: stretch;
+                width: 100%;
+                height: 3.2em;
+            }
+            
+            .wl-left, .wl-right {
+                overflow: hidden;
+                text-overflow: ellipsis;
+                position: relative;
+                cursor: default;
+            }
+            
+            pre {
+                text-overflow: ellipsis;
+                overflow: hidden;
+                margin: 1em;
+                cursor: inherit;
+            }
+            
+            .wl-right {
+                flex-grow: 1;
+            }
+            
+            .wl-splitter {
+                background: #ccc;
+                overflow: visible;
+                height: 100%;
+                position: relative;
+                width: 1px;
+            }
+            
+            .wl-splitter-mouse-target {
+                height: 100%;
+                left: -10px;
+                cursor: ew-resize;
+                z-index: 4;
+                width: 21px;
+                position: relative;
+            }
+
+            .wl-splitter-mouse-target.active {
+                left: -3px;
+                width: 7px;
+                background-color: rgba( 255, 128, 0, .25 );
+            }
+
+            :host.locals-entry .remove {
+                display: none;
+            }
+
+            .remove {
+                overflow: hidden;
+                position: relative;
+                width: 2em;
+            }
+
+            .remove a {
+                position: absolute;
+                opacity: .5;
+                padding-top: .75em;
+                padding-left: .25em;
+            }
+            
+            .remove a:hover {
+                opacity: .75;
+                cursor: pointer;
+            }
+        
+            
+        </style>
+
+        <div class='remove'>
+            <a title='remove' on-click='remove'><i class="material-icons">close</i></a>
+        </div>
+        <div id='left' class='wl-left'>
+            <pre class='fixed-width'>{{name}}</pre>
+        </div>
+        <div class='wl-splitter'>
+            <div id='mouse_target' class='wl-splitter-mouse-target'></div>
+        </div>
+        <div id='right' class='wl-right'>
+            <pre class='fixed-width'>{{value}}</pre>
+        </div>
+        
+    </template>	  
+      
+    <script>
+        Polymer({
+            is: "watch-list-entry",
+            properties: {
+                index: { type: Number, reflectToAttribute: true },
+                name: String,
+                value: String,
+                fulltext: String,
+                key: String,
+                func: String,
+                rclass: String,
+                locals: {
+                    type: Boolean,
+                    value: true
+                },
+                split: {
+                    type: Number,
+                    reflextToAttribute: true,
+                    observer: '_splitChange',
+                    value: 25
+                },
+                dragging: {
+                    type: Boolean,
+                    value: false,
+                    observer: '_dragChange'
+                }
+            },
+            
+            remove: function(e){
+                e.stopPropagation();	
+                
+                // find parent entry
+                var parent = e.target.parentNode;
+                while( parent && parent.is !== "watch-list-entry" ){
+                    parent = parent.parentNode;
+                }
+                if( parent ){
+                    this.fire( "remove-watch", { index: parent.index });
+                }
+            },
+            
+            attached: function(){
+                
+                // match previous in the event it's been resized;
+                // otherwise use default.
+                
+                var ps = Polymer.dom(this).previousSibling;	
+                if( ps ) this.split = ps.split;
+            },
+            
+            _dragChange: function(v){
+                if( v ) this.$.mouse_target.classList.add( "active" );
+                else this.$.mouse_target.classList.remove( "active" );
+            },
+            
+            _splitChange: function(){
+                this.$.left.setAttribute( "style", "width: " + this.split + "%;");
+                this.$.right.setAttribute( "style", "width: " + (100-this.split) + "%;");
+            }
+            
+        });
+    </script>
+
+</dom-module>
+
+<dom-module id="object-details-panel">
+    <template>
+        <style>
+            
+            :host {
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                position: absolute;
+                display: flex;
+                flex-direction: column;
+            }
+        
+            #selected_value {
+                overflow: scroll;
+                flex-grow: 1;
+                position: relative;
+                text-overflow: clip !important;
+            }
+
+            #selected_value:focus {
+                outline: none;
+            }
+            
+        </style>
+
+            <panel-header title="{{header}}"></panel-header>
+            <pre class='fixed-width watch-content' id='selected_value' tabindex="0"><content/></pre>
+        
+    </template>
+    <script>
+        
+        Polymer({
+            
+            is: "object-details-panel",
+        
+            properties: {
+                header: String	
+            },
+        
+            setContent: function(a){
+                while( Polymer.dom(this).children.length ) Polymer.dom(this).removeChild(Polymer.dom(this).children[0]);
+                var X = document.createElement( "span" );
+                if( this.format_value ) this.format_value( a, X );
+                else X.innerText = a;
+                Polymer.dom(this).appendChild(X);	
+            },
+            
+            selectAll: function(){
+                var selection = window.getSelection();        
+                var range = document.createRange();
+                range.selectNodeContents(this.$.selected_value);
+                selection.removeAllRanges();
+                selection.addRange(range);
+            }
+            
+        });
+        
+    </script>
+</dom-module>
+
+<dom-module id="watch-list-panel">
+    
+    <template>
+        
+        <style>
+            
+            :host {
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                position: absolute;
+                display: flex;
+                flex-direction: column;
+            }
+            
+            .list-container {
+                position: relative;
+                flex-grow: 1;
+            }
+            
+            #vlist {
+                position: absolute;
+                overflow-y: scroll;
+            }			
+            
+            #overlay {
+                position: absolute;
+                top: 0px;
+                left: 0px;
+                right: 0px;
+                bottom: 0px;
+                z-index: 10;
+                display: none;
+            }
+            
+            #overlay.active {
+                display: block;
+                /* background: rgba( 30, 90, 120, .25 ); */
+            }
+            
+            .add-link {
+                cursor: pointer;
+                margin: 1em 1em 1em 0em;
+            }
+                                    
+        </style>
+
+        <panel-header title="{{header}}">
+            <template is="dom-if" if="{{watches}}">
+                <!--
+                <button on-click='click_add' title="Add watch">
+                    <i class="material-icons">add_box</i>
+                </button>	
+                -->
+                <a on-click='click_add' class='add-link'>(Add...)</a>
+            </template>
+        </panel-header>
+        <div class='list-container'>
+            <virtual-list class='chooser-list2' template='{{list-template}}' class-list='{{node-class-list}}' id='vlist'></virtual-list>
+            <div id='overlay'></div>
+        </div>
+        
+    </template>
+
+    <script>
+        
+(function(){
+
+    /**
+     * this is another version of splitter.  we should merge the two,
+     * although there are some significant differences in this one becase
+     * it deals with multiple elements.  also in this one we can make 
+     * the simplifying assumptions (1) always horizontal and (2) only two
+     * panels.
+     */
+    var	drag = function(event){
+        
+        var watchpanel = this;
+        var overlay = watchpanel.$.overlay;
+        
+        overlay.classList.add( "active" );
+        
+        // P methods don't work? confused.
+        var list = watchpanel.querySelectorAll( "watch-list-entry" );
+        var a = list[0].split;		
+        var w = list[0].clientWidth; 
+        var x = event.screenX;
+
+        for( var i = 0; i< list.length; i++) list[i].dragging = true;
+            
+        var mouse_move = function(e){
+            e.preventDefault();
+            e.stopPropagation();
+            
+            var z = e.screenX;
+            var p = a + Math.round(( z - x ) / w * 400 )/4;
+
+            if( p < watchpanel.splitterMin ) p = watchpanel.splitterMin;
+            else if( p > 100 - watchpanel.splitterMin ) p = 100 - watchpanel.splitterMin;
+
+            for( var i = 0; i< list.length; i++) list[i].split = p;
+        };
+    
+        var mouse_up = function(e){
+            e.preventDefault();
+            e.stopPropagation();
+
+            overlay.removeEventListener( 'mouseleave', mouse_up);
+            overlay.removeEventListener( 'mouseup', mouse_up);
+            overlay.removeEventListener( 'mousemove', mouse_move);
+            
+            overlay.classList.remove( "active" );
+            for( var i = 0; i< list.length; i++) list[i].dragging = false;
+            
+        };
+
+        overlay.addEventListener( 'mousemove', mouse_move );
+        overlay.addEventListener( 'mouseup', mouse_up );
+        overlay.addEventListener( 'mouseleave', mouse_up );
+        
+    };
+        
+    Polymer({
+        is: "watch-list-panel",
+        
+        properties: {
+            header: {
+                type: String,
+                value: "Locals"	
+            },
+            "list-template": {
+                type: String,
+                value: "watch-list-entry"
+            },
+            "node-class-list": {
+                type: String,
+                value: ""
+            },
+            data: {
+                type: Array,
+                value: [],
+                observer: "_dataChange"
+            },
+            splitterMin: {
+                type: Number,
+                value: 10
+            },
+            watches: {
+                type: Boolean,
+                value: false
+            }
+        },
+        displayattribute: function(){
+            console.info( "ZOSD" );
+            return "goon-box";
+        },
+        
+        listeners: {
+            'vlist.mousedown': 'mousedown',
+            'vlist.click': 'click'	
+        },
+        
+        click_add: function(e){
+            this.fire( "add-watch", e );	
+        },
+        
+        /**
+         * we're wrapping the data and watching it so we can update on change
+         * (as well as clear on removal).
+         */
+        _dataChange: function(){
+            this.$.vlist.data = this.data;
+        },
+        
+        mousedown: function(e){
+            var target = e ? e.target : undefined;
+            if( target.classList.contains( "wl-splitter-mouse-target" )){
+                e.stopPropagation();
+                e.preventDefault();
+                drag.call(this, e);
+            }
+        },
+        
+        click: function(e){
+            var target = e ? e.target : undefined;
+            
+            while( target && target.is !== "watch-list-entry" ) target = target.parentElement;
+            if( target ){
+                e.stopPropagation();
+                e.preventDefault();
+                this.fire( "select-field", target );
+            }
+            else {
+                
+                // ?? change this to an unselect event? 
+                // either way, why does the select branch stop propagation, but not this one?
+                
+                this.fire( "select-field", {} );
+            }
+        }
+        
+    });
+        
+})();
+        
+        
+    </script>
+    
+</dom-module>
+
+<dom-module id="add-watch-form">
+    <template>
+        <style>
+            
+            td {
+                padding-bottom: .5em;
+            }
+            
+        </style>
+        
+        <div>
+            <p>
+                Field is any variable, slice, or function, essentially 
+                anything that can be resolved.
+            </p>
+            <p>
+                Function is used to represent the variable in the watch 
+                list and the details pane. Leave blank for the default or 
+                select one of the functions in the list.
+            </p>
+            <p>
+                You can also add watches from the console with the
+                function <em>js.client.add.watch</em>.  Use the R call 
+                if you want to use a custom display function.
+            </p>
+        </div>
+        
+        <br/>
+        
+        <table>
+            <tr><td>Field</td><td><input type='text' id='field'></input></td></tr>
+            <tr><td>Function</td><td>
+                <select id="func">
+                    <option></option>
+                    <option>capture.print</option>
+                    <option>capture.histogram</option>
+                    <option>capture.str</option>
+                    <option>capture.env</option>
+                    <option>summary</option>
+                </select>
+            </td></tr>
+        </table>
+        
+    </template>
+    <script>
+        Polymer({
+            is: "add-watch-form"
+        });
+    </script>
+</dom-module>
+    
