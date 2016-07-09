@@ -159,28 +159,36 @@ html-dialog .dialog-footer button:active {
 	background: #444;
 }
 
-/* --- needs work ---*/
+/* --- grid (needs work) ---*/
 
-.panel .grid-cell {
+display-grid {
+    background: #222;
+}
+
+display-grid grid-row {
+    background: #666;    
+}
+
+display-grid .grid-cell {
 	background: #444;
 }
 
-.panel .grid-header {
+display-grid .grid-header {
 	background: #333;
 }
 
-.panel .grid-cell.selected {
+display-grid .grid-cell.selected {
 	border-color: rgba(0,0,0,0);
 	background: #888;
 }
 
-.panel .grid-header.selected {
+display-grid .grid-header.selected {
 	border-color: rgba( 0,0,0,0 );
 	background: #eee;
 	color: #000;
 }
 
 /* alternate rows, except for selection */
-.panel grid-row:nth-child(odd) .table-cell:not(.selected) {
+display-grid grid-row:nth-child(odd) .table-cell:not(.selected) {
     background: #333;
 }
