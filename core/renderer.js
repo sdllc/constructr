@@ -484,6 +484,87 @@ var add_watch = function( field, func, envir, show ){
 
 }
 
+/*
+var open_watch = function(){
+
+	var panel = document.getElementById( "watch-panel" );
+	if( !panel ) {
+	
+		panel = document.createElement( "watch-list-panel" );
+		panel.id = "watch-panel";
+		panel.header = "Watches";
+		panel.className = "panel";
+		panel['node-class-list'] = "watch-entry";
+		panel.setAttribute( "data-preserve", true );
+		panel.setAttribute( "data-display", "watch" );
+		panel.watches = true;
+		panel.addEventListener( "add-watch", function(e){
+			var node = document.createElement( "add-watch-form" );
+			PubSub.publish( Constants.DIALOG_SHOW, {
+				title: "Add Watch",
+				content: node,
+				validate: function(dialog){
+					return node.$.field.value.trim() !== "";
+				},
+				complete: function( accept ){
+					if( accept ){
+						add_watch( node.$.field.value, node.$.func.value );
+					}
+				}
+			});
+		});
+		
+		panel.addEventListener( 'contextmenu', function(e){
+			var target = e.target;
+			while( target && target.tagName !== "WATCH-LIST-ENTRY" ) target = target.parentNode;
+			if( target ){
+				watches_context_menu.$index = Number( target.getAttribute( "index" ));
+				watches_context_menu.target = target;
+				Hooks.exec( "watch_context_menu", watches_context_menu );
+				watches_context_menu.popup(remote.getCurrentWindow());
+			}
+		});
+		
+		panel.addEventListener( 'close', function(e){ 
+			PubSub.publish( Constants.STACKED_PANE_REMOVE, panel );
+		});
+
+		panel.addEventListener( 'select-field', function(e){
+			show_details( e.detail );
+		});
+		
+		panel.addEventListener( 'remove-watch', function(e){
+			var cmd = `js.client.remove.watch(${e.detail.index+1});`;
+			R.queued_exec( cmd ).then( function(){
+				get_watches();
+			})
+		});
+		
+		var on_watch = function(msg, watch){
+			panel.data = watch;
+		};
+		
+		//Bus.on( "watch", on_watch );
+		PubSub.subscribe( "watch", on_watch );
+		
+		panel._onHide = function(){
+			delete( watches_registry.watch );
+		};
+		panel._onShow = function(){
+			watches_registry.watch = 1;
+		};
+		panel._onUnload = function(){
+			delete( watches_registry.watch );
+		};
+		
+	}
+
+	PubSub.publish( Constants.STACKED_PANE_SHOW, [ panel, 2 ]);
+	get_watches();
+
+}
+*/
+
 var open_watch = function(){
 
     var panel = document.getElementById( "watches-panel" );
