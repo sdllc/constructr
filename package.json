@@ -1,7 +1,7 @@
 {
   "name": "constructr",
   "productName": "ConstructR",
-  "version": "0.7.3",
+  "version": "0.7.4",
   "description": "Electron-based R shell",
   "repository": {
     "type": "git",
