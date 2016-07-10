@@ -118,6 +118,7 @@
                 let count = 0;
                 let counts = [];
                 let density = [];
+                let f = 1, max = 0;
 
                 if( null !== this.data ){
                     counts = Array.isArray( this.data.$data.counts ) ? 
@@ -125,6 +126,11 @@
                     density = Array.isArray( this.data.$data.density ) ? 
                         this.data.$data.density : [this.data.$data.density];
                     count = counts.length;
+                    if( count > 1 ){
+                        let delta = this.data.$data.breaks[1] - this.data.$data.breaks[0];
+                        f = Math.pow( 10, 1 + Math.abs( Math.floor( Math.log10( delta ))));
+                    }
+                    max = Math.max.apply(0, counts);
                 }
 
                 let children = Polymer.dom(this.root).children;
@@ -141,13 +147,15 @@
                 }
 
                 children = Polymer.dom(this.root).children;
-                let max = 0;
-                if( count ) max = Math.max.apply(0, counts);
 
                 for( let i = 0; i< count; i++ ){
                     let child = children[i];
                     child.height = ( 100 * counts[i] / max ) + "%";
-                    child.breakLabel =  i%2 ? this.data.$data.breaks[i] : "";
+                    child.breakLabel = "";
+                    if( i%2 ){
+                        child.breakLabel = 
+                            Math.round( this.data.$data.breaks[i] * f ) / f;
+                    }
 
                     let title = `${counts[i]} (${ Math.round(density[i]*100) }%)`;
                     child.setAttribute( 'title', title );

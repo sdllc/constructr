@@ -58,7 +58,7 @@ const open_stacked_pane = function( core, args ){
 	}
 	
 	PubSub.publish( core.Constants.SIDE_PANEL_ATTACH, { node: stacked });
-console.info( "B", arguments );
+
 	if( args ){
 		let x = stacked.attach.apply( stacked, args );
 		if( x ){
