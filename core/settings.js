@@ -72,4 +72,3 @@ const Settings = new Proxy( new LocalStorageBase( "settings" ), {
 
 module.exports = Settings;
 
-window.S = Settings;

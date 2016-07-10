@@ -48,6 +48,17 @@ module.exports = {
 		
 	},
 
+    /**
+     * is needle === haystack, or is needle _in_ haystack,
+     * or if need is an array, is one element of needle === or in haystack
+     */
+    array_cross_match: function( haystack, needle ){
+        if( !Array.isArray( needle )) needle = [needle];
+        return needle.some( function( test ){
+            return ( Array.isArray( haystack ) && haystack.includes( test )) || haystack === test;
+        });
+    },
+
 	/**
 	 * patch for file paths when running in a hybrid asar packed/unpacked
 	 * environment.  we generally use __dirname to map paths, but that will

@@ -216,21 +216,25 @@ var createInstance = function( field, id, menutype, menuindex ){
         }
     };
 
+    let token = 0;
+
     var rslt = {
         node: node,
         onShow: function(){
-            PubSub.subscribe( 'resize', func );
+            token = PubSub.subscribe( 'resize', func );
             instance.visible = true;
 			setImmediate( function(){
 				updateData.call( this, instance );
 			}, this );
         },
         onHide: function(){
-            PubSub.unsubscribe( 'resize', func );
+            if( token ) PubSub.unsubscribe( token );
+            token = 0;
             instance.visible = false;
         },
         onUnload: function(){
-            PubSub.unsubscribe( 'resize', func );
+            if( token ) PubSub.unsubscribe( token );
+            token = 0;
             instance.visible = false;
             instance.node = null;
         }
@@ -240,12 +244,6 @@ var createInstance = function( field, id, menutype, menuindex ){
 
 };
 
-const hasClass = function(rclass, target){
-    if( !Array.isArray( target )) target = [target];
-    return target.some( function( test ){
-        return ( Array.isArray( rclass ) && rclass.includes( test )) || rclass === test;
-    });
-}
 
 module.exports = {
 
@@ -292,13 +290,18 @@ module.exports = {
 			menu.insert( 3, menuitem );
             menuitem.menutype = "locals";
 			menu_target = menu.target.name;
-			menuitem.visible = hasClass( menu.target.rclass, [ 'data.frame', 'matrix' ]);
+			menuitem.visible = core.Utils.array_cross_match( menu.target.rclass, [ 'data.frame', 'matrix' ]);
 		});
 
         // (optionally) override default click on locals
 		core.Hooks.install( "locals_click", function( hook, opts ){
-            if( core.Settings["locals.click.view"] !== "table" 
-                || !hasClass( opts.rclass, [ 'data.frame', 'matrix' ])) return false;
+
+            if( !core.Utils.array_cross_match( core.Settings["locals.click.view"], "table" ) 
+                || !core.Utils.array_cross_match( opts.rclass, [ 'data.frame', 'matrix' ])) return false;
+            
+            // we have to be well-behaved
+            if( opts.handled ) return false;
+            opts.handled = true;
 
             var inst = createInstance( opts.name, 100, "locals", 0 );
             inst.position = Number( core.Settings["table.panel.position"] || 3) || 3; 
@@ -312,13 +315,17 @@ module.exports = {
             menuitem.menutype = "watch";
 			menu_target = menu.target.name;
             menu_index = menu.target.index;
-			menuitem.visible = hasClass( menu.target.rclass, [ 'data.frame', 'matrix' ]);
+			menuitem.visible = core.Utils.array_cross_match( menu.target.rclass, [ 'data.frame', 'matrix' ]);
         });
 
         core.Hooks.install( "watches_click", function( hook, opts ){
 
-            if( core.Settings["watches.click.view"] !== "table" 
-                || !hasClass( opts.rclass, [ 'data.frame', 'matrix' ])) return false;
+            if( !core.Utils.array_cross_match( core.Settings["watches.click.view"], "table" ) 
+                || !core.Utils.array_cross_match( opts.rclass, [ 'data.frame', 'matrix' ])) return false;
+            
+            // we have to be well-behaved
+            if( opts.handled ) return false;
+            opts.handled = true;
 
             var opts = createInstance( opts.name, 100, "watch", opts.index );
             opts.position = Number( core.Settings["table.panel.position"] || 3) || 3; 

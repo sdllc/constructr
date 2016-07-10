@@ -167,16 +167,19 @@ var update_spinner = function(){
 
 	var adjust_h = function(){
 
+        let token = 0;
+
 		if( spinner_cache.h.clientWidth ){
 			spinner_cache.overlay.classList.add( "scrollbar-offset-y" );
 			spinner_cache.offset_y_installed = true;
-			PubSub.unsubscribe( 'viewport-change', adjust_h );
+            if( token ) PubSub.unsubscribe( token );
+            token = 0;
 		}
 		else {
 			if( spinner_cache.offset_y_installed ){
 				spinner_cache.overlay.classList.remove( "scrollbar-offset-y" );
 				spinner_cache.offset_y_installed = false;
-				PubSub.subscribe( 'viewport-change', adjust_h );
+				token = PubSub.subscribe( 'viewport-change', adjust_h );
 			}
 		}
 		
@@ -655,11 +658,13 @@ var open_watch = function(){
         panel.node.selectCells = false;
         panel.node.selectRows = true;
         panel.appendChild( panel.node );
+
+        let token;
         
         panel._onHide = function(){ delete( watches_registry.watch ); };
 		panel._onShow = function(){ watches_registry.watch = 1; };
 		panel._onUnload = function(){ 
-    		PubSub.unsubscribe( "watch", on_watch );
+    		PubSub.unsubscribe( token );
             delete( watches_registry.watch ); 
         };
 
@@ -687,7 +692,7 @@ var open_watch = function(){
 
 		};
 		
-		PubSub.subscribe( "watch", on_watch );
+		token = PubSub.subscribe( "watch", on_watch );
 		
 
     }
@@ -736,7 +741,8 @@ var open_locals = function(){
                 name: key,
                 rclass: cls,
                 key: key,
-                fulltext: text.join( "\n" )
+                fulltext: text.join( "\n" ),
+                data: val
             };
 
             let rslt = Hooks.exec( "locals_click", opts );
@@ -791,10 +797,12 @@ var open_locals = function(){
         panel.node.selectRows = true;
         panel.appendChild( panel.node );
         
+        let token;
+
         panel._onHide = function(){ delete( locals_registry.locals ); };
 		panel._onShow = function(){ locals_registry.locals = 1; };
 		panel._onUnload = function(){ 
-            PubSub.unsubscribe( "locals", on_locals );
+            PubSub.unsubscribe( token );
             delete( locals_registry.locals ); 
         };
 
@@ -828,7 +836,7 @@ var open_locals = function(){
 
 		};
 
-        PubSub.subscribe( "locals", on_locals );
+        token = PubSub.subscribe( "locals", on_locals );
 
 	}
 
@@ -851,18 +859,22 @@ var open_test_area = function(){
         node.refresh();
     };
 
+    let token = 0;
+
     let opts = {
         node: node,
         position: 3,
         title: "Test block",
         onHide: function(){
-            PubSub.unsubscribe( "resize", rs );
+            if( token ) PubSub.unsubscribe( token );
+            token = 0;
         },
         onShow: function(){
-            PubSub.subscribe( "resize", rs );
+            token = PubSub.subscribe( "resize", rs );
         },
         onUnload: function(){
-            PubSub.unsubscribe( "resize", rs );
+            if( token ) PubSub.unsubscribe( token );
+            token = 0;
         }
     };
 
@@ -1248,10 +1260,9 @@ var init_r = function(opts = {}){
 	// prefs
 	R.on('preferences', function(msg){
 		if( msg.$data && msg.$data.KEY ){
-			//console.info( "PREF", msg );
-			var val = msg.$data.VALUE;
-			if( val && typeof val === "object" ) val = val.$data;
-			//console.info( "VAL", val );
+			let val = msg.$data.VALUE;
+            let type = val ? "null" : typeof val;
+			if( type === "object" ) val = val.$data;
 			Settings[msg.$data.KEY] = val;
 		}
 	});
@@ -1431,6 +1442,8 @@ var init_r = function(opts = {}){
 
 			if( libloaded ){
 
+                // NOTE: this happens twice? FIXME
+
 				// copy settings to R
 				let cmds = Object.keys(Settings).map( function(key){
 
@@ -1438,8 +1451,8 @@ var init_r = function(opts = {}){
 					let val = Settings[key];
 
 					if( Array.isArray( Settings[key] )){
-						val = "NULL";
-						console.warn( "unhandled type (array)" );	
+                        let json = JSON.stringify(val);
+                        val = "c(" + json.substr( 1, json.length-2 )  + ")";
 					}
 					else if( type === "object" ){ // FIXME: need a recursive method here
 						if( null == val ){
@@ -1787,7 +1800,7 @@ document.addEventListener("DOMContentLoaded", function(event) {
 		default:
 			// console.info( "UNHANDLED", obj );
 		}
-		
+
 		// mirror to the R env; FIXME: unify with startup code
 		{
 			var cmds = [];
@@ -1795,8 +1808,8 @@ document.addEventListener("DOMContentLoaded", function(event) {
 			var val = obj.val;
 			var key = obj.key;
 			if( Array.isArray( val )){
-				val = "NULL";
-				console.warn( "unhandled type (array)" );	
+                let json = JSON.stringify(val);
+                val = "c(" + json.substr( 1, json.length-2 )  + ")";
 			}
 			else if( type === "object" ){ // FIXME: need a recursive method here
 				if( null === val ) val = "NULL";
@@ -1813,6 +1826,9 @@ document.addEventListener("DOMContentLoaded", function(event) {
 			else if( type === "boolean" ){
 				val = val ? "T" : "F";
 			}
+            else {
+                console.info( "??", type, obj );
+            }
 			cmds.push( `assign( "${key}", ${val}, envir=jsClientLib:::.js.client.options.env )` );
 			R.queued_internal( cmds );
 		}

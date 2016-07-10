@@ -49,24 +49,28 @@ const createInstance = function(opts, src){
         node.data = locals.$data.fields.$data[name].$data.histogram;
     }
 
+    let token = 0;
+
     return {
         node: node,
         title: "Histogram view: " + opts.name,
 
         onShow: function(){
-            console.info( "hv show" );
             if( src === "locals" ){
-                PubSub.subscribe( "locals", on_locals );
+                token = PubSub.subscribe( "locals", on_locals );
             }
         },
         onHide: function(){
-            console.info( "hv hide" );
-            if( src === "locals" ){
-                PubSub.unsubscribe( "locals", on_locals );
+            if( src === "locals" && token ){
+                PubSub.unsubscribe( token );
+                token = 0;
             }
         },
         onUnload: function(){
-            console.info( "hv unload" );
+            if( src === "locals" && token ){
+                PubSub.unsubscribe( token );
+                token = 0;
+            }
         }
 
     };
@@ -87,7 +91,6 @@ module.exports = {
 		let menuitem = new MenuItem({
 			label: "View histogram",
 			click: function( menuitem ){
-
                 var opts = createInstance( menuitem.menu_target, "locals" );
                 opts.position = Number( core.Settings["histogram.panel.position"] || DEFAULT_PANEL_POSITION) || DEFAULT_PANEL_POSITION; 
 				PubSub.publish( core.Constants.STACKED_PANE_INSERT, opts );
@@ -100,6 +103,26 @@ module.exports = {
 			menu.insert( 3, menuitem );
 			menuitem.visible = !!menu.target.data.$data.histogram; 
 		});
+
+        // (optionally) override default click on locals
+		core.Hooks.install( "locals_click", function( hook, opts ){
+
+            //console.info( "O", opts );
+            //return false;
+
+            if( !core.Utils.array_cross_match( core.Settings["locals.click.view"], "histogram" )
+                || !opts.data.$data.histogram ) return false;
+
+            // we have to be well-behaved
+            if( opts.handled ) return false;
+            opts.handled = true;
+
+            let instance = createInstance( opts, "locals" );
+            instance.position = Number( core.Settings["histogram.panel.position"] || DEFAULT_PANEL_POSITION) || DEFAULT_PANEL_POSITION; 
+            PubSub.publish( core.Constants.STACKED_PANE_INSERT, instance );
+
+            return true;
+        });
 
     }
 
