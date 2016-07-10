@@ -117,19 +117,17 @@
 
                 let count = 0;
                 let counts = [];
-                let density = [];
-                let f = 1, max = 0;
+                let f = 1, max = 0, sum = 0;
 
                 if( null !== this.data ){
                     counts = Array.isArray( this.data.$data.counts ) ? 
                         this.data.$data.counts : [this.data.$data.counts];
-                    density = Array.isArray( this.data.$data.density ) ? 
-                        this.data.$data.density : [this.data.$data.density];
                     count = counts.length;
                     if( count > 1 ){
                         let delta = this.data.$data.breaks[1] - this.data.$data.breaks[0];
                         f = Math.pow( 10, 1 + Math.abs( Math.floor( Math.log10( delta ))));
                     }
+                    for( let i = 0; i< count; i++ ) sum += counts[i];
                     max = Math.max.apply(0, counts);
                 }
 
@@ -157,7 +155,7 @@
                             Math.round( this.data.$data.breaks[i] * f ) / f;
                     }
 
-                    let title = `${counts[i]} (${ Math.round(density[i]*100) }%)`;
+                    let title = `${counts[i]} (${ Math.round(counts[i]/sum*100) }%)`;
                     child.setAttribute( 'title', title );
                 }
 
