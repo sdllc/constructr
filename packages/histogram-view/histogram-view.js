@@ -35,7 +35,7 @@ const DEFAULT_PANEL_POSITION = 3;
 
 const createInstance = function(opts, src){
 
-    let node = document.createElement("histogram-view");
+    let node = document.createElement("histogram-panel");
     node.data = opts.data.$data.histogram;
 
     let on_locals = function(ch, locals){
@@ -50,30 +50,30 @@ const createInstance = function(opts, src){
     }
 
     let token = 0;
+    node.field = opts.name;
 
-    return {
-        node: node,
-        title: "Histogram view: " + opts.name,
-
-        onShow: function(){
+    node._onShow = function(){
             if( src === "locals" ){
                 token = PubSub.subscribe( "locals", on_locals );
             }
-        },
-        onHide: function(){
-            if( src === "locals" && token ){
-                PubSub.unsubscribe( token );
-                token = 0;
-            }
-        },
-        onUnload: function(){
-            if( src === "locals" && token ){
-                PubSub.unsubscribe( token );
-                token = 0;
-            }
-        }
+        };
 
-    };
+    node._onHide = function(){
+            if( token ){
+                PubSub.unsubscribe( token );
+                token = 0;
+            }
+        };
+
+    node._onUnload = function(){
+            if( token ){
+                PubSub.unsubscribe( token );
+                token = 0;
+            }
+        };
+
+    return node;
+    
 };
 
 module.exports = {
@@ -91,24 +91,21 @@ module.exports = {
 		let menuitem = new MenuItem({
 			label: "View histogram",
 			click: function( menuitem ){
-                var opts = createInstance( menuitem.menu_target, "locals" );
-                opts.position = Number( core.Settings["histogram.panel.position"] || DEFAULT_PANEL_POSITION) || DEFAULT_PANEL_POSITION; 
-				PubSub.publish( core.Constants.STACKED_PANE_INSERT, opts );
+                let opts = createInstance( menuitem.menu_target, menuitem.menu_source );
+				let pos = Number( core.Settings["histogram.panel.position"] || DEFAULT_PANEL_POSITION) || DEFAULT_PANEL_POSITION; 
+                PubSub.publish( core.Constants.STACKED_PANE_SHOW, [ opts, pos ]);
 			}
 		});
 
-		// CM: add a menu item if it's a frame (or descends from frame)
 		core.Hooks.install( "locals_context_menu", function( hook, menu ){
             menuitem.menu_target = menu.target;
+            menuitem.menu_source = "locals";
 			menu.insert( 3, menuitem );
 			menuitem.visible = !!menu.target.data.$data.histogram; 
 		});
 
         // (optionally) override default click on locals
 		core.Hooks.install( "locals_click", function( hook, opts ){
-
-            //console.info( "O", opts );
-            //return false;
 
             if( !core.Utils.array_cross_match( core.Settings["locals.click.view"], "histogram" )
                 || !opts.data.$data.histogram ) return false;
@@ -118,8 +115,8 @@ module.exports = {
             opts.handled = true;
 
             let instance = createInstance( opts, "locals" );
-            instance.position = Number( core.Settings["histogram.panel.position"] || DEFAULT_PANEL_POSITION) || DEFAULT_PANEL_POSITION; 
-            PubSub.publish( core.Constants.STACKED_PANE_INSERT, instance );
+            let pos = Number( core.Settings["histogram.panel.position"] || DEFAULT_PANEL_POSITION) || DEFAULT_PANEL_POSITION; 
+            PubSub.publish( core.Constants.STACKED_PANE_SHOW, [ instance, pos ] );
 
             return true;
         });

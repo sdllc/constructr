@@ -40,7 +40,14 @@
                 width: 100%;
                 background: lightblue;
                 bottom: 0px;
+                transition: background .05s linear;
             }
+
+            /*
+            #bar:hover {
+                background: #d7d4f0;
+            }
+            */
 
             #break-label {
                 position: absolute;
@@ -110,10 +117,13 @@
 
                 let count = 0;
                 let counts = [];
+                let density = [];
 
                 if( null !== this.data ){
                     counts = Array.isArray( this.data.$data.counts ) ? 
                         this.data.$data.counts : [this.data.$data.counts];
+                    density = Array.isArray( this.data.$data.density ) ? 
+                        this.data.$data.density : [this.data.$data.density];
                     count = counts.length;
                 }
 
@@ -138,7 +148,9 @@
                     let child = children[i];
                     child.height = ( 100 * counts[i] / max ) + "%";
                     child.breakLabel =  i%2 ? this.data.$data.breaks[i] : "";
-                    child.setAttribute( 'title', counts[i] );
+
+                    let title = `${counts[i]} (${ Math.round(density[i]*100) }%)`;
+                    child.setAttribute( 'title', title );
                 }
 
             }
@@ -146,3 +158,43 @@
         });
     </script>
 </dom-module>
+
+<dom-module id="histogram-panel">
+    <template>
+        <style>
+           
+        </style>
+
+        <div class='panel'>
+            <panel-header title={{title}}></panel-header>
+            <histogram-view data={{data}}></histogram-view>
+        </div>
+
+    </template>
+    <script>
+        Polymer({
+            is: "histogram-panel",
+            properties: {
+                title: "String",
+                field: {
+                    type: "String",
+                    observer: 'dataChanged'
+                },
+                data: {
+                    type: Object,
+                    observer: 'dataChanged'
+                }
+            },
+            dataChanged: function(){
+                let sum = 0;
+                if( null !== this.data ){
+                    let counts = Array.isArray( this.data.$data.counts ) ? 
+                        this.data.$data.counts : [this.data.$data.counts];
+                    counts.forEach( function(c){ sum += c; });
+                }
+                this.title = `Histogram view: ${this.field} (n=${sum})`;
+            }
+        });
+    </script>
+</dom-module>
+

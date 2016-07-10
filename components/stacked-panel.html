@@ -88,6 +88,8 @@
 			 */
 			attach: function( node, index ){
 				
+                console.info( "A", arguments );
+
 				var children = this.$.layout.getEffectiveChildren ? 
 					this.$.layout.getEffectiveChildren() :
 					this.$.layout.children;
