@@ -36,27 +36,38 @@ const DEFAULT_PANEL_POSITION = 3;
 const createInstance = function(opts, src){
 
     let node = document.createElement("histogram-panel");
-    node.data = opts.data.$data.histogram;
-
-    let on_locals = function(ch, locals){
-        let name = opts.name;
-        if( !locals.$data.fields.$data[name] 
-            || !locals.$data.fields.$data[name].$data    
-            || !locals.$data.fields.$data[name].$data.histogram ){
-                node.data = null;
-                return;
-        }
-        node.data = locals.$data.fields.$data[name].$data.histogram;
-    }
+    node.data = src === "locals" ? opts.data.$data.histogram : opts.histogram;
 
     let token = 0;
     node.field = opts.name;
 
     node._onShow = function(){
-            if( src === "locals" ){
-                token = PubSub.subscribe( "locals", on_locals );
-            }
-        };
+
+        if( src === "locals" ){
+            let name = opts.name;
+            token = PubSub.subscribe( "locals", function(ch, locals){
+                if( !locals.$data.fields.$data[name] 
+                    || !locals.$data.fields.$data[name].$data    
+                    || !locals.$data.fields.$data[name].$data.histogram ){
+                        node.data = null;
+                        return;
+                }
+                node.data = locals.$data.fields.$data[name].$data.histogram;
+            });
+        }
+        else if( src === "watches" ){
+            token = PubSub.subscribe( "watch", function(ch, watches){
+                let key = opts.key;
+                for( let i = 0; i< watches.length; i++ ){
+                    if( key === watches[i].key ){
+                        node.data = watches[i].histogram;
+                        return;
+                    }
+                }
+                node.data = null;
+            });
+        }
+    };
 
     node._onHide = function(){
             if( token ){
@@ -104,6 +115,13 @@ module.exports = {
 			menuitem.visible = !!menu.target.data.$data.histogram; 
 		});
 
+		core.Hooks.install( "watches_context_menu", function( hook, menu ){
+            menuitem.menu_target = menu.target;
+            menuitem.menu_source = "watches";
+			menu.insert( 3, menuitem );
+			menuitem.visible = !!menu.target.histogram; 
+		});
+
         // (optionally) override default click on locals
 		core.Hooks.install( "locals_click", function( hook, opts ){
 
@@ -115,6 +133,22 @@ module.exports = {
             opts.handled = true;
 
             let instance = createInstance( opts, "locals" );
+            let pos = Number( core.Settings["histogram.panel.position"] || DEFAULT_PANEL_POSITION) || DEFAULT_PANEL_POSITION; 
+            PubSub.publish( core.Constants.STACKED_PANE_SHOW, [ instance, pos ] );
+
+            return true;
+        });
+
+        core.Hooks.install( "watches_click", function( hook, opts ){
+
+            if( !core.Utils.array_cross_match( core.Settings["watches.click.view"], "histogram" )
+                || !opts.histogram ) return false;
+
+            // we have to be well-behaved
+            if( opts.handled ) return false;
+            opts.handled = true;
+
+            let instance = createInstance( opts, "watches" );
             let pos = Number( core.Settings["histogram.panel.position"] || DEFAULT_PANEL_POSITION) || DEFAULT_PANEL_POSITION; 
             PubSub.publish( core.Constants.STACKED_PANE_SHOW, [ instance, pos ] );
 

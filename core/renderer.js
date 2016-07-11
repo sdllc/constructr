@@ -597,7 +597,9 @@ var open_watch = function(){
             let row = e.target.row;
             if( typeof row === "undefined" ) return;
 
+            watches[row].handled = false;
             let rslt = Hooks.exec( "watches_click", watches[row] );
+
             if( rslt && rslt.some( function(x){
                 return x;
             })) return;
@@ -1278,49 +1280,52 @@ var init_r = function(opts = {}){
 		
 		// we're going to unpack (simplify) this event here so multiple
 		// listeners don't have to do the same thing
-		
-		var watches = [];
+
+		let watches = [];
 		if( msg.$data && msg.$data.fields && msg.$data.fields.$data && msg.$data.fields.$data.length ){
-			msg.$data.fields.$data.map( function( elt, index ){
+			watches = msg.$data.fields.$data.map( function( elt, index ){
     			
-				var name = elt.$data.label;
-				var func = elt.$data.func;
+				let name = elt.$data.label;
+				let func = elt.$data.func;
 				
 				// key is a (reasonably) unique identifier we can use to 
 				// repaint the details window.  avoids problems with indexing.
 				
-				var key = name + "::" + elt.$data.envir + "::" + elt.$data.func;
+				let key = name + "::" + elt.$data.envir + "::" + elt.$data.func;
 				
 				// value can be anything.  we'd prefer strings, generally, but
 				// that's not guaranteed.  we should perhaps allow custom processing here?
 				
-				var val = elt.$data.value;
-				var err = elt.$data.err;
-				var text = "";
+				let val = elt.$data.value;
+				let err = elt.$data.err;
+				let text = "";
+                let line;
 
 				if( err ){
 					line = text = err;
 				}
 				else {
 					if( !Array.isArray( val )) val = [val];
-					val.map( function( line ){
+					val.forEach( function( line ){
 						if( typeof line === "object" ) line = JSON.stringify(line);
 						text += line.toString().replace(/[\r\n]+$/, "") + "\n";
 					})
-					var line = text.split( "\n" )[0];
+					line = text.split( "\n" )[0];
 				}
 								
-				watches.push({
+				return {
 					rclass: elt.$data['class'],
 					index: index,
 					name: name,
 					key: key,
 					value: line,
 					func: func,
-					fulltext: text
-				})
+					fulltext: text,
+                    histogram: elt.$data.histogram || undefined
+				};
 			}); 
 		}
+
 		//Bus.emit( "watch", watches );
 		PubSub.publish( "watch", watches );
 		

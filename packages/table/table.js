@@ -322,7 +322,7 @@ module.exports = {
 
             if( !core.Utils.array_cross_match( core.Settings["watches.click.view"], "table" ) 
                 || !core.Utils.array_cross_match( opts.rclass, [ 'data.frame', 'matrix' ])) return false;
-            
+
             // we have to be well-behaved
             if( opts.handled ) return false;
             opts.handled = true;
