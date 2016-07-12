@@ -86,7 +86,7 @@ REM * alternatively, run with livereload:
 REM * node_modules\.bin\gulp watch
 ```
 
-[logo]: https://cdn.rawgit.com/sdllc/constructr/master/build/icon.svg
+[logo]: https://cdn.rawgit.com/sdllc/constructr/master/build/icon-inverse.svg
 
 [1]: https://github.com/sdllc/controlr
 [2]: https://github.com/sdllc/jsclientlib
