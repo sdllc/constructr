@@ -123,7 +123,15 @@ module.exports.apply = function(CM){
     startSearch( CM, state, q );
     state.posFrom = state.posTo = CM.getCursor();
     findNext(CM, false);//rev);
-  }
+  };
+
+  CM.next = function(rev){
+    doSearch( CM, rev, true, true );
+  };
+
+  CM.clearSearch = function(){
+    clearSearch( CM );
+  };
 
   function doSearch(cm, rev, persistent, immediate) {
     var state = getSearchState(cm);

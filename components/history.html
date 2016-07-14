@@ -53,6 +53,13 @@
 				margin-top: .8em;
 			}
 
+			.list-header-filter-button {
+				margin-left: .2em;
+                margin-right: 0;
+				margin-top: .8em;
+                text-align: center;
+			}
+
             #flex-patch {
                 position: absolute;
                 top: 0px;
@@ -65,6 +72,8 @@
 
             <panel-header close-box title="{{header}}">
                 <input type='text' id='query' class='list-header-filter' placeholder='Find' value="{{filter::input}}"></input>
+                <button class='list-header-filter-button' on-click='find_prev'><i class="material-icons">keyboard_arrow_left</i></button>
+                <button class='list-header-filter-button' on-click='find_next'><i class="material-icons">keyboard_arrow_right</i></button>
             </panel-header>
             <div id='content_area'>
                 <div id='flex-patch'>
@@ -89,12 +98,19 @@
             },
         
             appendChild: function(elt){
-                console.info( "aC", elt );
                 Polymer.dom(this).appendChild(elt);
             },
 
             _filterChange: function(e){
                 this.fire( "filter-change", this.filter );
+            },
+
+            find_prev: function(e){
+                this.fire( "find-next", -1 );
+            },
+            
+            find_next: function(e){
+                this.fire( "find-next", 1 );
             },
 
             /*

@@ -716,11 +716,11 @@ var history_panel = function(){
         let token = null;
         let token2 = null;
         let loaded = false;
+        let query;
 
         let update_history = function(){
             let x = shell.get_history();
             // if( x.length ) panel.appendContent( "\n" + x[x.length-1] );
-            console.info( "UH" );
         }
 
         let cm = CodeMirror( function(elt){panel.appendChild( elt ); }, {
@@ -777,10 +777,22 @@ var history_panel = function(){
 			PubSub.publish( Constants.STACKED_PANE_REMOVE, panel );
         });
 
-        panel.addEventListener( "filter-change", function(e){
-            let query = e.detail;
-            if( query.length ) cm.search(query);
+        PubSub.subscribe( "history-select-all", function(){
+            cm.execCommand( "selectAll" );
+        }); 
 
+        panel.addEventListener( "contextmenu", function(e){
+			history_context_menu.popup(remote.getCurrentWindow());
+        });
+
+        panel.addEventListener( "filter-change", function(e){
+            query = e.detail;
+            if( query.length ) cm.search(query);
+            else cm.clearSearch();
+        });
+
+        panel.addEventListener( "find-next", function(e){
+            if( query ) cm.next( e.detail === -1 );
         });
 
         HistorySearch.apply( cm );
@@ -2208,6 +2220,16 @@ var details_context_menu = Menu.buildFromTemplate([
 	{ label: 'Select All', click: function(e){
 		if( details_context_menu.$target ) details_context_menu.$target.selectAll();
 	}}
+]);
+
+/**
+ * context menu for history pane
+ */
+var history_context_menu = Menu.buildFromTemplate([
+	{ label: 'Copy', role: 'copy' },
+	{ label: 'Select All', click: function(e){
+        PubSub.publish( "history-select-all" );
+    }}
 ]);
 
 /**
