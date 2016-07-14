@@ -153,7 +153,7 @@ FIXME: back-merge in list so we don't have multiple components
 
             },
 
-            render: function( selection, column_classes, data, m, row, row_headers, label_width, first_col, last_col, left, header, resizable, fixed ){
+            render: function( selection, column_classes, data, m, row, row_headers, label_width, first_col, last_col, left, header, resizable, fixed, hm ){
 
                 let index = 0;
 
@@ -196,6 +196,7 @@ FIXME: back-merge in list so we don't have multiple components
                     if( fixed ){
                         //cell.style.minWidth = m.pct[i] + "%";
                         //cell.style.minWidth = `calc(${m.pct[i]}% - 3px)`;
+                        cell.style.minWidth = ( hm.cell_widths[i] + m.horizontal_margin ) + "px";
                         cell.style.width = `calc(${m.pct[i]}% - 3px + ${m.drag_delta[i]}px)`;
                         cell.style.flexBasis = `calc(${m.pct[i]}% - 3px + ${m.drag_delta[i]}px)`;
                     }
@@ -1052,7 +1053,7 @@ FIXME: back-merge in list so we don't have multiple components
                         Polymer.dom( grid ).appendChild( this.header_row );
                     }
 
-                    this.header_row.render( this.selection, [], this.column_headers, m, -1, this.row_headers ? " " : null, this.row_header_width, first_col, last_col, left, true, this.resizeColumns, this.fixed );
+                    this.header_row.render( this.selection, [], this.column_headers, m, -1, this.row_headers ? " " : null, this.row_header_width, first_col, last_col, left, true, this.resizeColumns, this.fixed, this.header_measurements );
                     this.header_row.style.top = ( area.scrollTop - margin_top ) + "px";
                     this.header_row.style.display = null;
                     //if( this.fixed ) this.header_row.style.width = area.clientWidth + "px";
@@ -1069,7 +1070,7 @@ FIXME: back-merge in list so we don't have multiple components
                         this.nodes[index] = document.createElement( this.template );
                         Polymer.dom( grid ).appendChild( this.nodes[index] );
                     }
-                    this.nodes[index].render( this.selection, this.column_classes, this.data, m, first_row, this.row_headers, this.row_header_width, first_col, last_col, left, false, false, this.fixed );
+                    this.nodes[index].render( this.selection, this.column_classes, this.data, m, first_row, this.row_headers, this.row_header_width, first_col, last_col, left, false, false, this.fixed, this.header_measurements );
                     this.nodes[index].style.display = "flex";
                     //if( this.fixed ) this.nodes[index].style.width = area.clientWidth + "px";
 
