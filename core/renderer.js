@@ -46,6 +46,7 @@ const PackageManager = require( "./package-manager.js" );
 const FileCache = require( "./file-cache.js");
 const Settings = require( "./settings.js");
 const MenuTemplate = require( "./menus.js" );
+const HistorySearch = require( "./search-history.js" );
 
 const R = new ExtendR();
 const Utils = require( "./utils.js" ).init(R);
@@ -704,6 +705,100 @@ var open_watch = function(){
 	PubSub.publish( Constants.STACKED_PANE_SHOW, [ panel, 2 ]);
 	get_watches();
      
+}
+
+var history_panel = function(){
+
+	var panel = document.getElementById( "history-panel" );
+	if( !panel ) {
+        panel = document.createElement( "history-panel" );
+
+        let token = null;
+        let token2 = null;
+        let loaded = false;
+
+        let update_history = function(){
+            let x = shell.get_history();
+            // if( x.length ) panel.appendContent( "\n" + x[x.length-1] );
+            console.info( "UH" );
+        }
+
+        let cm = CodeMirror( function(elt){panel.appendChild( elt ); }, {
+			//inputStyle: "contenteditable",
+            readOnly: true,
+            cursorBlinkRate: 0,
+            //lineNumbers: true
+			mode: "r"
+		});
+
+        if( Settings.theme ) cm.setOption( "theme", Settings.theme );
+
+        Object.assign( panel, {
+            visible: false,
+            header: "History",
+            className: "panel",
+            id: "history-panel",
+            format_value: function(value, node){
+				CodeMirror.runMode( value, "r", node );
+				node.classList.add( "cm-s-" + Settings.theme );
+			},
+            _onHide: function(){ 
+                this.visible = false; 
+                if( token ) PubSub.unsubscribe(token);
+                if( token2 ) PubSub.unsubscribe(token2);
+                token = null;
+                token2 = null;
+            },
+            _onShow: function(){ 
+                this.visible = true; 
+                if( !token ) token = PubSub.subscribe("exec_complete", update_history);
+                if( !token2 ) token2 = PubSub.subscribe( Constants.SHELL_UPDATE_THEME, function( ch, args ){
+            		cm.setOption( "theme", args );
+                });
+                if( !loaded ){
+                    setTimeout( function(){
+                        loaded = true;
+                        let history = shell.get_history();
+                        cm.setValue(history.join("\n"));
+                        cm.scrollIntoView({ line: history.length-1, ch: 0 });
+                    }, 1);
+                }
+            },
+            _onUnload: function(){ 
+                this.visible = false; 
+                if( token ) PubSub.unsubscribe(token);
+                if( token2 ) PubSub.unsubscribe(token2);
+                token = null;
+                token2 = null;
+            }
+        });
+        panel.setAttribute( "data-preserve", true );
+        panel.addEventListener( "close", function(){
+			PubSub.publish( Constants.STACKED_PANE_REMOVE, panel );
+        });
+
+        panel.addEventListener( "filter-change", function(e){
+            let query = e.detail;
+            if( query.length ) cm.search(query);
+
+        });
+
+        HistorySearch.apply( cm );
+
+        panel.$.content_area.addEventListener( "keydown", function(e){
+			if( e.keyCode === 70 && e.ctrlKey ){
+				e.stopPropagation();
+				e.preventDefault();
+                console.info( "Ctrl+F" );
+                panel.$.query.focus();
+			}
+		});
+
+    }
+
+    // panel.setContent(shell.get_history().join("\n"));
+
+    PubSub.publish( Constants.STACKED_PANE_SHOW, [ panel, 3 ]);
 }
 
 var open_locals = function(){
@@ -2096,6 +2191,9 @@ PubSub.subscribe( "menu-click", function(){
 	case "close":
 		quit();
 		break;
+    case "history":
+        history_panel();
+        break;
 	default:
 		console.warn( "Unhandled menu command", data.item.message );
 		break;

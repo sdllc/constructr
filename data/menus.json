@@ -146,6 +146,11 @@
 					"message": "watch"
 				},
 				{
+					"label": "History",
+					"accelerator": "Ctrl+H",
+					"message": "history"
+				},
+				{
 					"type": "separator"
 				},
 				{
