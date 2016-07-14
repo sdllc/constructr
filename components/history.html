@@ -111,32 +111,7 @@
             
             find_next: function(e){
                 this.fire( "find-next", 1 );
-            },
-
-            /*
-            setContent: function(a){
-                while( Polymer.dom(this).children.length ) Polymer.dom(this).removeChild(Polymer.dom(this).children[0]);
-                var X = document.createElement( "span" );
-                if( this.format_value ) this.format_value( a, X );
-                else X.innerText = a;
-                Polymer.dom(this).appendChild(X);	
-            },
-            
-            appendContent: function(a){
-                var X = document.createElement( "span" );
-                if( this.format_value ) this.format_value( a, X );
-                else X.innerText = a;
-                Polymer.dom(this).appendChild(X);	
-            },
-
-            selectAll: function(){
-                var selection = window.getSelection();        
-                var range = document.createRange();
-                range.selectNodeContents(this.$.content_area);
-                selection.removeAllRanges();
-                selection.addRange(range);
             }
-            */
 
         });
         
