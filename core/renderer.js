@@ -819,21 +819,21 @@ var open_locals = function(){
 			keys = locals.$data.fields && locals.$data.fields.$names ? locals.$data.fields.$names : [];
 			data = locals.$data.fields && locals.$data.fields.$data ? locals.$data.fields.$data : {};
 
-            let table_data = [
-                keys, 
-                keys.map( function( key ){
-    				var val = data[key];
-	    			var text = val.$data.value;
-    				if( Array.isArray(text)) text = text[0];
-                    if( text.length > 64 ) text = text.substring( 0, 61 ) + "...";
-                    return text;
-                })
-            ];
+            let table_data = [ keys, Array(keys.length), Array(keys.length) ];
+            keys.forEach( function( key, index ){
+    		    let val = data[key];
+                table_data[1][index] = val.$data.class;
+    			
+                let text = val.$data.value;
+                if( Array.isArray(text)) text = text[0];
+                if( text.length > 64 ) text = text.substring( 0, 61 ) + "...";
+                table_data[2][index ] = text;
+            });
 
             panel.node.update({
                 data: table_data,
-                column_classes: [ "string", "left" ],
-                column_headers: [ Messages.FIELD, Messages.VALUE ]
+                column_classes: [ "string", "string", "left" ],
+                column_headers: [ Messages.FIELD, Messages.CLASS, Messages.VALUE ]
             })
 
 		};
@@ -885,17 +885,15 @@ var open_test_area = function(){
     let column_headers = [];
 
     let nrow = 50;
-    let ncol = 8;
+    let ncol = 5;
 
     let row_headers = new Array( nrow );
 
     for( let i = 0; i< nrow; i++ ) row_headers[i] = (i+1);
 
-//    column_headers.push( "X" );
     column_headers.push( "Fruit Type" );
     let arr = new Array(nrow);
     for( let j = 0; j< nrow; j++ ) arr[j] = j;
-//    data.push( arr );
 
     arr = new Array(nrow);
     var factor = [ "banana", "tangerine", "volkswagen", "mario goetze", "never", "Quorn" ];
@@ -1897,7 +1895,7 @@ document.addEventListener("DOMContentLoaded", function(event) {
                 open_test_area();
             });
             */
-
+            
 		}
 
 		if( init_status && init_status.success ){
