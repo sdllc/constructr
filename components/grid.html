@@ -926,7 +926,6 @@ FIXME: back-merge in list so we don't have multiple components
                     }
                     m.pct[ this.col_count-1 ] = 100-sum;
 
-                    console.info( "FIXED", m.pct );
                 }
 
                 this.grid_measurements = m;
@@ -1037,14 +1036,11 @@ FIXME: back-merge in list so we don't have multiple components
                     cols.style.minWidth = m.total_width + "px";
 
                 }
-                else console.info( "Skip1", area.clientWidth, area.offsetWidth )
 
                 let height = area.clientHeight + 2 * buffer * m.line_height; 
                 let index = 0;
 
                 left = area.scrollLeft - padding_left;
-
-                console.info( "L", left );
 
                 if( this.column_headers ){
 
