@@ -674,6 +674,7 @@ var open_watch = function(){
 
             let names = [];
             let values = [];
+            let classes = [];
 
             watches = watch;
 
@@ -682,13 +683,15 @@ var open_watch = function(){
                 let text = w.value;
                 if( text.length > 64 ) text = text.substring( 0, 61 ) + "...";
                 values.push( text );
+                classes.push( w.rclass || "" );
             });
 
-            let headers = watch.length ? [ Messages.FIELD, Messages.VALUE ] : false;
+            let headers = watch.length ? [ Messages.FIELD, Messages.CLASS, Messages.VALUE ] : false;
 
             panel.node.update({
-                data: [ names, values ],
-                column_classes: [ "string", "left" ],
+                fixed: true,
+                data: [ names, classes, values ],
+                column_classes: [ "string", "string", "left" ],
                 column_headers: headers
             }, true, true );
 
@@ -820,17 +823,19 @@ var open_locals = function(){
 			data = locals.$data.fields && locals.$data.fields.$data ? locals.$data.fields.$data : {};
 
             let table_data = [ keys, Array(keys.length), Array(keys.length) ];
-            keys.forEach( function( key, index ){
+            for( let i = 0; i< keys.length; i++ ){
+                let key = keys[i];
     		    let val = data[key];
-                table_data[1][index] = val.$data.class;
+                table_data[1][i] = val.$data.class;
     			
                 let text = val.$data.value;
                 if( Array.isArray(text)) text = text[0];
                 if( text.length > 64 ) text = text.substring( 0, 61 ) + "...";
-                table_data[2][index ] = text;
-            });
+                table_data[2][i] = text;
+            };
 
             panel.node.update({
+                fixed: true,
                 data: table_data,
                 column_classes: [ "string", "string", "left" ],
                 column_headers: [ Messages.FIELD, Messages.CLASS, Messages.VALUE ]
@@ -885,7 +890,7 @@ var open_test_area = function(){
     let column_headers = [];
 
     let nrow = 50;
-    let ncol = 5;
+    let ncol = 3;
 
     let row_headers = new Array( nrow );
 
@@ -903,7 +908,7 @@ var open_test_area = function(){
 
     for( let i = 0; i< ncol-1; i++ ){
         arr = new Array(nrow);
-        if( i && (i % 7 === 0)){
+        if( i && (i % 2 === 0)){
             column_headers.push( "SPOON" );
             for( let j = 0; j< nrow; j++ ) arr[j] = "spoon";
             arr[Math.round(arr.length/2)] = "extraspoon";
@@ -919,10 +924,15 @@ var open_test_area = function(){
         data[i][0] = `COL ${i+1}/${data.length}`;
     }
 
+    for( let i = 0; i< data[0].length; i++ ){
+        data[2][i] = "I AM A LONG STRING.  LONGER, EVEN.  LONG!"
+    }
+
     window.setTimeout(function(){
         node.update({
+            fixed: true,
             data: data,
-            row_headers: row_headers,
+            row_headers: false, // row_headers,
             column_headers: column_headers });
     }, 100);
 
@@ -1895,7 +1905,7 @@ document.addEventListener("DOMContentLoaded", function(event) {
                 open_test_area();
             });
             */
-            
+
 		}
 
 		if( init_status && init_status.success ){

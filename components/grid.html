@@ -63,6 +63,12 @@ FIXME: back-merge in list so we don't have multiple components
                 box-shadow: 1px 0px #ccc;
             }
             
+            .grid-cell.fixed-overflow {
+                flex-shrink: 1;
+                text-overflow: ellipsis;
+                overflow: hidden;
+            }
+
             .selection-border {
                 position: absolute;
                 z-index: 3;
@@ -105,9 +111,10 @@ FIXME: back-merge in list so we don't have multiple components
                 cells: Array
             },
 
-            create_cell: function( header ){
+            create_cell: function( header, fixed ){
                 let elt = document.createElement( header ? "div" : "pre" );
                 elt.className = header ? "grid-cell grid-header" : "grid-cell table-cell fixed-width";
+                if( fixed ) elt.classList.add( "fixed-overflow" );
                 Polymer.dom( this.root ).appendChild( elt );
 
                 // capture class now, because polymer has appended scope
@@ -146,11 +153,13 @@ FIXME: back-merge in list so we don't have multiple components
 
             },
 
-            render: function( selection, column_classes, data, m, row, row_headers, label_width, first_col, last_col, left, header, resizable ){
+            render: function( selection, column_classes, data, m, row, row_headers, label_width, first_col, last_col, left, header, resizable, fixed ){
 
                 let index = 0;
 
                 if( row_headers ){
+
+                    // FIXME: fixed
 
                     if( !this.row_header ){
                         this.row_header = this.create_cell( true );
@@ -175,17 +184,25 @@ FIXME: back-merge in list so we don't have multiple components
                         else this.row_header.classList.remove( "selected" );
                     }
 
-                }
+                } 
 
                 for( let i = first_col; i<= last_col; i++ ){
 
                     if( this.cells.length <= index ){
-                        this.cells[index] = this.create_cell( header );
+                        this.cells[index] = this.create_cell( header, fixed );
                     }
                     let cell = this.cells[index];
 
-                    cell.style.minWidth = m.cell_widths[i] + "px";
-                    cell.style.flexBasis = ( m.cell_widths[i] + m.drag_delta[i] ) + "px";
+                    if( fixed ){
+                        //cell.style.minWidth = m.pct[i] + "%";
+                        //cell.style.minWidth = `calc(${m.pct[i]}% - 3px)`;
+                        cell.style.width = `calc(${m.pct[i]}% - 3px + ${m.drag_delta[i]}px)`;
+                        cell.style.flexBasis = `calc(${m.pct[i]}% - 3px + ${m.drag_delta[i]}px)`;
+                    }
+                    else {
+                        cell.style.minWidth = m.cell_widths[i] + "px";
+                        cell.style.flexBasis = ( m.cell_widths[i] + m.drag_delta[i] ) + "px";
+                    }
 
                     // this is an interesting effect, and might be worth using.  it allocates
                     // free space according to the calculated column widths.  the effect is 
@@ -316,6 +333,10 @@ FIXME: back-merge in list so we don't have multiple components
                 box-sizing: border-box;
             }
 
+            #grid-columns.fixed-overflow {
+                max-width: 100%;
+            }
+
             #grid-rows {
                 position: static;
                 box-sizing: border-box;
@@ -323,6 +344,10 @@ FIXME: back-merge in list so we don't have multiple components
                 padding: 0;
                 border: 0;
                 flex-grow: 1;
+            }
+
+            #grid-rows.fixed-overflow {
+                max-width: 100%;
             }
 
             #measurement-node {
@@ -737,10 +762,25 @@ FIXME: back-merge in list so we don't have multiple components
 
             update: function(opts, force, preserve_selection ){
 
+                // force boolean
+                this.cache_fixed = !!this.fixed;
+
                 Object.keys(opts).forEach( function( key ){
                     if( key !== "row_headers" && key !== "column_headers" )
                         this[key] = opts[key];
                 }, this);
+
+                // force boolean
+                this.fixed = !!this.fixed;
+
+                if( this.fixed ){
+                    this.$['grid-rows'].classList.add( "fixed-overflow" );
+                    this.$['grid-columns'].classList.add( "fixed-overflow" );
+                }
+                else {
+                    this.$['grid-rows'].classList.remove( "fixed-overflow" );
+                    this.$['grid-columns'].classList.remove( "fixed-overflow" );
+                }
 
                 if( opts.row_headers && typeof opts.row_headers === "boolean" ){
                     if( !this.row_headers || this.row_headers.length !== this.data[0].length ){
@@ -764,10 +804,11 @@ FIXME: back-merge in list so we don't have multiple components
                 let rh = opts.row_headers ? opts.row_headers.toString() : "";
                 */
 
-                if( this.col_count !== this.data.length 
-                        //|| this.ch_cache !== ch 
-                        //|| this.rh_cache !== rh 
-                          || force  ){
+                if( (this.col_count !== this.data.length)
+                    || ( this.cache_fixed !== this.fixed )
+                  //|| this.ch_cache !== ch 
+                  //|| this.rh_cache !== rh 
+                    || force  ){
 
                     this.col_count = this.data.length; 
                     this.row_count = this.data[0].length;
@@ -812,6 +853,9 @@ FIXME: back-merge in list so we don't have multiple components
                         return "X".repeat(max);
                     }
                     else {
+
+                        // there's got to be a better way to do this
+
                         for( let i = 0; i< col.length; i++ ){
                             let s = col[i].toString().split("\n" );                        
                             for( let j = 0; j< s.length; j++ ) max = Math.max( max, s[j].length );
@@ -863,6 +907,27 @@ FIXME: back-merge in list so we don't have multiple components
                 m.line_height = m.max_height + m.vertical_margin;
                 m.total_height = ( this.row_count + ( this.column_headers ? 1 : 0 )) * m.line_height;
                 m.total_width = (this.col_count * m.horizontal_margin) + m.row_length;
+
+                if( this.fixed ){
+
+                    // FIXED means force the table to be the same width as the containing node,
+                    // notwithstanding individual column widths.  for that to work, we set 
+                    // widths as percentages of the whole instead of pixel widths.  (FIXME: drag?)
+
+                    // FIXME: adjust for row headers
+
+                    m.pct = [];
+                    let sum = 0;
+                    let factor = 10000;
+
+                    for( let i = 0; i< this.col_count - 1; i++ ){
+                        m.pct[i] = 100 * Math.round((m.cell_widths[i] + m.horizontal_margin) / m.total_width * factor) / factor;
+                        sum += m.pct[i];
+                    }
+                    m.pct[ this.col_count-1 ] = 100-sum;
+
+                    console.info( "FIXED", m.pct );
+                }
 
                 this.grid_measurements = m;
 
@@ -949,30 +1014,37 @@ FIXME: back-merge in list so we don't have multiple components
                 let right = area.scrollLeft + area.clientWidth + 20;
                 let sum = 0;
 
-                for( let i = 0; i< this.col_count-1; i += 2, first_col += 2 ){
-                    let w = m.cell_widths[i] + m.cell_widths[i+1] + (2*m.horizontal_margin);
-                    if( sum + w >= left ) break;
-                    padding_left += w;
-                    sum += w;
-                }
+                if( !this.fixed ){
 
-                for( last_col = first_col; sum < right && last_col< this.col_count; last_col++ ){
-                    sum += (m.cell_widths[last_col] + m.horizontal_margin);
-                }
-                last_col = Math.min( last_col, this.col_count-1 );
+                    for( let i = 0; i< this.col_count-1; i += 2, first_col += 2 ){
+                        let w = m.cell_widths[i] + m.cell_widths[i+1] + (2*m.horizontal_margin);
+                        if( sum + w >= left ) break;
+                        padding_left += w;
+                        sum += w;
+                    }
 
-                for( let i = last_col + 1; i< this.col_count; i++ ){
-                    padding_right += (m.cell_widths[i] + m.horizontal_margin);
-                }
+                    for( last_col = first_col; sum < right && last_col< this.col_count; last_col++ ){
+                        sum += (m.cell_widths[last_col] + m.horizontal_margin);
+                    }
+                    last_col = Math.min( last_col, this.col_count-1 );
 
-                cols.style.paddingLeft = padding_left + "px";
-                cols.style.paddingRight = padding_right + "px";
-                cols.style.minWidth = m.total_width + "px";
+                    for( let i = last_col + 1; i< this.col_count; i++ ){
+                        padding_right += (m.cell_widths[i] + m.horizontal_margin);
+                    }
+
+                    cols.style.paddingLeft = padding_left + "px";
+                    cols.style.paddingRight = padding_right + "px";
+                    cols.style.minWidth = m.total_width + "px";
+
+                }
+                else console.info( "Skip1", area.clientWidth, area.offsetWidth )
 
                 let height = area.clientHeight + 2 * buffer * m.line_height; 
                 let index = 0;
 
                 left = area.scrollLeft - padding_left;
+
+                console.info( "L", left );
 
                 if( this.column_headers ){
 
@@ -984,9 +1056,10 @@ FIXME: back-merge in list so we don't have multiple components
                         Polymer.dom( grid ).appendChild( this.header_row );
                     }
 
-                    this.header_row.render( this.selection, [], this.column_headers, m, -1, this.row_headers ? " " : null, this.row_header_width, first_col, last_col, left, true, this.resizeColumns );
+                    this.header_row.render( this.selection, [], this.column_headers, m, -1, this.row_headers ? " " : null, this.row_header_width, first_col, last_col, left, true, this.resizeColumns, this.fixed );
                     this.header_row.style.top = ( area.scrollTop - margin_top ) + "px";
                     this.header_row.style.display = null;
+                    //if( this.fixed ) this.header_row.style.width = area.clientWidth + "px";
                 }
                 else if( this.header_row ){
                     this.header_row.style.display = "none";
@@ -1000,8 +1073,9 @@ FIXME: back-merge in list so we don't have multiple components
                         this.nodes[index] = document.createElement( this.template );
                         Polymer.dom( grid ).appendChild( this.nodes[index] );
                     }
-                    this.nodes[index].render( this.selection, this.column_classes, this.data, m, first_row, this.row_headers, this.row_header_width, first_col, last_col, left );
+                    this.nodes[index].render( this.selection, this.column_classes, this.data, m, first_row, this.row_headers, this.row_header_width, first_col, last_col, left, false, false, this.fixed );
                     this.nodes[index].style.display = "flex";
+                    //if( this.fixed ) this.nodes[index].style.width = area.clientWidth + "px";
 
                     index++;
                     first_row++;
