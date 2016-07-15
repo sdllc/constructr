@@ -720,6 +720,9 @@ var history_panel = function(){
         let loaded = false;
         let query;
 
+        let markers = [];
+        let markerAnnotations = [];
+
         let update_history = function(){
 
             let x = shell.get_history(); // need a method for just 1 line
@@ -739,7 +742,8 @@ var history_panel = function(){
 			//inputStyle: "contenteditable",
             readOnly: true,
             cursorBlinkRate: 0,
-            //lineNumbers: true
+            lineNumbers: true,
+            gutters: ['history-gutter'],
 			mode: "r"
 		});
 
@@ -794,16 +798,33 @@ var history_panel = function(){
 			PubSub.publish( Constants.STACKED_PANE_REMOVE, panel );
         });
 
-        PubSub.subscribe( "history-menu", function( ch, arg ){
-            if( arg === "select-all" ) cm.execCommand( "selectAll" );
-            else if( arg === "clear-history" ){
-                shell.clearHistory();
-                cm.setValue("");
-            }
-        }); 
-
         panel.addEventListener( "contextmenu", function(e){
-			history_context_menu.popup(remote.getCurrentWindow());
+
+            let pos = cm.getDoc().getCursor();
+            let marked = !!markers[pos.line];
+            let template = [
+                { label: 'Copy', role: 'copy' },
+                { label: 'Select All', click: function(e){
+                    setImmediate( function(){
+                        cm.execCommand( "selectAll" );
+                    });
+                }},
+                { type: 'separator' },
+                { label: marked ? 'Remove Marker' : 'Add Marker', click: function(e){
+                    setMarker( pos.line, undefined, !marked );
+                }},
+                { type: 'separator' },
+                { label: 'Clear History', click: function(e){
+                    setImmediate( function(){
+                        shell.clearHistory();
+                        cm.setValue("");
+                    });
+                }}
+            ];
+
+            let menu = Menu.buildFromTemplate(template);
+			menu.popup(remote.getCurrentWindow());
+
         });
 
         panel.addEventListener( "filter-change", function(e){
@@ -817,6 +838,33 @@ var history_panel = function(){
         });
 
         HistorySearch.apply( cm );
+
+        let annotation = cm.annotateScrollbar("history-scrollbar-annotation");
+
+        let setMarker = function( line, gutter, marker ){
+            if( !marker ){
+                cm.setGutterMarker( line, "history-gutter", null );
+                markers[line] = false;
+                markerAnnotations = markerAnnotations.filter( function( ma ){
+                    return ma.from.line !== line;
+                });
+            }
+            else {
+                let x = document.createElement( "div" );
+                x.className = "history-gutter-marker";
+                cm.setGutterMarker( line, "history-gutter", x );
+                markers[line] = true;
+                markerAnnotations.push({
+                    from: { line: line, ch: 0 }, to: { line: line, ch: 1 }
+                });
+            }
+            markerAnnotations.sort( function(a, b){ return a.from.line - b.from.line; });
+            annotation.update(markerAnnotations);
+        };
+
+        cm.on( "gutterClick", function( instance, line, gutter, e ){
+            setMarker( line, gutter, !markers[line] );
+        });
 
         panel.$.content_area.addEventListener( "keydown", function(e){
 			if( e.keyCode === 70 && e.ctrlKey ){
@@ -2245,20 +2293,6 @@ var details_context_menu = Menu.buildFromTemplate([
 	{ label: 'Select All', click: function(e){
 		if( details_context_menu.$target ) details_context_menu.$target.selectAll();
 	}}
-]);
-
-/**
- * context menu for history pane
- */
-var history_context_menu = Menu.buildFromTemplate([
-	{ label: 'Copy', role: 'copy' },
-	{ label: 'Select All', click: function(e){
-        PubSub.publish( "history-menu", "select-all" );
-    }},
-    { type: 'separator' },
-    { label: 'Clear History', click: function(e){
-        PubSub.publish( "history-menu", "clear-history" );
-    }}
 ]);
 
 /**
