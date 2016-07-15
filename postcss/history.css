@@ -31,6 +31,6 @@
 }
 
 .history-scrollbar-annotation {
-    background: blue;
-    
+    background: rgba( 160, 200, 255, .75 );
+
 }

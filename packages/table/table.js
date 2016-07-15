@@ -327,10 +327,10 @@ module.exports = {
             if( opts.handled ) return false;
             opts.handled = true;
 
-            var opts = createInstance( opts.name, 100, "watch", opts.index );
-            opts.position = Number( core.Settings["table.panel.position"] || 3) || 3; 
-            opts.title = "Table view: " + opts.name;
-            PubSub.publish( core.Constants.STACKED_PANE_INSERT, opts );
+            var inst = createInstance( opts.name, 100, "watch", opts.index );
+            inst.position = Number( core.Settings["table.panel.position"] || 3) || 3; 
+            inst.title = "Table view: " + opts.name;
+            PubSub.publish( core.Constants.STACKED_PANE_INSERT, inst );
             return true;
 
         });

@@ -59,6 +59,8 @@ const RDATA = ".constructr-shell.rdata";
 const RESIZE_TIMEOUT = 50;
 const SCW_TIMEOUT = 500;
 const SPINNER_TIMEOUT = 250;
+const HISTORY_MAX = 1000;
+
 const LEARN_MORE_URL = 'https://constructr-project.com/shell';
 
 if( process.platform === "darwin" ){
@@ -722,6 +724,7 @@ var history_panel = function(){
 
         let markers = [];
         let markerAnnotations = [];
+        let removedLines = 0;
 
         let update_history = function(){
 
@@ -736,6 +739,37 @@ var history_panel = function(){
 
             cm.replaceRange( append, { line: ln, ch: text.length });
             if( atbottom ) cm.scrollIntoView( {line: ln+1, ch: 0 });
+
+            if( x.length > HISTORY_MAX ){
+
+                // remove the first line, then adjust all markers
+                cm.replaceRange( "", { line: 0, ch: 0 }, { line: 1, ch: 0 });
+
+                // preserve line numbers, session only
+                removedLines++;
+                cm.setOption( "firstLineNumber", 1+removedLines );
+
+                if( !markerAnnotations.length ) return;
+
+                markers = [];
+                let annotations_tmp = [];
+                markerAnnotations.forEach( function( a ){
+                    if( a.from.line > 0 ){
+                        let line = a.from.line-1;
+                        annotations_tmp.push({
+                            from: { ch: 0, line: line },
+                            to: { ch: 1, line: line }
+                        });
+                        setMarker( line, true, true );
+                    }
+                });
+
+                markerAnnotations = annotations_tmp;
+                annotation.update(markerAnnotations);
+
+            }
+
+
         };
 
         let cm = CodeMirror( function(elt){panel.appendChild( elt ); }, {
@@ -775,6 +809,7 @@ var history_panel = function(){
                     setTimeout( function(){
                         loaded = true;
                         let history = shell.get_history();
+                        if( history.length > HISTORY_MAX ) history = history.slice(-HISTORY_MAX);
                         cm.setValue(history.join("\n"));
                         if( history.length ) cm.scrollIntoView({ line: history.length-1, ch: 0 });
                     }, 1);
@@ -811,7 +846,7 @@ var history_panel = function(){
                 }},
                 { type: 'separator' },
                 { label: marked ? 'Remove Marker' : 'Add Marker', click: function(e){
-                    setMarker( pos.line, undefined, !marked );
+                    setMarker( pos.line, !marked );
                 }},
                 { type: 'separator' },
                 { label: 'Clear History', click: function(e){
@@ -841,7 +876,7 @@ var history_panel = function(){
 
         let annotation = cm.annotateScrollbar("history-scrollbar-annotation");
 
-        let setMarker = function( line, gutter, marker ){
+        let setMarker = function( line, marker, tollUpdates ){
             if( !marker ){
                 cm.setGutterMarker( line, "history-gutter", null );
                 markers[line] = false;
@@ -858,12 +893,14 @@ var history_panel = function(){
                     from: { line: line, ch: 0 }, to: { line: line, ch: 1 }
                 });
             }
-            markerAnnotations.sort( function(a, b){ return a.from.line - b.from.line; });
-            annotation.update(markerAnnotations);
+            if( !tollUpdates ){
+                markerAnnotations.sort( function(a, b){ return a.from.line - b.from.line; });
+                annotation.update(markerAnnotations);
+            }
         };
 
         cm.on( "gutterClick", function( instance, line, gutter, e ){
-            setMarker( line, gutter, !markers[line] );
+            setMarker( line, !markers[line] );
         });
 
         panel.$.content_area.addEventListener( "keydown", function(e){
@@ -1031,7 +1068,7 @@ var open_locals = function(){
                 // rank then sort, optionally reverse
                 let x = new Array( keys.length );
                 for( let i = 0; i< keys.length; i++ ){
-                    x[i] = [ table_data[sortindex][i], i ];
+                    x[i] = [ table_data[sortindex][i].toString().toLowerCase(), i ];
                 }
                 x.sort(function(a, b) {
                     return +(a[0] > b[0]) || +(a[0] === b[0]) - 1;
