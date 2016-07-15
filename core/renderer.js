@@ -63,6 +63,9 @@ const HISTORY_MAX = 1000;
 
 const LEARN_MORE_URL = 'https://constructr-project.com/shell';
 
+/**
+ * FIXME: this needs an explanation
+ */
 if( process.platform === "darwin" ){
     process.env.PATH = process.env.PATH + ":/usr/local/bin";
 }
