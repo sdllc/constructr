@@ -719,9 +719,17 @@ var history_panel = function(){
         let query;
 
         let update_history = function(){
-            let x = shell.get_history();
-            // if( x.length ) panel.appendContent( "\n" + x[x.length-1] );
-        }
+
+            let x = shell.get_history(); // need a method for just 1 line
+            let append = "\n" + x[x.length-1];
+            let ln = cm.lastLine();
+            let text = cm.getLine( ln );
+            let si = cm.getScrollInfo();
+            let atbottom = (( si.clientHeight + si.top ) === si.height );
+
+            cm.replaceRange( append, { line: ln, ch: text.length });
+            if( atbottom ) cm.scrollIntoView( {line: ln+1, ch: 0 });
+        };
 
         let cm = CodeMirror( function(elt){panel.appendChild( elt ); }, {
 			//inputStyle: "contenteditable",
@@ -761,6 +769,11 @@ var history_panel = function(){
                         let history = shell.get_history();
                         cm.setValue(history.join("\n"));
                         cm.scrollIntoView({ line: history.length-1, ch: 0 });
+                    }, 1);
+                }
+                else {
+                    setTimeout( function(){
+                        cm.refresh();
                     }, 1);
                 }
             },
@@ -804,6 +817,10 @@ var history_panel = function(){
                 console.info( "Ctrl+F" );
                 panel.$.query.focus();
 			}
+            else if( e.keyCode === 27 ){
+                panel.$.query.value = "";                
+                cm.clearSearch();
+            }
 		});
 
     }
