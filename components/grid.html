@@ -153,7 +153,7 @@ FIXME: back-merge in list so we don't have multiple components
 
             },
 
-            render: function( selection, column_classes, data, m, row, row_headers, label_width, first_col, last_col, left, header, resizable, fixed, hm ){
+            render: function( selection, column_classes, data, m, row, row_headers, label_width, first_col, last_col, left, header, resizable, fixed, hm, sort ){
 
                 let index = 0;
 
@@ -220,6 +220,15 @@ FIXME: back-merge in list so we don't have multiple components
                     cell.row = header ? -1 : row;
                     cell.col = i;
                     cell.style.height = m.max_height + "px";
+
+                    if( header && sort && sort.col === i ){
+                        console.info( "Sort marker @", i );
+                        let span = document.createElement( "span" );
+                        span.className = "header-column-sort-" + (sort.asc?"ascending":"descending");
+                        span.textContent = data[i].toString();
+                        cell.textContent = "";
+                        cell.appendChild( span );
+                    }
 
                     if( header && resizable && i ){
                         let target = document.createElement( "div" );
@@ -407,7 +416,9 @@ FIXME: back-merge in list so we don't have multiple components
                 selectRows: {
                     type: Boolean, 
                     value: false
-                }
+                },
+                sortColumn: -1, 
+                sortAscending: false
             },
 
             /*
@@ -761,6 +772,43 @@ FIXME: back-merge in list so we don't have multiple components
 
             },
 
+            sort: function( column, ascending ){
+
+                this.sortColumn = column;
+                this.sortAscending = ascending;
+
+                this.sort_internal();
+                this.refresh();
+            },
+
+            sort_internal: function(){
+
+                let rank = new Array( this.row_count );
+                let column = this.sortColumn;
+                this.rank = new Array( this.row_count );
+
+                if( column >= 0 ){
+                    if( this.column_classes && 
+                        ( this.column_classes[column] === "string" || this.column_classes[column] === "factor" )){
+                        for( let i = 0; i< this.row_count; i++ ){
+                            rank[i] = [ this.data[column][i].toString().toLowerCase(), i ];
+                        }
+                    }
+                    else {
+                        for( let i = 0; i< this.row_count; i++ ){
+                            rank[i] = [ this.data[column][i], i ];
+                        }
+                    }
+                    rank.sort( function( a, b ){ return ( a[0] < b[0] ? -1 : (a[0] > b[0] ? 1 : 0 )); });
+                    if( this.sortAscending ) rank.reverse();
+                    for( let i = 0; i< this.row_count; i++ ) this.rank[i] = rank[i][1];
+                }
+                else {
+                    for( let i = 0; i< this.row_count; i++ ) this.rank[i] = i;
+                }
+
+            },
+
             update: function(opts, force, preserve_selection ){
 
                 // force boolean
@@ -829,6 +877,8 @@ FIXME: back-merge in list so we don't have multiple components
 
                 this.$['grid-row-header-background'].style.display = 
                     this.row_headers ? "block" : "none";
+
+                this.sort_internal();
 
                 this.refresh();
             },
@@ -1053,7 +1103,7 @@ FIXME: back-merge in list so we don't have multiple components
                         Polymer.dom( grid ).appendChild( this.header_row );
                     }
 
-                    this.header_row.render( this.selection, [], this.column_headers, m, -1, this.row_headers ? " " : null, this.row_header_width, first_col, last_col, left, true, this.resizeColumns, this.fixed, this.header_measurements );
+                    this.header_row.render( this.selection, [], this.column_headers, m, -1, this.row_headers ? " " : null, this.row_header_width, first_col, last_col, left, true, this.resizeColumns, this.fixed, this.header_measurements, { col: this.sortColumn, asc: this.sortAscending });
                     this.header_row.style.top = ( area.scrollTop - margin_top ) + "px";
                     this.header_row.style.display = null;
                     //if( this.fixed ) this.header_row.style.width = area.clientWidth + "px";
@@ -1070,7 +1120,7 @@ FIXME: back-merge in list so we don't have multiple components
                         this.nodes[index] = document.createElement( this.template );
                         Polymer.dom( grid ).appendChild( this.nodes[index] );
                     }
-                    this.nodes[index].render( this.selection, this.column_classes, this.data, m, first_row, this.row_headers, this.row_header_width, first_col, last_col, left, false, false, this.fixed, this.header_measurements );
+                    this.nodes[index].render( this.selection, this.column_classes, this.data, m, this.rank[first_row], this.row_headers, this.row_header_width, first_col, last_col, left, false, false, this.fixed, this.header_measurements, null );
                     this.nodes[index].style.display = "flex";
                     //if( this.fixed ) this.nodes[index].style.width = area.clientWidth + "px";
 

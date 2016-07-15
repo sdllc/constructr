@@ -601,6 +601,7 @@ var open_watch = function(){
             e.preventDefault();
             let row = e.target.row;
             if( typeof row === "undefined" ) return;
+            if( e.target.className.match( /header/ )) return;
 
             watches[row].handled = false;
             let rslt = Hooks.exec( "watches_click", watches[row] );
@@ -611,7 +612,25 @@ var open_watch = function(){
 
             show_details( watches[row] );
         };
+
+        let doubleclick = function(e){
+
+            e.stopPropagation();
+            e.preventDefault();
+
+            if( !e.target.className.match( /header/ )) return;
+            let col = e.target.col;
+            if( typeof col === "undefined" ) return;
+
+            let ascending = false;
+            if( panel.node.sortColumn === col ) ascending = !panel.node.sortAscending;
+
+            panel.node.sort( col, ascending );
+
+        };
+
         panel.addEventListener( "click", click );
+        panel.addEventListener( "dblclick", doubleclick );
 
         panel.addEventListener( "keydown", function(e){
             if( e.keyCode === 46 ){ // delete
@@ -944,9 +963,8 @@ var open_locals = function(){
         panel.header.addEventListener( "close", closelistener );
         panel.appendChild( panel.header );
 
-        let keys, data, sortindex = -1, sortorder = 1;
+        let keys, data;
         let indexes = null;
-        let table_data; // cached for sorting
 
         let click = function(e){
 
@@ -993,14 +1011,13 @@ var open_locals = function(){
             e.preventDefault();
 
             if( !e.target.className.match( /header/ )) return;
-
             let col = e.target.col;
-            if( sortindex === col ) sortorder = -sortorder;
-            else {
-                sortindex = col;
-                sortorder = 1;
-            }
-            push_data( true );
+            if( typeof col === "undefined" ) return;
+
+            let ascending = false;
+            if( panel.node.sortColumn === col ) ascending = !panel.node.sortAscending;
+
+            panel.node.sort( col, ascending );
 
         };
 
@@ -1061,53 +1078,6 @@ var open_locals = function(){
             delete( locals_registry.locals ); 
         };
 
-        let push_data = function( resort ){
-
-            if( resort && sortindex >= 0 && keys.length > 0 ){
-
-                // rank then sort, optionally reverse
-                let x = new Array( keys.length );
-                for( let i = 0; i< keys.length; i++ ){
-                    x[i] = [ table_data[sortindex][i].toString().toLowerCase(), i ];
-                }
-                x.sort(function(a, b) {
-                    return +(a[0] > b[0]) || +(a[0] === b[0]) - 1;
-                });
-                if( sortorder < 0 ) x.reverse();
-
-                // now reorder data
-                let tmp = new Array(table_data.length);
-                for( let j = 0; j< table_data.length; j++ ){
-                    tmp[j] = new Array( keys.length );
-                }
-
-                // faster way?
-                for( let j = 0; j< table_data.length; j++ ){
-                    for( let i = 0; i< keys.length; i++ ){
-                        tmp[j][i] = table_data[j][x[i][1]];
-                    }
-                }
-
-                // set
-                table_data = tmp;
-
-                // resort keys for click map
-                tmp = new Array( keys.length );
-                for( let i = 0; i< keys.length; i++ ) tmp[i] = keys[x[i][1]];
-                keys = tmp;
-
-            }
-            else indexes = null;
-
-            panel.node.update({
-                fixed: true,
-                data: table_data,
-                column_classes: [ "string", "string", "left" ],
-                column_headers: [ Messages.FIELD, Messages.CLASS, Messages.VALUE ]
-            })
-
-        }
-
         let on_locals = function(msg, locals){
 		
 			// FIXME: don't send in empty data; OR, handle empty data in a more useful way.
@@ -1118,7 +1088,8 @@ var open_locals = function(){
 			
 			keys = locals.$data.fields && locals.$data.fields.$names ? locals.$data.fields.$names : [];
 			data = locals.$data.fields && locals.$data.fields.$data ? locals.$data.fields.$data : {};
-            table_data = [ keys, Array(keys.length), Array(keys.length) ];
+
+            let table_data = [ keys, Array(keys.length), Array(keys.length) ];
 
             for( let i = 0; i< keys.length; i++ ){
                 let key = keys[i];
@@ -1131,7 +1102,12 @@ var open_locals = function(){
                 table_data[2][i] = text;
             };
 
-            push_data( true );
+            panel.node.update({
+                fixed: true,
+                data: table_data,
+                column_classes: [ "string", "string", "left" ],
+                column_headers: [ Messages.FIELD, Messages.CLASS, Messages.VALUE ]
+            })
 
 		};
 
@@ -2197,7 +2173,6 @@ document.addEventListener("DOMContentLoaded", function(event) {
                 open_test_area();
             });
             */
-
 		}
 
 		if( init_status && init_status.success ){

@@ -77,3 +77,21 @@ grid-row:nth-child(odd) .table-cell:not(.selected) {
     min-width: 3px;
     min-height: 3px;
 }
+
+/* === sort arrows ============================== */
+
+.header-column-sort-ascending::after {
+    content: "arrow_drop_up";
+    padding-left: .1em;
+    font-family: 'Material Icons';
+    position: absolute;
+    opacity: .5;
+}
+
+.header-column-sort-descending::after {
+    content: "arrow_drop_down";
+    padding-left: .1em;
+    font-family: 'Material Icons';
+    position: absolute;
+    opacity: .5;
+}
