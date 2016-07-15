@@ -39,7 +39,9 @@ const remote = electron.remote;
 const dialog = remote.dialog;
 const Menu = remote.Menu;
 const MenuItem = remote.MenuItem;
+
 const Shell = require( "cmjs-shell" ); 
+//const Shell = require( "../../cmjs-shell/shell.js");
 
 const ExtendR = require( "./extendR.js");
 const PackageManager = require( "./package-manager.js" );
@@ -721,7 +723,9 @@ var history_panel = function(){
         let update_history = function(){
 
             let x = shell.get_history(); // need a method for just 1 line
-            let append = "\n" + x[x.length-1];
+            let append = x[x.length-1];
+            if( x.length !== 1 ) append = "\n" + append;
+
             let ln = cm.lastLine();
             let text = cm.getLine( ln );
             let si = cm.getScrollInfo();
@@ -768,7 +772,7 @@ var history_panel = function(){
                         loaded = true;
                         let history = shell.get_history();
                         cm.setValue(history.join("\n"));
-                        cm.scrollIntoView({ line: history.length-1, ch: 0 });
+                        if( history.length ) cm.scrollIntoView({ line: history.length-1, ch: 0 });
                     }, 1);
                 }
                 else {
@@ -790,8 +794,12 @@ var history_panel = function(){
 			PubSub.publish( Constants.STACKED_PANE_REMOVE, panel );
         });
 
-        PubSub.subscribe( "history-select-all", function(){
-            cm.execCommand( "selectAll" );
+        PubSub.subscribe( "history-menu", function( ch, arg ){
+            if( arg === "select-all" ) cm.execCommand( "selectAll" );
+            else if( arg === "clear-history" ){
+                shell.clearHistory();
+                cm.setValue("");
+            }
         }); 
 
         panel.addEventListener( "contextmenu", function(e){
@@ -2245,7 +2253,11 @@ var details_context_menu = Menu.buildFromTemplate([
 var history_context_menu = Menu.buildFromTemplate([
 	{ label: 'Copy', role: 'copy' },
 	{ label: 'Select All', click: function(e){
-        PubSub.publish( "history-select-all" );
+        PubSub.publish( "history-menu", "select-all" );
+    }},
+    { type: 'separator' },
+    { label: 'Clear History', click: function(e){
+        PubSub.publish( "history-menu", "clear-history" );
     }}
 ]);
 
