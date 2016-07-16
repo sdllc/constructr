@@ -86,6 +86,7 @@ grid-row:nth-child(odd) .table-cell:not(.selected) {
     font-family: 'Material Icons';
     position: absolute;
     opacity: .5;
+    font-size: 1.2em;
 }
 
 .header-column-sort-descending::after {
@@ -94,4 +95,5 @@ grid-row:nth-child(odd) .table-cell:not(.selected) {
     font-family: 'Material Icons';
     position: absolute;
     opacity: .5;
+    font-size: 1.2em;
 }

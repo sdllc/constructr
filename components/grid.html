@@ -100,6 +100,10 @@ FIXME: back-merge in list so we don't have multiple components
                 top: 0px;
             }
 
+            .header-column-sort {
+                pointer-events: none;
+            }
+
         </style>
 
     </template>
@@ -222,12 +226,11 @@ FIXME: back-merge in list so we don't have multiple components
                     cell.style.height = m.max_height + "px";
 
                     if( header && sort && sort.col === i ){
-                        console.info( "Sort marker @", i );
                         let span = document.createElement( "span" );
-                        span.className = "header-column-sort-" + (sort.asc?"ascending":"descending");
+                        span.className = "header-column-sort header-column-sort-" + (sort.asc?"ascending":"descending");
                         span.textContent = data[i].toString();
                         cell.textContent = "";
-                        cell.appendChild( span );
+                        Polymer.dom(cell).appendChild( span );
                     }
 
                     if( header && resizable && i ){

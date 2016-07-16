@@ -237,6 +237,7 @@ var tip_function = function( text, pos ){
 	
 	var cmd = "utils:::.win32consoleCompletion('" + text + "', " + pos + "); utils:::.CompletionEnv";
 	R.queued_internal( cmd, "autocomplete" ).then( function(obj){
+
 		if( obj.response && obj.response['function.signature'] ){
 			shell.show_function_tip( obj.response['function.signature'] );
 		}
@@ -816,10 +817,6 @@ var history_panel = function(){
 			},
             _onHide: function(){ 
                 this.visible = false; 
-                if( token ) PubSub.unsubscribe(token);
-                if( token2 ) PubSub.unsubscribe(token2);
-                token = null;
-                token2 = null;
             },
             _onShow: function(){ 
                 this.visible = true; 
