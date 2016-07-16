@@ -333,11 +333,11 @@ var exec_function = function( original_cmd, callback ){
 			Hooks.exec( "update" );
 		}
 	
-		PubSub.publish( "exec_complete", [ callback, rslt.data ]);
+		PubSub.publish( "exec_complete", [ callback, rslt.data, original_cmd ]);
 		
 	}).catch( function( rslt ){
 		console.warn( "exec_function rejected", rslt );
-		PubSub.publish( "exec_complete", [ callback, rslt ]);
+		PubSub.publish( "exec_complete", [ callback, rslt, original_cmd ]);
 	});
 
 };
@@ -749,11 +749,16 @@ var history_panel = function(){
         let markerAnnotations = [];
         let removedLines = 0;
 
-        let update_history = function(){
+        let update_history = function( ch, args ){
 
-            let x = shell.get_history(); // need a method for just 1 line
-            let append = x[x.length-1];
-            if( x.length !== 1 ) append = "\n" + append;
+            let cmd = args[2].join('\n').trim();
+            if( !cmd.length ) return;
+
+            //let x = shell.get_history(); // need a method for just 1 line
+            //let append = x[x.length-1];
+            //if( x.length !== 1 ) append = "\n" + append;
+            let count = cm.getDoc().lineCount();
+            let append = count ? "\n" + cmd : cmd;
 
             let ln = cm.lastLine();
             let text = cm.getLine( ln );
@@ -763,7 +768,7 @@ var history_panel = function(){
             cm.replaceRange( append, { line: ln, ch: text.length });
             if( atbottom ) cm.scrollIntoView( {line: ln+1, ch: 0 });
 
-            if( x.length > HISTORY_MAX ){
+            if( count >= HISTORY_MAX ){
 
                 // remove the first line, then adjust all markers
                 cm.replaceRange( "", { line: 0, ch: 0 }, { line: 1, ch: 0 });
