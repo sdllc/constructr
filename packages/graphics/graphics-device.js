@@ -531,7 +531,6 @@ function show_graphics_panel( core ){
 			panel.classList.add( "panel" );
 			
 			panel.addEventListener( "close", function(e){
-				console.info( "close graphics" );
 				PubSub.publish( core.Constants.STACKED_PANE_REMOVE, panel );
 			});
 			
@@ -557,7 +556,10 @@ function show_graphics_panel( core ){
 			
 		}
 		
-		PubSub.publish( core.Constants.STACKED_PANE_SHOW, [ panel, 1 ]);
+        let pos = core.Settings['graphics.panel.position'];
+        if( !pos || ( typeof pos !== "object" )) pos = { column: 0, row: 1 };
+
+		PubSub.publish( core.Constants.STACKED_PANE_SHOW, { node: panel, column: pos.column, row: pos.row });
 		resolve( panel );
 		
 	});
