@@ -159,8 +159,6 @@ module.exports = {
 			panel._onHide = opts.onHide || function(){};
 			panel._onUnload = opts.onUnload || function(){};
 
-            console.info( "CHECL", opts.position );
-
             let pos = opts.position || { row: 0, column: 0 };
             if( typeof pos !== "object" ) pos = { row: 0, column: 0 };
 
