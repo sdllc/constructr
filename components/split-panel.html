@@ -464,6 +464,17 @@
         removePane: function( index ){
 
             let children = Polymer.dom(this).children;
+
+            // allow remove by ID
+            if( typeof index === "string" ){
+                for( let i = 0; i< children.length; i++ ){
+                    if( children[i].id === index ){
+                        index = i;
+                        break;
+                    }
+                }
+            }
+
             if( index < 0 || index >= children.length ) return; // invalid index
         
             // how large is target
@@ -472,18 +483,24 @@
             
             // remove
             Polymer.dom(this).removeChild( children[index] );
-            
-            // resize
-            children = Polymer.dom(this).children;
-            let remainder = 100;
-            
-            for( let i = 0; i< children.length - 1; i++ ){
-                let s = children[i].split; 
-                children[i].split = Math.round( 100 * s / balance );
-                // console.info( "panel", i, s, "->", children[i].split );
-                remainder -= children[i].split;
+
+            // this screws up if width is 0; it's also unecessary
+            if( target !== 0 ){
+
+                // resize
+                children = Polymer.dom(this).children;
+                let remainder = 100;
+                
+                for( let i = 0; i< children.length - 1; i++ ){
+                    let s = children[i].split; 
+                    children[i].split = Math.round( 100 * s / balance );
+                    // console.info( "panel", i, s, "->", children[i].split );
+                    remainder -= children[i].split;
+                }
+                if( children.length ) children[children.length-1].split = remainder;
+
             }
-            if( children.length ) children[children.length-1].split = remainder;
+
             Polymer.dom(this).flush(); 
 
             // fix listeners			

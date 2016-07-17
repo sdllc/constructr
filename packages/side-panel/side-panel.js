@@ -24,13 +24,36 @@
 
 const PubSub = require( "pubsub-js" );
 
-var SidePanel = function( parent_selector, panel_id, cache ){
+const sidePanels = [];
+const widthCache = [];
+
+const PARENT_ID = "shell-layout";
+const CACHE_NODE_ID = "orphans";
+
+
+var SidePanel = function( parent_selector, target_index, panel_id, cache ){
 
 	let history = [];
     let parent_node = document.getElementById(parent_selector) || 
         document.querySelector( parent_selector );
 
-    let node = parent_node.insertPane(0);
+    // target index is the desired index of the panel, but previous indexes
+    // may not exist.  so we need to figure out what exists, and then use that
+    // to determine an insert index.
+    let insert_index = -1;
+    let sps = parent_node.querySelectorAll( "split-pane" );
+    for( let i = 0; i< sps.length; i++ ){
+        let id = sps[i].id;
+        let m = id.match( /side-panel-(\d+)$/);
+        if(m && m[1] > target_index ){
+            insert_index = i;
+            break;
+        }
+    }
+
+    // console.info( "inserting at index", insert_index );
+
+    let node = parent_node.insertPane(0, insert_index);
     if( panel_id ) node.id = panel_id;
 
 	let orphans = document.getElementById(cache) || document.querySelector(cache);
@@ -67,13 +90,16 @@ var SidePanel = function( parent_selector, panel_id, cache ){
 		cached_size = node.split;
 		
 		if( adding ) return; // don't need to close it
-				
+
+        widthCache[target_index] = cached_size;
+        
 		var parent = node.parentNode;
 		while( parent && parent.tagName !== "SPLIT-PANEL" ) parent = parent.parentNode;
 		if( parent ){
 			parent.setSize({
 				target: node,
 				size: 0,
+                take_from: 0,
 				hide: true
 			});
 		}
@@ -132,7 +158,9 @@ var SidePanel = function( parent_selector, panel_id, cache ){
 			if( parent ){
 				parent.setSize({
 					target: node,
-					size: cached_size ? cached_size : 33
+                    take_from: 0,
+					//size: cached_size ? cached_size : 33
+                    size: widthCache[target_index] ? widthCache[target_index] : 33
 				}).then( function(){
 					if( content._onShow ) content._onShow.call(this);
 					if( opts.shown ) opts.shown.call(this);
@@ -155,10 +183,6 @@ var SidePanel = function( parent_selector, panel_id, cache ){
 
 };
 
-const sidePanels = [];
-const PARENT_ID = "shell-layout";
-const CACHE_NODE_ID = "orphans";
-
 module.exports = {
 	init: function( core ){
 
@@ -167,25 +191,18 @@ module.exports = {
 			SIDE_PANEL_POP: "side-panel-pop"
 		});
 
-		//sidePanels[0] = new SidePanel("#side-panel", "#orphans");
-        sidePanels[0] = new SidePanel( PARENT_ID, "side-panel-0", CACHE_NODE_ID );
-
 		PubSub.subscribe( core.Constants.SIDE_PANEL_ATTACH, function(channel, opts){
-            let panel = sidePanels[0];
-            if( typeof opts.panel === "number" ){
-                if( !sidePanels[opts.panel] ) sidePanels[opts.panel] = 
-                    new SidePanel( PARENT_ID, "side-panel-" + opts.panel, CACHE_NODE_ID );
-                panel = sidePanels[opts.panel];
-            }
-			panel.attach(opts);
+            let index = opts.panel || 0;
+            if( !sidePanels[index] ) sidePanels[index] = new SidePanel( PARENT_ID, index, "side-panel-" + index, CACHE_NODE_ID );
+            sidePanels[index].attach(opts);
 		});
 
-		PubSub.subscribe( core.Constants.SIDE_PANEL_POP, function(channel, node){
-            let panel = sidePanels[0];
-            if( typeof opts.panel === "number" ){
-                panel = sidePanels[opts.panel];
-            }
-			panel.pop();
+		PubSub.subscribe( core.Constants.SIDE_PANEL_POP, function(channel, opts){
+            let index = opts ? opts.panel || 0 : 0;
+            if( !sidePanels[index] ) return; 
+			sidePanels[index].pop();
+            document.getElementById( PARENT_ID ).removePane( "side-panel-" + index );
+            sidePanels[index] = null;
 		})
 
 		return Promise.resolve();

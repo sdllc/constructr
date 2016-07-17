@@ -464,7 +464,7 @@ var show_details = function(elt){
 		panel.setContent( elt.fulltext );
 	}
 	
-	PubSub.publish( Constants.STACKED_PANE_SHOW, [ panel, 3 ]);
+	PubSub.publish( Constants.STACKED_PANE_SHOW, { node: panel, row: 3, column: 0 });
 	
 };
 
@@ -729,12 +729,12 @@ var open_watch = function(){
 		
 
     }
-	PubSub.publish( Constants.STACKED_PANE_SHOW, [ panel, 2 ]);
+	PubSub.publish( Constants.STACKED_PANE_SHOW, { node: panel, row: 2 });
 	get_watches();
      
 }
 
-var history_panel = function(){
+var open_history_panel = function(){
 
 	var panel = document.getElementById( "history-panel" );
 	if( !panel ) {
@@ -942,9 +942,8 @@ var history_panel = function(){
 
     }
 
-    // panel.setContent(shell.get_history().join("\n"));
+    PubSub.publish( Constants.STACKED_PANE_SHOW, { node: panel, row: 3, column: 0 });
 
-    PubSub.publish( Constants.STACKED_PANE_SHOW, [ panel, 3 ]);
 }
 
 var open_locals = function(){
@@ -1120,7 +1119,7 @@ var open_locals = function(){
 
 	}
 
-	PubSub.publish( Constants.STACKED_PANE_SHOW, [ panel, 2 ]);
+	PubSub.publish( Constants.STACKED_PANE_SHOW, { node: panel, row: 2, column: 0 });
 	get_locals();
 
 };
@@ -2297,7 +2296,7 @@ PubSub.subscribe( "menu-click", function(){
 		quit();
 		break;
     case "history":
-        history_panel();
+        open_history_panel();
         break;
 	default:
 		console.warn( "Unhandled menu command", data.item.message );

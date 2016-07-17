@@ -24,51 +24,60 @@
 
 const PubSub = require( "pubsub-js" );
 
+const stackedPanels = []; 
+
+const create_stacked_pane = function( id ){
+
+	let stacked = document.createElement( "stacked-panel" );
+    stacked.setAttribute( "data-preserve", true );
+
+    Object.assign( stacked, {
+        id: id || "stacked-panel", 
+        hidden: false,
+        _onShow: function(){
+            if( stacked.hidden ){
+                stacked.hidden = false;
+                stacked.signal_children( !stacked.hidden );
+            }
+        },
+        _onHide: function(){
+            if( !stacked.hidden ){
+                stacked.hidden = true;
+                stacked.signal_children( !stacked.hidden );
+            }
+        },
+        _onUnload: function(){
+
+        }
+    });
+
+    return stacked;
+
+};
+
 /**
  * open the stacked ("tools") pane.  if arguments are passed to
  * this function (beyond core), it will pass them to the attach() 
  * method.
  */
-const open_stacked_pane = function( core, args ){
+const open_stacked_pane = function( core, opts ){
 
-	let stacked = document.getElementById( "stacked-panel" );
+    let id = opts.column;
+    let stacked = stackedPanels[id]; 
+    if( !stacked ) stacked = stackedPanels[id] = create_stacked_pane( "stacked-panel-" + id );
 
-	if( !stacked ){
-		stacked = document.createElement( "stacked-panel" );
-		stacked.setAttribute( "data-preserve", true );
-		Object.assign( stacked, {
-			id: "stacked-panel", 
-			hidden: false,
-			_onShow: function(){
-				if( stacked.hidden ){
-					stacked.hidden = false;
-					stacked.signal_children( !stacked.hidden );
-				}
-			},
-			_onHide: function(){
-				if( !stacked.hidden ){
-					stacked.hidden = true;
-					stacked.signal_children( !stacked.hidden );
-				}
-			},
-			_onUnload: function(){
+	PubSub.publish( core.Constants.SIDE_PANEL_ATTACH, { node: stacked, panel: id });
 
-			}
-		});
-	}
-	
-	PubSub.publish( core.Constants.SIDE_PANEL_ATTACH, { node: stacked });
+    // args is [node, position].  cache the panel ID so 
+    // we can remove it without needing to know where it is
+    opts.node.__stacked_pane_id = id;
 
-	if( args ){
-		let x = stacked.attach.apply( stacked, args );
-		if( x ){
-			var a = x.getAttribute( "data-preserve" );
-			if( a && a !== "false" ){
-				document.getElementById( "orphans" ).appendChild(x);
-			}
-			else if( x._onUnload ) x._onUnload.call(this);
-		}
-	}
+    let x = stacked.attach.call( stacked, opts.node, opts.row );
+    if( x ){
+        var a = x.getAttribute( "data-preserve" );
+        if( a && a !== "false" ) document.getElementById( "orphans" ).appendChild(x);
+        else if( x._onUnload ) x._onUnload.call(this);
+    }
 
 	return stacked;
 };
@@ -77,17 +86,18 @@ const open_stacked_pane = function( core, args ){
  * remove a sub-panel from the stacked ("tools") pane.  if that
  * was the last panel in the stacked pane, close it.
  */
-const remove_from_stacked_pane = function(core, node){
+const remove_from_stacked_pane = function( id, core, node){
 
-	let stacked = document.getElementById( "stacked-panel" );
+    let stacked = stackedPanels[id]; 
 	if( !stacked ) return;	
+
 	stacked.remove( node );
 	if( node.hasAttribute( "data-preserve" )
 		&& node.getAttribute( "data-preserve" ) !== "false" ){
 		let cache = document.getElementById( "orphans" );
 		cache.appendChild( node );
 	}
-	if( stacked.is_empty()) PubSub.publish( core.Constants.SIDE_PANEL_POP );
+	if( stacked.is_empty()) PubSub.publish( core.Constants.SIDE_PANEL_POP, { panel: id });
 	
 };
 
@@ -103,16 +113,30 @@ module.exports = {
 
 		// remove node
 		PubSub.subscribe( core.Constants.STACKED_PANE_REMOVE, function( channel, node ){
-			remove_from_stacked_pane( core, node );
+            let id = node.__stacked_pane_id || 0;
+			remove_from_stacked_pane( id, core, node );
 		});
 
 		// open stacked pane, and optionally add node
 		PubSub.subscribe( core.Constants.STACKED_PANE_SHOW, function( channel, opts ){
+
+            // support old style, but convert
+            if( Array.isArray( opts )){
+                opts = {
+                    node: opts[0],
+                    row: opts[1],
+                    column: opts[2]
+                };
+            }
+
 			open_stacked_pane.call( this, core, opts );
 		});
 
 		// create a sub-panel and attach a node.  same as show, except 
 		// you don't have to build the panel.
+        //
+        // FIXME: deprecate this.  AFAIK the only one using this right now is table 
+        //
 		PubSub.subscribe( core.Constants.STACKED_PANE_INSERT, function( channel, opts ){
 
 			let panel = document.createElement( "div" );
@@ -123,7 +147,8 @@ module.exports = {
 				
 			var closelistener = function(){
 				header.removeEventListener( "close", closelistener );
-				remove_from_stacked_pane( core, panel );
+                let id = panel.__stacked_pane_id || 0;
+				remove_from_stacked_pane( id, core, panel );
 			};
 
 			header.addEventListener( "close", closelistener );
@@ -134,7 +159,7 @@ module.exports = {
 			panel._onHide = opts.onHide || function(){};
 			panel._onUnload = opts.onUnload || function(){};
 
-			open_stacked_pane( core, [ panel, opts.position || 0 ]);
+			open_stacked_pane( core, { node: panel, row: opts.position || 0, column: opts.panel_id || 0 });
 
 		});
 
