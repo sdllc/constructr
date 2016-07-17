@@ -24,13 +24,13 @@
 
 const PubSub = require( "pubsub-js" );
 
-var SidePanel = function( selector, cache ){
+var SidePanel = function( parent_selector, panel_id, cache ){
 
-	var history = [];
-	var node = document.querySelector(selector);
-	var orphans = document.querySelector(cache);
-
-	var cached_size = 0;
+	let history = [];
+    let parent_node = document.querySelector( parent_selector );
+    let node = parent_node.insertPane(0);
+	let orphans = document.querySelector(cache);
+	let cached_size = 0;
 
 	this.pop = function( adding ){
 
@@ -151,7 +151,7 @@ var SidePanel = function( selector, cache ){
 
 };
 
-var sidePanel = null;
+var sidePanels = [];
 
 module.exports = {
 	init: function( core ){
@@ -161,14 +161,23 @@ module.exports = {
 			SIDE_PANEL_POP: "side-panel-pop"
 		});
 
-		sidePanel = new SidePanel("#side-panel", "#orphans");
+		//sidePanels[0] = new SidePanel("#side-panel", "#orphans");
+        sidePanels[0] = new SidePanel("#shell-layout", "#orphans");
 
 		PubSub.subscribe( core.Constants.SIDE_PANEL_ATTACH, function(channel, opts){
-			sidePanel.attach(opts);
+            if( opts.panel ){
+                if( typeof opts.panel === "number" ) sidePanels[opts.panel].attach(opts);
+                else opts.panel.attach(opts);
+            }
+			else sidePanels[0].attach(opts);
 		});
 
 		PubSub.subscribe( core.Constants.SIDE_PANEL_POP, function(channel, node){
-			sidePanel.pop();
+            if( opts.panel ){
+                if( typeof opts.panel === "number" ) sidePanels[opts.panel].pop();
+                else opts.panel.pop();
+            }
+			else sidePanels[0].pop();
 		})
 
 		return Promise.resolve();

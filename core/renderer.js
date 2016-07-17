@@ -1537,9 +1537,6 @@ var init_r = function(opts = {}){
 		PubSub.publish(Constants.SHELL_MESSAGE, [ msg.toString(), "shell-piped-stream", true ]); // FIXME: err class
 	});
 	
-	// use the bus for things that have multiple listeners and 
-	// may be ephemeral
-
 	// prefs
 	R.on('preferences', function(msg){
 		if( msg.$data && msg.$data.KEY ){
@@ -2028,7 +2025,7 @@ document.addEventListener("DOMContentLoaded", function(event) {
 	// buffered resize. we err on the side of being slow (vs. lots of calls)
 	window._resize_timeout = null;
 	window.addEventListener( "resize", function(e){
-        console.info( "publish resize" );
+//        console.info( "publish resize" );
 		PubSub.publish( "resize", e );
 		if( _resize_timeout ) window.clearTimeout( _resize_timeout );
 		_resize_timeout = window.setTimeout( resize_panes, RESIZE_TIMEOUT );
