@@ -464,7 +464,11 @@ var show_details = function(elt){
 		panel.setContent( elt.fulltext );
 	}
 	
-	PubSub.publish( Constants.STACKED_PANE_SHOW, { node: panel, row: 3, column: 0 });
+    let pos = Settings["details.panel.position"];
+    if( !pos ) pos = { row: 3, column: 0 };
+    else if( typeof pos === "number" ) pos = { row: pos, column: 0 };
+
+	PubSub.publish( Constants.STACKED_PANE_SHOW, { row: pos.row, column: pos.column, node: panel });
 	
 };
 
@@ -942,7 +946,10 @@ var open_history_panel = function(){
 
     }
 
-    PubSub.publish( Constants.STACKED_PANE_SHOW, { node: panel, row: 3, column: 0 });
+    let pos = Settings["history.panel.position"];
+    if( !pos || ( typeof pos !== "object" )) pos = { row: 5, column: 0 };
+
+    PubSub.publish( Constants.STACKED_PANE_SHOW, { node: panel, row: pos.row, column: pos.column });
 
 }
 
@@ -1540,7 +1547,9 @@ var init_r = function(opts = {}){
 	R.on('preferences', function(msg){
 		if( msg.$data && msg.$data.KEY ){
 			let val = msg.$data.VALUE;
-			if( typeof val === "object" ){
+
+            // NOTE: null is an object
+			if( val && typeof val === "object" ){
                 val = val.$data;
                 if( val.$type === "list" ) val = val.$data;
             }
@@ -1551,10 +1560,10 @@ var init_r = function(opts = {}){
 	// FIXME: format locals like watch, below -- this makes sense
 
 	R.on('locals', function(msg){
-		// Bus.emit( "locals", msg );
 		PubSub.publish( "locals", msg );
 	});
 
+    // R sends notification when a watch is set so we can open the panel
     R.on('add-watch', function(){
         open_watch();
     });

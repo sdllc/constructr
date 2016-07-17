@@ -262,6 +262,16 @@ module.exports = {
 			updateData();
 		});
 
+        const show = function(opts){
+            let pos = core.Settings["table.panel.position"];
+            if( !pos ) pos = core.Settings["details.panel.position"];
+            if( !pos ) pos = { row: 3, column: 0 };
+            else if( typeof pos === "number" ) pos = { row: pos, column: 0 };
+            else if( typeof pos !== "object" ) pos = { row: 3, column: 0 };
+            opts.position = { row: pos.row, column: pos.column };
+            PubSub.publish( core.Constants.STACKED_PANE_INSERT, opts );
+        };
+
         /*
         core.Hooks.install( "preferences_panel", function(){
             console.info( "hook; tpp " + Settings["table.panel.position"]);
@@ -278,9 +288,8 @@ module.exports = {
 			label: "View table",
 			click: function( menuitem ){
 				var opts = createInstance( menu_target, 100, menuitem.menutype, menu_index );
-				opts.position = Number( core.Settings["table.panel.position"] || 3) || 3; 
 				opts.title = "Table view: " + menu_target;
-				PubSub.publish( core.Constants.STACKED_PANE_INSERT, opts );
+				show( opts );
 			}
 		});
 
@@ -304,9 +313,9 @@ module.exports = {
             opts.handled = true;
 
             var inst = createInstance( opts.name, 100, "locals", 0 );
-            inst.position = Number( core.Settings["table.panel.position"] || 3) || 3; 
             inst.title = "Table view: " + opts.name;
-            PubSub.publish( core.Constants.STACKED_PANE_INSERT, inst );
+            show( inst );
+
             return true;
         });
 
@@ -328,9 +337,8 @@ module.exports = {
             opts.handled = true;
 
             var inst = createInstance( opts.name, 100, "watch", opts.index );
-            inst.position = Number( core.Settings["table.panel.position"] || 3) || 3; 
             inst.title = "Table view: " + opts.name;
-            PubSub.publish( core.Constants.STACKED_PANE_INSERT, inst );
+            show( inst );
             return true;
 
         });

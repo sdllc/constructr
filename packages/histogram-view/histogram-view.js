@@ -31,8 +31,6 @@ const MenuItem = remote.MenuItem;
 
 var path = require( "path" );
 
-const DEFAULT_PANEL_POSITION = 3;
-
 const createInstance = function(core, opts, src){
 
     let node = document.createElement("histogram-panel");
@@ -102,12 +100,19 @@ module.exports = {
             return false;    
         });
 
+        const show = function(node){
+            let pos = core.Settings["histogram.panel.position"];
+            if( !pos ) pos = core.Settings["details.panel.position"];
+            if( !pos ) pos = { row: 3, column: 0 };
+            else if( typeof pos === "number" ) pos = { row: pos, column: 0 };
+            else if( typeof pos !== "object" ) pos = { row: 3, column: 0 };
+            PubSub.publish( core.Constants.STACKED_PANE_SHOW, { row: pos.row, column: pos.column, node: node });
+        };
+
 		let menuitem = new MenuItem({
 			label: "View histogram",
 			click: function( menuitem ){
-                let node = createInstance( core, menuitem.menu_target, menuitem.menu_source );
-				let pos = Number( core.Settings["histogram.panel.position"] || DEFAULT_PANEL_POSITION) || DEFAULT_PANEL_POSITION; 
-                PubSub.publish( core.Constants.STACKED_PANE_SHOW, { node: node, row: pos, column: 0 });
+                show(createInstance( core, menuitem.menu_target, menuitem.menu_source ));
 			}
 		});
 
@@ -135,9 +140,7 @@ module.exports = {
             if( opts.handled ) return false;
             opts.handled = true;
 
-            let instance = createInstance( core, opts, "locals" );
-            let pos = Number( core.Settings["histogram.panel.position"] || DEFAULT_PANEL_POSITION) || DEFAULT_PANEL_POSITION; 
-            PubSub.publish( core.Constants.STACKED_PANE_SHOW, { node: instance, row: pos, column: 0 } );
+            show( createInstance( core, opts, "locals" ));
 
             return true;
         });
@@ -151,9 +154,7 @@ module.exports = {
             if( opts.handled ) return false;
             opts.handled = true;
 
-            let instance = createInstance( core, opts, "watches" );
-            let pos = Number( core.Settings["histogram.panel.position"] || DEFAULT_PANEL_POSITION) || DEFAULT_PANEL_POSITION; 
-            PubSub.publish( core.Constants.STACKED_PANE_SHOW, { node: instance, row: pos, column: 0 });
+            show( createInstance( core, opts, "watches" ));
 
             return true;
         });

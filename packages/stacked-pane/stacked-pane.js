@@ -159,7 +159,12 @@ module.exports = {
 			panel._onHide = opts.onHide || function(){};
 			panel._onUnload = opts.onUnload || function(){};
 
-			open_stacked_pane( core, { node: panel, row: opts.position || 0, column: opts.panel_id || 0 });
+            console.info( "CHECL", opts.position );
+
+            let pos = opts.position || { row: 0, column: 0 };
+            if( typeof pos !== "object" ) pos = { row: 0, column: 0 };
+
+			open_stacked_pane( core, { node: panel, row: pos.row, column: pos.column });
 
 		});
 
