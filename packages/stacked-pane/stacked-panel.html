@@ -1,0 +1,166 @@
+<!-- 
+
+ Copyright (c) 2016 Structured Data, LLC
+
+ Permission is hereby granted, free of charge, to any person obtaining a copy
+ of this software and associated documentation files (the "Software"), to 
+ deal in the Software without restriction, including without limitation the 
+ rights to use, copy, modify, merge, publish, distribute, sublicense, and/or 
+ sell copies of the Software, and to permit persons to whom the Software is 
+ furnished to do so, subject to the following conditions:
+
+ The above copyright notice and this permission notice shall be included in 
+ all copies or substantial portions of the Software.
+
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+ IN THE SOFTWARE.
+
+-->
+
+<dom-module id="stacked-panel"> 
+
+	<template>
+
+		<style>
+			:host > div {
+				top: 0;
+				left: 0;
+				right: 0;
+				bottom: 0;
+				position: absolute;
+			}
+		</style>
+
+		<div class='panel-body'>
+			<split-panel direction='vertical' id='layout'>
+			</split-panel>
+		</div>
+		
+	</template>
+	
+	<script>
+		
+		Polymer({
+			is: "stacked-panel",
+			
+			is_empty: function(){
+				var children = this.$.layout.getEffectiveChildren ? 
+					this.$.layout.getEffectiveChildren() :
+					this.$.layout.children;
+				return (children.length === 0);
+			},
+			
+			/**
+			 * the containing panel is being shown/hidden; 
+			 * call methods in all contained children
+			 */
+			signal_children: function( show ){
+
+				var children = this.$.layout.getEffectiveChildren ? 
+					this.$.layout.getEffectiveChildren() :
+					this.$.layout.children;
+											
+				for( var i = 0; i< children.length; i++ ){
+					var pos = children[i].getAttribute( "data-stacked-position" );
+					var child = children[i].getContent();
+					if( show ){
+                        if( child._onShow ) child._onShow.call(this);
+                    }
+					else {
+                        if( child._onHide ) child._onHide.call(this);
+                    }
+				}
+				
+			},
+			
+			/** 
+			 * attach at index.  replaces content with the 
+			 * same index.  if the index isn't found, inserts
+			 * in the appropriate position.
+			 * 
+			 * if something is removed, it's returned so the 
+			 * caller can cache it (if desired)
+			 */
+			attach: function( node, index ){
+
+				var children = this.$.layout.getEffectiveChildren ? 
+					this.$.layout.getEffectiveChildren() :
+					this.$.layout.children;
+											
+				for( var i = 0; i< children.length; i++ ){
+					var pos = children[i].getAttribute( "data-stacked-position" );
+					if( typeof pos !== "undefined" ){
+						pos = Number( pos );
+						
+						if( pos === index ){
+							
+							var child = children[i].getContent();
+							
+							if( child === node ){
+								// console.info( "Already attached at position" );
+								return;
+							}
+
+							if( child._onHide ) child._onHide.call(this);
+							children[i].removeChild( child );
+							children[i].appendChild( node );
+							if( node._onShow ) node._onShow.call(this);
+							return child;
+							
+						}
+						
+						if( pos > index ){
+
+							var pane = this.$.layout.insertPane( undefined, i );
+							pane.setAttribute( "data-stacked-position", index );
+							pane.appendChild(node);
+							if( node._onShow ) node._onShow.call(this);
+							return;
+							
+						}
+					}
+				}
+				
+				// still here? add at end (or beginning...)
+				var pane = this.$.layout.insertPane();
+				pane.setAttribute( "data-stacked-position", index );
+				pane.appendChild(node);
+				if( node._onShow ) node._onShow.call(this);
+
+			},
+			
+			/** 
+			 * just remove. let the caller cache, if desired.
+			 */
+			remove: function( node ){
+
+				//console.info( "remove", node );
+
+				var children = this.$.layout.getEffectiveChildren ? 
+					this.$.layout.getEffectiveChildren() :
+					this.$.layout.children;
+				
+				for( var i = 0; i< children.length; i++ ){
+					var pc = Polymer.dom(children[i]).children;
+					if( pc.length && pc[0] === node ){
+						// console.info( "Found @", i );
+						this.$.layout.removePane( i );
+						if( node._onUnload ) node._onUnload.call(this);
+						return;
+					}
+				}
+				
+				console.info( "not found!" );
+				
+			}
+			
+		});
+		
+	</script>
+	
+</dom-module>
