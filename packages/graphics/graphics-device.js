@@ -589,9 +589,6 @@ module.exports = {
 	
 	init: function( core ){
 
-		let html = path.join( "packages", "graphics", "graphics-panel.html" );
-		core.Utils.install_html_component( html );
-
         copy_inline_to_panel = function(){
             if(graphics_devices.panel.device_number){
                 let i = graphics_devices.inline.device_number;

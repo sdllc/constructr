@@ -4,6 +4,9 @@
     "main": "histogram-view.js",
     "packageDependencies": [
         "stacked-pane"
+    ],
+    "htmlComponents": [
+        "histogram.html"
     ]
 }
 

@@ -91,9 +91,6 @@ module.exports = {
 
 	init: function(core){
 
-        let html = path.join( "packages", "histogram-view", "histogram.html" );
-        core.Utils.install_html_component( html );
-
         core.Hooks.install( "locals_click", function( hook, opts ){
             // ...
             return false;    

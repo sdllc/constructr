@@ -27,9 +27,13 @@ const PubSub = require( "pubsub-js" );
 var SidePanel = function( parent_selector, panel_id, cache ){
 
 	let history = [];
-    let parent_node = document.querySelector( parent_selector );
+    let parent_node = document.getElementById(parent_selector) || 
+        document.querySelector( parent_selector );
+
     let node = parent_node.insertPane(0);
-	let orphans = document.querySelector(cache);
+    if( panel_id ) node.id = panel_id;
+
+	let orphans = document.getElementById(cache) || document.querySelector(cache);
 	let cached_size = 0;
 
 	this.pop = function( adding ){
@@ -151,7 +155,9 @@ var SidePanel = function( parent_selector, panel_id, cache ){
 
 };
 
-var sidePanels = [];
+const sidePanels = [];
+const PARENT_ID = "shell-layout";
+const CACHE_NODE_ID = "orphans";
 
 module.exports = {
 	init: function( core ){
@@ -162,22 +168,24 @@ module.exports = {
 		});
 
 		//sidePanels[0] = new SidePanel("#side-panel", "#orphans");
-        sidePanels[0] = new SidePanel("#shell-layout", "#orphans");
+        sidePanels[0] = new SidePanel( PARENT_ID, "side-panel-0", CACHE_NODE_ID );
 
 		PubSub.subscribe( core.Constants.SIDE_PANEL_ATTACH, function(channel, opts){
-            if( opts.panel ){
-                if( typeof opts.panel === "number" ) sidePanels[opts.panel].attach(opts);
-                else opts.panel.attach(opts);
+            let panel = sidePanels[0];
+            if( typeof opts.panel === "number" ){
+                if( !sidePanels[opts.panel] ) sidePanels[opts.panel] = 
+                    new SidePanel( PARENT_ID, "side-panel-" + opts.panel, CACHE_NODE_ID );
+                panel = sidePanels[opts.panel];
             }
-			else sidePanels[0].attach(opts);
+			panel.attach(opts);
 		});
 
 		PubSub.subscribe( core.Constants.SIDE_PANEL_POP, function(channel, node){
-            if( opts.panel ){
-                if( typeof opts.panel === "number" ) sidePanels[opts.panel].pop();
-                else opts.panel.pop();
+            let panel = sidePanels[0];
+            if( typeof opts.panel === "number" ){
+                panel = sidePanels[opts.panel];
             }
-			else sidePanels[0].pop();
+			panel.pop();
 		})
 
 		return Promise.resolve();

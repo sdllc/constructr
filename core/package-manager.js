@@ -24,6 +24,7 @@
 
 const path = require( 'path' );
 const fs = require( 'fs' );
+
 const X = eval( 'require' ); // !webpack
 
 window.fs = fs;
@@ -78,7 +79,7 @@ var PackageManager = function(){
             }
         };
 
-        let init_package_js = function( pkg ){
+        let init_package_js = function( pkg, elt ){
 
             console.info( "Installing package", pkg.name );
 
@@ -89,6 +90,15 @@ var PackageManager = function(){
                 for( let group in pkg.preferenceGroups ){
                     default_settings( pkg.preferenceGroups[group] );
                 }
+            }
+
+            // load html files (polymer components)
+            if( pkg.htmlComponents ){
+                let source_dir = core.Utils.escape_backslashes(core.Utils.patch_asar_path(elt), 2);
+                pkg.htmlComponents.forEach( function(component){
+                    core.Utils.install_html_component(
+                        path.join( source_dir, component ));
+                })
             }
 
             // ok, load and call init
@@ -109,7 +119,7 @@ var PackageManager = function(){
 
         let init_package = function( pkg, elt ){
             return new Promise( function( resolve, reject ){
-                init_package_js( pkg ).then( function(){
+                init_package_js( pkg, elt ).then( function(){
                     if( pkg.R ){ 
                         let source_dir = core.Utils.escape_backslashes(
                             core.Utils.patch_asar_path(elt), 2);
