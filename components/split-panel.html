@@ -406,6 +406,16 @@
                 }
             }
 
+            // allow take_from to be an ID
+            if( typeof opts.take_from === "string" ){
+                for( let i = 0; i< panes.length; i++ ){
+                    if( panes[i].id === opts.take_from ){
+                        opts.take_from = i;
+                        break;
+                    }
+                }
+            }
+
             // in case it was hidden
             panes[opts.target].classList.remove( "hidden" );
             

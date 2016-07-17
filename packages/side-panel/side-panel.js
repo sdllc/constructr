@@ -40,12 +40,34 @@ var SidePanel = function( parent_selector, target_index, panel_id, cache ){
     // target index is the desired index of the panel, but previous indexes
     // may not exist.  so we need to figure out what exists, and then use that
     // to determine an insert index.
+
+    /* 
     let insert_index = -1;
     let sps = parent_node.querySelectorAll( "split-pane" );
     for( let i = 0; i< sps.length; i++ ){
         let id = sps[i].id;
         let m = id.match( /side-panel-(\d+)$/);
         if(m && m[1] > target_index ){
+            insert_index = i;
+            break;
+        }
+    }
+    */
+    // TEST: LEFT SIDE
+    let insert_index = 0;
+    let sps = parent_node.querySelectorAll( "split-pane" );
+    for( let i = 0; i< sps.length; i++ ){
+        let id = sps[i].id;
+        if( id === "center-pane" ){
+            console.info( "@CP", i );
+            insert_index = Math.max( 0, i-1 );
+            break;
+        }
+        let m = id.match( /side-panel-(\d+)$/);
+        if( m && m[1] > target_index ){
+
+            console.info( "STOP on", id, i );
+
             insert_index = i;
             break;
         }
@@ -99,7 +121,7 @@ var SidePanel = function( parent_selector, target_index, panel_id, cache ){
 			parent.setSize({
 				target: node,
 				size: 0,
-                take_from: 0,
+                take_from: "center-pane",
 				hide: true
 			});
 		}
@@ -158,7 +180,7 @@ var SidePanel = function( parent_selector, target_index, panel_id, cache ){
 			if( parent ){
 				parent.setSize({
 					target: node,
-                    take_from: 0,
+                    take_from: "center-pane",
 					//size: cached_size ? cached_size : 33
                     size: widthCache[target_index] ? widthCache[target_index] : 33
 				}).then( function(){
