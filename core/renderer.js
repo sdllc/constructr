@@ -1557,6 +1557,10 @@ var init_r = function(opts = {}){
 		PubSub.publish( "locals", msg );
 	});
 
+    R.on('add-watch', function(){
+        open_watch();
+    });
+
 	R.on('watches', function(msg){
 		
 		// we're going to unpack (simplify) this event here so multiple
