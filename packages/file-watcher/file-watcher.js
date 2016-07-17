@@ -65,9 +65,9 @@ var FileWatcher = function(){
 		if( opts.source ){
 			
 			opts.source.on( 'file.watch', function(data){
-				console.info( data );	
+				//console.info( data );	
 				if( data.$data.command === "watch" ){
-					console.info( "watch", data.$data.path );
+					//console.info( "watch", data.$data.path );
 					data.$data.path = untildify( data.$data.path );
 
 					if( watches[data.$data.path] ) watches[data.$data.path].close();
@@ -109,9 +109,9 @@ module.exports = {
 		new FileWatcher().init({
 			source: core.R,
 			change_callback: function( path, original_path ){
-				console.info( `filewatcher cb: ${path} (${original_path})`);
+				//console.info( `filewatcher cb: ${path} (${original_path})`);
 				var cmd = `jsClientLib:::file.changed('${core.Utils.escape_backslashes(path, 2)}', '${core.Utils.escape_backslashes(original_path, 2)}')`;
-				console.info( cmd );
+				//console.info( cmd );
 				core.R.queued_internal( cmd ); // FIXME: should use exec?
 			},
 			notify_callback: function(msg){

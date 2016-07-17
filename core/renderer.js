@@ -1372,7 +1372,7 @@ var open_shell_preferences = function(toggle){
 						sizer.classList.add("list-entry");
 						group.appendChild(sizer);
 						sizer.addEventListener( "change", function(e){
-							console.info( e.detail );
+							//console.info( e.detail );
 							Settings[subkey] = e.detail;
 						});
 						break;
@@ -1544,8 +1544,10 @@ var init_r = function(opts = {}){
 	R.on('preferences', function(msg){
 		if( msg.$data && msg.$data.KEY ){
 			let val = msg.$data.VALUE;
-            let type = val ? "null" : typeof val;
-			if( type === "object" ) val = val.$data;
+			if( typeof val === "object" ){
+                val = val.$data;
+                if( val.$type === "list" ) val = val.$data;
+            }
 			Settings[msg.$data.KEY] = val;
 		}
 	});
