@@ -3,7 +3,7 @@
     "version": "0.1.0",
     "main": "histogram-view.js",
     "packageDependencies": [
-        "stacked-pane"
+        "side-panel"
     ],
     "htmlComponents": [
         "histogram.html"

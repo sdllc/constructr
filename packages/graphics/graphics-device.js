@@ -531,7 +531,7 @@ function show_graphics_panel( core ){
 			panel.classList.add( "panel" );
 			
 			panel.addEventListener( "close", function(e){
-				PubSub.publish( core.Constants.STACKED_PANE_REMOVE, panel );
+				PubSub.publish( core.Constants.SIDE_PANEL_REMOVE, panel );
 			});
 			
 			let container = document.createElement( "div" );
@@ -539,28 +539,27 @@ function show_graphics_panel( core ){
 			panel.appendChild( container );
 			window.addEventListener('resize', resize_to_panel );
 			
-			panel._onShow = function(){
+			panel.onShow = function(){
 				panel.graphics_events = true;
 				requestAnimationFrame( function(){
 					resize_to_panel();
 				});
 			}
 
-			panel._onHide = function(){
+			panel.onHide = function(){
 				panel.graphics_events = false;
 			};
 
-			panel._onUnload = function(){
+			panel.onUnload = function(){
 				panel.graphics_events = false;
 			};
 			
 		}
 		
-        let opts = core.Settings['graphics.panel.position'];
-        if( !opts || ( typeof opts !== "object" )) opts = { column: 0, row: 1 };
-        opts.node = panel;
+        let pos = core.Settings['graphics.panel.position'];
+        if( !pos || ( typeof pos !== "object" )) pos = { column: 0, row: 1 };
 
-		PubSub.publish( core.Constants.STACKED_PANE_SHOW, opts );
+		PubSub.publish( core.Constants.SIDE_PANEL_ATTACH, { position: pos, node: panel });
 		resolve( panel );
 		
 	});

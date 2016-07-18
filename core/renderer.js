@@ -409,15 +409,15 @@ var show_details = function(elt){
 				CodeMirror.runMode( value, "r", node );
 				node.classList.add( "cm-s-" + Settings.theme );
 			},
-			_onHide: function(){
+			onHide: function(){
 				delete( locals_registry.detail );
 				delete( watches_registry.detail );
 			},
-			_onUnload: function(){
+			onUnload: function(){
 				delete( locals_registry.detail );
 				delete( watches_registry.detail );
 			},
-			_onShow: function(){
+			onShow: function(){
 				delete( locals_registry.detail );
 				delete( watches_registry.detail );
 				if( locals_registry.locals ) locals_registry.detail = 1;
@@ -426,7 +426,7 @@ var show_details = function(elt){
 		});
 
 		panel.addEventListener( "close", function(e){
-			PubSub.publish( Constants.STACKED_PANE_REMOVE, panel );
+			PubSub.publish( Constants.SIDE_PANEL_REMOVE, panel );
 		});
 		
 		details_context_menu.$target = panel;
@@ -464,12 +464,13 @@ var show_details = function(elt){
 		panel.setContent( elt.fulltext );
 	}
 	
-    let opts = Settings["details.panel.position"];
-    if( !opts ) opts = { row: 3, column: 0 };
-    else if( typeof opts === "number" ) opts = { row: opts, column: 0 };
-    opts.node = panel;
+    let pos = Settings["details.panel.position"];
+    if( !pos || ( typeof pos !== "object" )) pos = { row: 3, column: 0 };
 
-	PubSub.publish( Constants.STACKED_PANE_SHOW, opts );
+	PubSub.publish( Constants.SIDE_PANEL_ATTACH, {
+        node: panel,
+        position: pos
+    });
 	
 };
 
@@ -597,7 +598,7 @@ var open_watch = function(){
             panel.header.removeEventListener( "close", closelistener );
             panel.header.removeEventListener( "click", click );
             panel.header.removeEventListener( "contextmenu", context );
-            PubSub.publish( Constants.STACKED_PANE_REMOVE, panel );
+            PubSub.publish( Constants.SIDE_PANEL_REMOVE, panel );
         };
 
         panel.header.addEventListener( "close", closelistener );
@@ -696,9 +697,9 @@ var open_watch = function(){
 
         let token;
         
-        panel._onHide = function(){ delete( watches_registry.watch ); };
-		panel._onShow = function(){ watches_registry.watch = 1; };
-		panel._onUnload = function(){ 
+        panel.onHide = function(){ delete( watches_registry.watch ); };
+		panel.onShow = function(){ watches_registry.watch = 1; };
+		panel.onUnload = function(){ 
     		PubSub.unsubscribe( token );
             delete( watches_registry.watch ); 
         };
@@ -735,11 +736,12 @@ var open_watch = function(){
 
     }
 
-    let opts = Settings["watch.panel.position"];
-    if( !opts || ( typeof opts !== "object" )) opts = { row: 2, column: 0 };
-    opts.node = panel;
-    
-	PubSub.publish( Constants.STACKED_PANE_SHOW, opts );
+    let pos = Settings["watch.panel.position"];
+    if( !pos || ( typeof pos !== "object" )) pos = { row: 2, column: 0 };
+     
+	PubSub.publish( Constants.SIDE_PANEL_ATTACH, {
+        position: pos, node: panel });
+
 	get_watches();
      
 }
@@ -830,10 +832,11 @@ var open_history_panel = function(){
 				CodeMirror.runMode( value, "r", node );
 				node.classList.add( "cm-s-" + Settings.theme );
 			},
-            _onHide: function(){ 
+            onHide: function(){ 
                 this.visible = false; 
             },
-            _onShow: function(){ 
+            onShow: function(){ 
+                
                 this.visible = true; 
                 if( !token ) token = PubSub.subscribe("exec_complete", update_history);
                 if( !token2 ) token2 = PubSub.subscribe( Constants.SHELL_UPDATE_THEME, function( ch, args ){
@@ -854,7 +857,7 @@ var open_history_panel = function(){
                     }, 1);
                 }
             },
-            _onUnload: function(){ 
+            onUnload: function(){ 
                 console.info( "unload" );                
                 this.visible = false; 
                 if( token ) PubSub.unsubscribe(token);
@@ -865,7 +868,7 @@ var open_history_panel = function(){
         });
         panel.setAttribute( "data-preserve", true );
         panel.addEventListener( "close", function(){
-			PubSub.publish( Constants.STACKED_PANE_REMOVE, panel );
+			PubSub.publish( Constants.SIDE_PANEL_REMOVE, panel );
         });
 
         panel.addEventListener( "contextmenu", function(e){
@@ -953,11 +956,12 @@ var open_history_panel = function(){
 
     }
 
-    let opts = Settings["history.panel.position"];
-    if( !opts || ( typeof opts !== "object" )) opts = { row: 5, column: 0 };
-    opts.node = panel;
+    let pos = Settings["history.panel.position"];
+    if( !pos || ( typeof pos !== "object" )) pos = { row: 5, column: 0 };
 
-    PubSub.publish( Constants.STACKED_PANE_SHOW, opts );
+    PubSub.publish( Constants.SIDE_PANEL_ATTACH, {
+        position: pos, node: panel
+    });
 
 }
 
@@ -976,7 +980,7 @@ var open_locals = function(){
             panel.header.removeEventListener( "close", closelistener );
             panel.header.removeEventListener( "click", click );
             panel.header.removeEventListener( "contextmenu", context );
-            PubSub.publish( Constants.STACKED_PANE_REMOVE, panel );
+            PubSub.publish( Constants.SIDE_PANEL_REMOVE, panel );
         };
 
         panel.header.addEventListener( "close", closelistener );
@@ -1086,9 +1090,9 @@ var open_locals = function(){
         
         let token;
 
-        panel._onHide = function(){ delete( locals_registry.locals ); };
-		panel._onShow = function(){ locals_registry.locals = 1; };
-		panel._onUnload = function(){ 
+        panel.onHide = function(){ delete( locals_registry.locals ); };
+		panel.onShow = function(){ locals_registry.locals = 1; };
+		panel.onUnload = function(){ 
             panel.removeEventListener( "click", click );
             panel.removeEventListener( "dblclick", doubleclick );
             panel.removeEventListener( "contextmenu", context );
@@ -1134,11 +1138,13 @@ var open_locals = function(){
 
 	}
 
-    let opts = Settings["locals.panel.position"];
-    if( !opts || ( typeof opts !== "object" )) opts = { row: 2, column: 0 };
-    opts.node = panel;
+    let pos = Settings["locals.panel.position"];
+    if( !pos || ( typeof pos !== "object" )) pos = { row: 2, column: 0 };
 
-	PubSub.publish( Constants.STACKED_PANE_SHOW, opts);
+	PubSub.publish( Constants.SIDE_PANEL_ATTACH, {
+        position: pos, node: panel
+    });
+
 	get_locals();
 
 };
@@ -1249,15 +1255,15 @@ var open_shell_preferences = function(toggle){
 	if( toggle ){
 		panel = document.querySelector( "shell-preferences" );
 		if( panel ){
-			PubSub.publish( Constants.SIDE_PANEL_POP );
+			PubSub.publish( Constants.SIDE_PANEL_POP, panel );
 			return;
 		}
 	}
 
 	panel = document.createElement( "shell-preferences" );
 	panel.className = "panel";
-	panel.addEventListener( 'close', function(){ PubSub.publish( Constants.SIDE_PANEL_POP ); });
-	panel.$.cancel.addEventListener( 'click', function(){ PubSub.publish( Constants.SIDE_PANEL_POP ); });
+	panel.addEventListener( 'close', function(){ PubSub.publish( Constants.SIDE_PANEL_POP, panel ); });
+	panel.$.cancel.addEventListener( 'click', function(){ PubSub.publish( Constants.SIDE_PANEL_POP, panel ); });
 
 	// general
 	var group = document.createElement( "preferences-group" );
@@ -1423,7 +1429,7 @@ var open_shell_preferences = function(toggle){
 		}
 	});
 
-	PubSub.publish( Constants.SIDE_PANEL_ATTACH, { node: panel });
+	PubSub.publish( Constants.SIDE_PANEL_PUSH, { node: panel });
 	
 };
 
@@ -1562,8 +1568,12 @@ var init_r = function(opts = {}){
 
             // NOTE: null is an object
 			if( val && typeof val === "object" ){
-                val = val.$data;
-                if( val.$type === "list" ) val = val.$data;
+                if( !Array.isArray(val)){
+                    val = val.$data;
+                    if( val.$type === "list" ){
+                        val = val.$data;
+                    }
+                }
             }
 			Settings[msg.$data.KEY] = val;
 		}

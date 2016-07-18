@@ -263,14 +263,37 @@ module.exports = {
 		});
 
         const show = function(opts){
+            
             let pos = core.Settings["table.panel.position"];
             if( !pos ) pos = core.Settings["details.panel.position"];
             if( !pos ) pos = { row: 3, column: 0 };
-            else if( typeof pos === "number" ) pos = { row: pos, column: 0 };
-            else if( typeof pos !== "object" ) pos = { row: 3, column: 0 };
 
-            opts.position = pos;
-            PubSub.publish( core.Constants.STACKED_PANE_INSERT, opts );
+            // opts.position = pos;
+            // PubSub.publish( core.Constants.STACKED_PANE_INSERT, opts );
+
+            let panel = document.createElement( "div" );
+			panel.className = "panel";
+				
+			let header = document.createElement( "panel-header" );
+			header.title = opts.title || "Panel";
+				
+			var closelistener = function(){
+				header.removeEventListener( "close", closelistener );
+                //let id = panel.__stacked_pane_id || 0;
+				//remove_from_stacked_pane( id, core, panel );
+                PubSub.publish( core.Constants.SIDE_PANEL_REMOVE, panel );
+			};
+
+			header.addEventListener( "close", closelistener );
+			panel.appendChild( header );
+			panel.appendChild( opts.node );
+			
+			panel.onShow = opts.onShow;
+			panel.onHide = opts.onHide;
+			panel.onUnload = opts.onUnload;
+
+            PubSub.publish( core.Constants.SIDE_PANEL_ATTACH, { node: panel, position: pos });
+
         };
 
         /*

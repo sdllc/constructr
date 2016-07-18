@@ -22,237 +22,309 @@
 
 "use strict";
 
-const PubSub = require( "pubsub-js" );
+const PubSub = require( "pubsub-js");
 
-//const subPanels = [];
-//const widthCache = [];
-
-const sidePanels = {};
-const sidePanelWidth = {};
+/**
+ * rewrite of side panel to combine ideas in side panel, stacked panel, and 
+ * fix the interplay between them.
+ * 
+ * basically there should be a panel on the left and a panel on the right 
+ * (TODO: extend to center as well).  each one can have an arbitrary set of
+ * rows and columns (columns are dominant), and you can randomly assign a
+ * node to an (R,C) address in the panel -- or take over the panel entirely.
+ * 
+ * if you take over the panel entirely, content is stacked -- so removing the 
+ * new item will bring back the old item.  
+ */
 
 const PARENT_ID = "shell-layout";
-const CACHE_NODE_ID = "orphans";
+const CACHE_ID = "orphans";
 
-var SubPanel = function( parent_node, target_index, panel_id, cache ){
+let cache = null;
 
-	let history = [];
-//    let parent_node = document.getElementById(parent_selector) || 
-//        document.querySelector( parent_selector );
+const Column = function( parent ){
 
-    // target index is the desired index of the panel, but previous indexes
-    // may not exist.  so we need to figure out what exists, and then use that
-    // to determine an insert index.
-    let insert_index = -1;
-    let sps = parent_node.querySelectorAll( "split-pane" );
-    for( let i = 0; i< sps.length; i++ ){
-        let id = sps[i].id;
-        let m = id.match( /side-panel-(\d+)$/);
-        if(m && m[1] > target_index ){
-            insert_index = i;
-            break;
+    let count = 0;
+    let rows = [];
+
+    this.container = parent.insertPane(50, -1);
+    let splitter = document.createElement( "split-panel" );
+    splitter.direction = "vertical";
+    this.container.appendChild(splitter);
+
+    this.find = function( node ){
+        for( let r = 0; r< rows.length; r++ ){
+            if( rows[r] && rows[r].getContent() === node ) return r;
         }
+        return -1;
     }
 
-    // console.info( "inserting at index", insert_index );
+    this.get_count = function(){ return count; }
 
-    let node = parent_node.insertPane(0, insert_index);
-    if( panel_id ) node.id = panel_id;
-
-	let orphans = document.getElementById(cache) || document.querySelector(cache);
-	let cached_size = 0;
-
-	this.pop = function( adding ){
-
-		var children = node.getEffectiveChildren ? node.getEffectiveChildren() : node.children;
-		if( !children.length ) return;
-		
-		var child = children[0];
-		node.removeChild(child);
-				
-		// hold on to this?
-		if( !child.hasAttribute( "data-preserve" )
-			|| child.getAttribute( "data-preserve" ) === "false" ){
-			if( child._onUnload ) child._onUnload.call(this);
-		}
-		else {
-
-			orphans.appendChild(child);
-			if( child._onHide ) child._onHide.call(this);
-		
-			// push onto history stack -- FIXME: ID or node?
-			if( adding ) history.push( child.id );
-		}
-
-		// is there something on history, which we need to insert?
-		
-		// ...
-		
-		// grab the current size, then close the panel
-
-		cached_size = node.split;
-		
-		if( adding ) return; // don't need to close it
-
-        // widthCache[target_index] = cached_size;
+    this.remove = function( r ){
         
-        node.setSize({ size: 0, hide: true });
+        if( !rows[r] ){
+            console.warn( "Invalid row in column.remove", r );
+            return;
+        }
+        
+        let test = rows[r].getContent();
+        if( test ){
+            if( test.onHide ) test.onHide.call(this);
+            rows[r].removeChild(test);
+            if( test.hasAttribute( "data-preserve" )) cache.appendChild(test);
+            else if( test.onUnload ) test.onUnload.call(this);
+        }
 
+        splitter.removePane( rows[r] );
+        delete rows[r];
 
-	};
+        count--;
 
-	this.attach = function(opts, toggle){
-		
-		var content = null;
-		
-		if( typeof opts.node === "string" ) content = document.querySelector( opts.node );
-		else content = opts.node;
-		if( !content ) throw( "Can't resolve node", opts.node );
-		
-		// if there is a child, remove it.  call any unload 
-		// function that's provided (if you remove it; not if you
-		// hide it?) 
+    };
 
-		var attached = false;
-		var children = node.getEffectiveChildren ? node.getEffectiveChildren() : node.children;
-		if( children.length ){
-			var child = children[0];
-			if( child === content ){
-				attached = true;
-			}
-			else {
-				this.pop( true );
-			}
-		}
+    this.attach = function( r, node ){
 
+        //console.info( "Attach @", r, node );
 
-		// now attach this child and call any open callback
-		
-		if( !attached ){
+        if( !rows[r] ){
+            //console.info( "Creating row", r );
 
-			// if it's attached to a non-polymer node, attaching
-			// to a polymer node seems to destroy it.  so remove 
-			// it from the parent first.  FIXME: do this inside?
-			
-			if( content.parentNode ){
-				content.parentNode.removeChild( content );
-			}
-			node.appendChild( content );
-			
-		}
+            // we use row indexes, but the array is sparse. to figure
+            // out the insert index, you can walk children and look at 
+            // IDs; or we can guess based on populated row cells.
 
-		// if we've just removed the content, and set width to zero,
-		// then width will be zero.  no point in measuring it.
-				
-		// and show if not visible
-		if( node.split < 10 ){
+            let insert_index = 0;
+            for( let i = 0; i< r; i++ ) if( rows[i] ) insert_index++;
 
-            let size = 0; // widthCache[target_index] ? widthCache[target_index] : 0;
-            let inst = this;
+            count++;
+            rows[r] = splitter.insertPane(undefined, insert_index);
+        }
 
-            node.setSize({ 
-                size: size, 
-                balance: !size,
-                callback: function(){
-                    if( content._onShow ) content._onShow.call(inst);
-                    if( opts.shown ) opts.shown.call(inst);
+        // r,c has only one child.  if it's already
+        // attached, do nothing (FIXME: callback?)
+
+        let test = rows[r].getContent();
+        if( test !== node )
+        {
+            if( test ){
+                if( test.onHide ) test.onHide.call(this);
+                rows[r].removeChild(test);
+                if( test.hasAttribute( "data-preserve" )) cache.appendChild(test);
+                else if( test.onUnload ) test.onUnload.call(this);
+            }
+
+            if( node ){
+                if( node.parentNode ) node.parentNode.removeChild(node);
+                rows[r].appendChild(node);
+                if( node.onShow ) node.onShow.call(this);
+            }
+
+        }
+        return rows[r];
+
+    };
+
+}
+
+const SidePanel = function( parent, insert_position, id ){
+
+    let columns = [];
+
+    let splitter = null;
+    let container = null;
+    let count = 0; 
+
+    let history = [];
+
+    this.id = id;
+
+    this.pop = function( node ){
+        if( !container ) return;
+        let ctx = container.getContent();
+
+        // FIXME: history
+
+        if( ctx !== node ){
+            return;
+        }        
+
+        container.removeChild(ctx);
+        if( ctx.onHide ) ctx.onHide.call(this);
+
+        if( ctx.hasAttribute( "data-preserve" )) cache.appendChild(ctx);
+        else if( ctx.onUnload ) ctx.onUnload.call(this);
+
+        if( splitter ){
+            container.appendChild( splitter );
+        }
+        else {
+            parent.removePane( container );
+            container = splitter = null;
+        }
+
+    };
+
+    this.push = function( node ){
+
+        if( !container ){
+            //console.info( "Creating container" );
+            if( typeof insert_position === "undefined" ) insert_position = -1;
+            container = parent.insertPane( 33, insert_position, "center-pane" );
+        }
+
+        let ctx = container.getContent();
+        if( ctx === node ){
+
+        }
+        else {
+            if(ctx) container.removeChild(ctx);
+
+            // FIXME: notify children
+
+            container.appendChild( node );
+            if( node.onShow ) node.onShow.call(this);
+        }
+        node.__position = { panel: id };
+
+    };
+
+    /**
+     * attach node at (r,c).  returns the containing panel so
+     * you can (if desired) not pass a node argument, and attach
+     * later.
+     */
+    this.attach = function( r, c, node ){
+
+        if( !columns[c] ){
+
+            if( !container ){
+                //console.info( "Creating container" );
+                if( typeof insert_position === "undefined" ) insert_position = -1;
+                container = parent.insertPane( 33, insert_position, "center-pane" );
+            }
+
+            if( !splitter ){
+                //console.info( "Creating splitter" );
+                splitter = document.createElement( "split-panel" );
+                splitter.direction = "horizontal";
+            }
+
+            //console.info( "Creating column", c );
+            columns[c] = new Column(splitter);
+            count++;
+
+        }
+
+        let ctx = container.getContent();
+        if( ctx !== splitter ){
+            if( ctx )  container.removeChild( ctx );
+            container.appendChild( splitter );
+        }
+
+        columns[c].attach( r, node );
+
+        if( node ){
+            node.__position = { row: r, column: c, panel: id };
+        }
+
+    };
+
+    this.remove = function(node){
+
+        let position = {};
+
+        if( node.__position ) Object.assign( position, node.__position );
+        else {
+            for( let c = 0; c< columns.length; c++ ){
+                if( columns[c] ){
+                    let r = columns[c].find( node );
+                    if( r >= 0 ){
+                        position = { row: r, column: c };
+                        break;
+                    }
                 }
-            });
+            }            
+        }
 
-		}
-		else {
+        if((typeof position.row === "undefined") || (typeof position.column === "undefined")){
+            console.warn( "Node not found", node );
+        }
+        if( !columns[position.column] ) throw( "Invalid column in remove: " + position.column );
 
-			if( attached && toggle ){
-				this.pop();
-			}
-			else {
-				if( content._onShow ) content._onShow.call(this);
-				if( opts.shown ) opts.shown.call(this);
-			}
-		}
-		
-	};
+        //console.info( "Remove", position );
+        columns[position.column].remove( position.row );
+
+        if( columns[position.column].get_count() === 0 ){
+            //console.info( "Dropping column...");
+            splitter.removePane( columns[position.column].container );
+            delete columns[position.column];
+            count--;
+
+            if( count === 0 ){
+                //console.info( "removing container" );
+                parent.removePane( container );
+                container = splitter = null;
+            }
+
+        }
+
+        node.__position = null;
+
+    };
+
+}
+
+module.exports.init = function(core){
+
+    let parent = document.getElementById(PARENT_ID);
+    cache = document.getElementById(CACHE_ID);
+
+    // nodes aren't created until populated, so it's ok to 
+    // create these ahead of time
+
+    let sides = {
+        left: new SidePanel(parent, 0, "left"),
+        right: new SidePanel(parent, -1, "right")
+    };
+
+    let default_side = sides.right;
+
+    Object.assign( core.Constants, {
+
+        // this is for row/column layout
+        SIDE_PANEL_ATTACH: "side-panel-attach",
+        SIDE_PANEL_REMOVE: "side-panel-remove",
+
+        // this is for whole-panel operations
+        SIDE_PANEL_PUSH: "side-panel-push",
+        SIDE_PANEL_POP: "side-panel-pop"
+
+    });
+
+    PubSub.subscribe( core.Constants.SIDE_PANEL_POP, function( channel, node ){
+        if( !node ) throw( "node required in pop()");
+        let side = node.position ? sides[node.position.side] || default_side : default_side;
+        side.pop( node );
+    });
+
+    PubSub.subscribe( core.Constants.SIDE_PANEL_PUSH, function( channel, opts ){
+        opts = opts || {};
+        let side = opts.position ? sides[opts.position.side] || default_side : default_side;
+        side.push( opts.node );
+    });
+
+    PubSub.subscribe( core.Constants.SIDE_PANEL_ATTACH, function(channel, opts){
+        opts = opts || {};
+        let side = opts.position ? sides[opts.position.side] || default_side : default_side;
+        side.attach( opts.position.row || 0, opts.position.column || 0, opts.node );
+    });
+
+    PubSub.subscribe( core.Constants.SIDE_PANEL_REMOVE, function(channel, node){
+        let side = default_side;
+        if( node.__position ) side = sides[node.__position.panel] || default_side;
+        side.remove( node );
+    });
 
 };
-
-module.exports = {
-	init: function( core ){
-
-		Object.assign( core.Constants, {
-			SIDE_PANEL_ATTACH: "side-panel-attach",
-			SIDE_PANEL_POP: "side-panel-pop"
-		});
-
-		PubSub.subscribe( core.Constants.SIDE_PANEL_ATTACH, function(channel, opts){
-
-            let index = opts.panel || 0;
-            let side = opts.side;
-            if( side !== "left" ) side = "right";
-
-            if( !sidePanels[side] ){
-
-                let width = sidePanelWidth[side] ? sidePanelWidth[side] : 33;
-                let parent = document.getElementById(PARENT_ID);
-                let node = parent.insertPane( 0, side === "left" ? 0 : -1 );
-
-                parent.setSize({
-                    target: node,
-                    take_from: "center-pane",
-                    size: width
-                });
-
-                node.id = side + "-layout-pane";
-
-                let splitter = document.createElement( "split-panel" );
-                splitter.direction = "horizontal";
-                node.appendChild( splitter );
-                sidePanels[side] = { node: node, splitter: splitter, count: 0, subPanels: [] };
-
-            }
-
-            if( !sidePanels[side].subPanels[index] ){
-                sidePanels[side].subPanels[index] = new SubPanel( sidePanels[side].splitter, index, "side-panel-" + side + "-" + index, CACHE_NODE_ID );
-                sidePanels[side].count++;
-            }
-
-            sidePanels[side].subPanels[index].attach(opts);
-
-		});
-
-		PubSub.subscribe( core.Constants.SIDE_PANEL_POP, function(channel, opts){
-            
-            let index = opts ? opts.panel || 0 : 0;
-            let side = opts ? opts.side : 0;
-            if( side !== "left" ) side = "right";
-
-            if( !sidePanels[side] ) return;
-
-            sidePanels[side].count--;
-
-            if( !sidePanels[side].subPanels[index] ) return;
-
-			sidePanels[side].subPanels[index].pop();
-
-            sidePanels[side].splitter.removePane( "side-panel-" + side + "-" + index );
-            sidePanels[side].subPanels[index] = null;
-
-            if( sidePanels[side].count === 0 ){
-                sidePanelWidth[side] = sidePanels[side].node.split;
-                let parent = document.getElementById(PARENT_ID);
-                parent.setSize({
-                    target: sidePanels[side].node,
-                    size: 0,
-                    hide: true,
-                    take_from: "center-pane" 
-                }).then( function(){
-                    parent.removePane( sidePanels[side].node );
-                    sidePanels[side] = null;
-                });
-            }
-
-//            document.getElementById( PARENT_ID ).removePane( "side-panel-" + index );
-		})
-
-		return Promise.resolve();
-	}
-}
 

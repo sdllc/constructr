@@ -596,7 +596,7 @@
          * insert in last position).  pct is the target width, in percent,
          * of the new pane.  other panes will be rebalanced.
          */
-        insertPane: function( pct, index ){
+        insertPane: function( pct, index, take_from ){
 
             let children = Polymer.dom(this).children;
 
@@ -612,12 +612,27 @@
             if( direction ) pane.setAttribute( "direction", direction );
             
             // resize others
-            for( let i = 0; i< children.length; i++ ){
-                let s = children[i].split;
-                children[i].split = Math.round( s*balance/100 );
-                remainder -= children[i].split;
+            if( typeof take_from === "undefined" ){
+                for( let i = 0; i< children.length; i++ ){
+                    let s = children[i].split;
+                    children[i].split = Math.round( s*balance/100 );
+                    remainder -= children[i].split;
+                }
+                pane.setAttribute( "split", remainder );
             }
-            pane.setAttribute( "split", remainder );
+            else {
+                if( typeof take_from === "string" ){
+                    for( let i = 0; i< children.length; i++ ){
+                        if( children[i].id === take_from ){
+                            take_from = i;
+                            break;
+                        }
+                    }
+                }
+                let a = children[take_from].split;
+                children[take_from].split -= pct;
+                pane.setAttribute( "split", pct );
+            }
 
             // insert at index or at end (FIXME: check index?)			
             if( index < 0 ) Polymer.dom(this).appendChild(pane);

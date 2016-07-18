@@ -38,15 +38,15 @@ var open_mirror_chooser = function(core, cb){
 	panel.id = "mirror-chooser-panel";
 	panel.className = "panel";
 	panel.addEventListener( 'close', function(){ 
-		PubSub.publish( core.Constants.SIDE_PANEL_POP );
+		PubSub.publish( core.Constants.SIDE_PANEL_POP, panel );
 	});
 	panel.$.cancel.addEventListener( 'click', function(){ 
-		PubSub.publish( core.Constants.SIDE_PANEL_POP );
+		PubSub.publish( core.Constants.SIDE_PANEL_POP, panel );
 	});
 
 	panel.message = core.Messages.LOADING_MIRROR_LIST; 
 
-	PubSub.publish( core.Constants.SIDE_PANEL_ATTACH, { node: panel });
+	PubSub.publish( core.Constants.SIDE_PANEL_PUSH, { node: panel });
 	
 	var mirror = undefined;
 	var selected_index = 0;
@@ -125,12 +125,12 @@ var open_mirror_chooser = function(core, cb){
 				
 				core.R.set_cran_mirror( mirror, msg ).then( function(){
 					if( cb ) cb.call(this);
-					else PubSub.publish( core.Constants.SIDE_PANEL_POP );
+					else PubSub.publish( core.Constants.SIDE_PANEL_POP, panel);
 					PubSub.publish( core.Constants.SHELL_FOCUS );
 					//shell.focus();
 				}).catch( function(){
 					if( cb ) cb.call(this);
-					else PubSub.publish( core.Constants.SIDE_PANEL_POP );
+					else PubSub.publish( core.Constants.SIDE_PANEL_POP, panel);
 					PubSub.publish( core.Constants.SHELL_FOCUS );
 					//shell.focus();
 				});
@@ -174,12 +174,12 @@ var open_package_chooser = function(core){
 	var panel = document.createElement( "package-chooser" );
 	panel.id = "package-chooser-panel";
 	panel.className = "panel";
-	panel.addEventListener( 'close', function(){ PubSub.publish( core.Constants.SIDE_PANEL_POP ); });
-	panel.$.cancel.addEventListener( 'click', function(){ PubSub.publish( core.Constants.SIDE_PANEL_POP ); });
+	panel.addEventListener( 'close', function(){ PubSub.publish( core.Constants.SIDE_PANEL_POP, panel ); });
+	panel.$.cancel.addEventListener( 'click', function(){ PubSub.publish( core.Constants.SIDE_PANEL_POP, panel ); });
 
 	panel.message = core.Messages.LOADING_PACKAGE_LIST;
 
-	PubSub.publish( core.Constants.SIDE_PANEL_ATTACH, { node: panel });
+	PubSub.publish( core.Constants.SIDE_PANEL_PUSH, { node: panel });
 	
 	var packages = undefined;
 	var installed = undefined;
@@ -230,7 +230,7 @@ var open_package_chooser = function(core){
 				}
 			}
 			
-			PubSub.publish( core.Constants.SIDE_PANEL_POP );
+			PubSub.publish( core.Constants.SIDE_PANEL_POP, panel );
 			setImmediate(function(){
 				if( list.length ){
 					//shell.block();

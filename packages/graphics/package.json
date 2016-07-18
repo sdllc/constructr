@@ -17,7 +17,8 @@
             "graphics.target": {
                 "type": "choice",
                 "options": "get_graphics_targets",
-                "label": ""
+                "label": "", 
+                "default": "inline" 
             }
         },
         "Inline Graphics Size": {

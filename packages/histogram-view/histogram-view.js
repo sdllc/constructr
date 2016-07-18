@@ -40,11 +40,11 @@ const createInstance = function(core, opts, src){
     node.field = opts.name;
 
     let onclose = function(){
-        PubSub.publish( core.Constants.STACKED_PANE_REMOVE, node );
+        PubSub.publish( core.Constants.SIDE_PANEL_REMOVE, node );
     };
 
     node.addEventListener( "close", onclose );
-    node._onShow = function(){
+    node.onShow = function(){
 
         if( src === "locals" ){
             let name = opts.name;
@@ -72,20 +72,20 @@ const createInstance = function(core, opts, src){
         }
     };
 
-    node._onHide = function(){
-            if( token ){
-                PubSub.unsubscribe( token );
-                token = 0;
-            }
-        };
+    node.onHide = function(){
+        if( token ){
+            PubSub.unsubscribe( token );
+            token = 0;
+        }
+    };
 
-    node._onUnload = function(){
-            if( token ){
-                PubSub.unsubscribe( token );
-                token = 0;
-            }
-            node.removeEventListener( "close", onclose );
-        };
+    node.onUnload = function(){
+        if( token ){
+            PubSub.unsubscribe( token );
+            token = 0;
+        }
+        node.removeEventListener( "close", onclose );
+    };
 
     return node;
     
@@ -104,10 +104,7 @@ module.exports = {
             let pos = core.Settings["histogram.panel.position"];
             if( !pos ) pos = core.Settings["details.panel.position"];
             if( !pos ) pos = { row: 3, column: 0 };
-            else if( typeof pos === "number" ) pos = { row: pos, column: 0 };
-            else if( typeof pos !== "object" ) pos = { row: 3, column: 0 };
-            pos.node = node;
-            PubSub.publish( core.Constants.STACKED_PANE_SHOW, pos );
+            PubSub.publish( core.Constants.SIDE_PANEL_ATTACH, { position: pos, node: node });
         };
 
 		let menuitem = new MenuItem({

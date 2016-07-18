@@ -3,7 +3,7 @@
     "version": "0.4.4",
     "main": "table.js",
     "packageDependencies": [
-        "stacked-pane"
+        "side-panel"
     ]
 }
 
