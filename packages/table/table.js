@@ -268,7 +268,8 @@ module.exports = {
             if( !pos ) pos = { row: 3, column: 0 };
             else if( typeof pos === "number" ) pos = { row: pos, column: 0 };
             else if( typeof pos !== "object" ) pos = { row: 3, column: 0 };
-            opts.position = { row: pos.row, column: pos.column };
+
+            opts.position = pos;
             PubSub.publish( core.Constants.STACKED_PANE_INSERT, opts );
         };
 
@@ -305,7 +306,7 @@ module.exports = {
         // (optionally) override default click on locals
 		core.Hooks.install( "locals_click", function( hook, opts ){
 
-            if( !core.Utils.array_cross_match( core.Settings["locals.click.view"], "table" ) 
+            if( !core.Utils.array_cross_match( core.Settings["locals.default.view"], "table" ) 
                 || !core.Utils.array_cross_match( opts.rclass, [ 'data.frame', 'matrix' ])) return false;
             
             // we have to be well-behaved
@@ -329,7 +330,7 @@ module.exports = {
 
         core.Hooks.install( "watches_click", function( hook, opts ){
 
-            if( !core.Utils.array_cross_match( core.Settings["watches.click.view"], "table" ) 
+            if( !core.Utils.array_cross_match( core.Settings["watches.default.view"], "table" ) 
                 || !core.Utils.array_cross_match( opts.rclass, [ 'data.frame', 'matrix' ])) return false;
 
             // we have to be well-behaved

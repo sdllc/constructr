@@ -556,10 +556,11 @@ function show_graphics_panel( core ){
 			
 		}
 		
-        let pos = core.Settings['graphics.panel.position'];
-        if( !pos || ( typeof pos !== "object" )) pos = { column: 0, row: 1 };
+        let opts = core.Settings['graphics.panel.position'];
+        if( !opts || ( typeof opts !== "object" )) opts = { column: 0, row: 1 };
+        opts.node = panel;
 
-		PubSub.publish( core.Constants.STACKED_PANE_SHOW, { node: panel, column: pos.column, row: pos.row });
+		PubSub.publish( core.Constants.STACKED_PANE_SHOW, opts );
 		resolve( panel );
 		
 	});

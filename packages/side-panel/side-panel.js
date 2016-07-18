@@ -24,50 +24,30 @@
 
 const PubSub = require( "pubsub-js" );
 
-const sidePanels = [];
-const widthCache = [];
+//const subPanels = [];
+//const widthCache = [];
+
+const sidePanels = {};
+const sidePanelWidth = {};
 
 const PARENT_ID = "shell-layout";
 const CACHE_NODE_ID = "orphans";
 
-
-var SidePanel = function( parent_selector, target_index, panel_id, cache ){
+var SubPanel = function( parent_node, target_index, panel_id, cache ){
 
 	let history = [];
-    let parent_node = document.getElementById(parent_selector) || 
-        document.querySelector( parent_selector );
+//    let parent_node = document.getElementById(parent_selector) || 
+//        document.querySelector( parent_selector );
 
     // target index is the desired index of the panel, but previous indexes
     // may not exist.  so we need to figure out what exists, and then use that
     // to determine an insert index.
-
-    /* 
     let insert_index = -1;
     let sps = parent_node.querySelectorAll( "split-pane" );
     for( let i = 0; i< sps.length; i++ ){
         let id = sps[i].id;
         let m = id.match( /side-panel-(\d+)$/);
         if(m && m[1] > target_index ){
-            insert_index = i;
-            break;
-        }
-    }
-    */
-    // TEST: LEFT SIDE
-    let insert_index = 0;
-    let sps = parent_node.querySelectorAll( "split-pane" );
-    for( let i = 0; i< sps.length; i++ ){
-        let id = sps[i].id;
-        if( id === "center-pane" ){
-            console.info( "@CP", i );
-            insert_index = Math.max( 0, i-1 );
-            break;
-        }
-        let m = id.match( /side-panel-(\d+)$/);
-        if( m && m[1] > target_index ){
-
-            console.info( "STOP on", id, i );
-
             insert_index = i;
             break;
         }
@@ -113,19 +93,11 @@ var SidePanel = function( parent_selector, target_index, panel_id, cache ){
 		
 		if( adding ) return; // don't need to close it
 
-        widthCache[target_index] = cached_size;
+        // widthCache[target_index] = cached_size;
         
-		var parent = node.parentNode;
-		while( parent && parent.tagName !== "SPLIT-PANEL" ) parent = parent.parentNode;
-		if( parent ){
-			parent.setSize({
-				target: node,
-				size: 0,
-                take_from: "center-pane",
-				hide: true
-			});
-		}
-				
+        node.setSize({ size: 0, hide: true });
+
+
 	};
 
 	this.attach = function(opts, toggle){
@@ -173,22 +145,19 @@ var SidePanel = function( parent_selector, target_index, panel_id, cache ){
 				
 		// and show if not visible
 		if( node.split < 10 ){
-			
-			// find parent splitter. 
-			var parent = node.parentNode;
-			while( parent && parent.tagName !== "SPLIT-PANEL" ) parent = parent.parentNode;
-			if( parent ){
-				parent.setSize({
-					target: node,
-                    take_from: "center-pane",
-					//size: cached_size ? cached_size : 33
-                    size: widthCache[target_index] ? widthCache[target_index] : 33
-				}).then( function(){
-					if( content._onShow ) content._onShow.call(this);
-					if( opts.shown ) opts.shown.call(this);
-				});
-			}
-			
+
+            let size = 0; // widthCache[target_index] ? widthCache[target_index] : 0;
+            let inst = this;
+
+            node.setSize({ 
+                size: size, 
+                balance: !size,
+                callback: function(){
+                    if( content._onShow ) content._onShow.call(inst);
+                    if( opts.shown ) opts.shown.call(inst);
+                }
+            });
+
 		}
 		else {
 
@@ -214,21 +183,76 @@ module.exports = {
 		});
 
 		PubSub.subscribe( core.Constants.SIDE_PANEL_ATTACH, function(channel, opts){
+
             let index = opts.panel || 0;
-            if( !sidePanels[index] ) sidePanels[index] = new SidePanel( PARENT_ID, index, "side-panel-" + index, CACHE_NODE_ID );
-            sidePanels[index].attach(opts);
+            let side = opts.side;
+            if( side !== "left" ) side = "right";
+
+            if( !sidePanels[side] ){
+
+                let width = sidePanelWidth[side] ? sidePanelWidth[side] : 33;
+                let parent = document.getElementById(PARENT_ID);
+                let node = parent.insertPane( 0, side === "left" ? 0 : -1 );
+
+                parent.setSize({
+                    target: node,
+                    take_from: "center-pane",
+                    size: width
+                });
+
+                node.id = side + "-layout-pane";
+
+                let splitter = document.createElement( "split-panel" );
+                splitter.direction = "horizontal";
+                node.appendChild( splitter );
+                sidePanels[side] = { node: node, splitter: splitter, count: 0, subPanels: [] };
+
+            }
+
+            if( !sidePanels[side].subPanels[index] ){
+                sidePanels[side].subPanels[index] = new SubPanel( sidePanels[side].splitter, index, "side-panel-" + side + "-" + index, CACHE_NODE_ID );
+                sidePanels[side].count++;
+            }
+
+            sidePanels[side].subPanels[index].attach(opts);
+
 		});
 
 		PubSub.subscribe( core.Constants.SIDE_PANEL_POP, function(channel, opts){
+            
             let index = opts ? opts.panel || 0 : 0;
-            if( !sidePanels[index] ) return; 
-			sidePanels[index].pop();
-            document.getElementById( PARENT_ID ).removePane( "side-panel-" + index );
-            sidePanels[index] = null;
+            let side = opts ? opts.side : 0;
+            if( side !== "left" ) side = "right";
+
+            if( !sidePanels[side] ) return;
+
+            sidePanels[side].count--;
+
+            if( !sidePanels[side].subPanels[index] ) return;
+
+			sidePanels[side].subPanels[index].pop();
+
+            sidePanels[side].splitter.removePane( "side-panel-" + side + "-" + index );
+            sidePanels[side].subPanels[index] = null;
+
+            if( sidePanels[side].count === 0 ){
+                sidePanelWidth[side] = sidePanels[side].node.split;
+                let parent = document.getElementById(PARENT_ID);
+                parent.setSize({
+                    target: sidePanels[side].node,
+                    size: 0,
+                    hide: true,
+                    take_from: "center-pane" 
+                }).then( function(){
+                    parent.removePane( sidePanels[side].node );
+                    sidePanels[side] = null;
+                });
+            }
+
+//            document.getElementById( PARENT_ID ).removePane( "side-panel-" + index );
 		})
 
 		return Promise.resolve();
 	}
 }
-
 

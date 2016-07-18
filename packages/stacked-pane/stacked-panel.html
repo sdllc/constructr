@@ -150,7 +150,9 @@
 					if( pc.length && pc[0] === node ){
 						// console.info( "Found @", i );
 						this.$.layout.removePane( i );
-						if( node._onUnload ) node._onUnload.call(this);
+						if( node._onUnload ){
+                         node._onUnload.call(this);
+                        }
 						return;
 					}
 				}

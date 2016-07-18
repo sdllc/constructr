@@ -24,7 +24,7 @@
 
 const PubSub = require( "pubsub-js" );
 
-const stackedPanels = []; 
+const stackedPanels = {}; 
 
 const create_stacked_pane = function( id ){
 
@@ -62,21 +62,30 @@ const create_stacked_pane = function( id ){
  */
 const open_stacked_pane = function( core, opts ){
 
-    let id = opts.column;
+    let column = opts.column || 0;
+    let side = opts.side;
+    if( side !== "left" ) side = "right";
+
+    let id = side + "-" + column;
+    
     let stacked = stackedPanels[id]; 
     if( !stacked ) stacked = stackedPanels[id] = create_stacked_pane( "stacked-panel-" + id );
 
-	PubSub.publish( core.Constants.SIDE_PANEL_ATTACH, { node: stacked, panel: id });
+	PubSub.publish( core.Constants.SIDE_PANEL_ATTACH, { node: stacked, panel: column, side: side });
 
     // args is [node, position].  cache the panel ID so 
     // we can remove it without needing to know where it is
     opts.node.__stacked_pane_id = id;
+    opts.node.__side = side;
+    opts.node.__column = column;
 
     let x = stacked.attach.call( stacked, opts.node, opts.row );
     if( x ){
         var a = x.getAttribute( "data-preserve" );
         if( a && a !== "false" ) document.getElementById( "orphans" ).appendChild(x);
-        else if( x._onUnload ) x._onUnload.call(this);
+        else if( x._onUnload ){
+            x._onUnload.call(this);
+        }
     }
 
 	return stacked;
@@ -97,8 +106,10 @@ const remove_from_stacked_pane = function( id, core, node){
 		let cache = document.getElementById( "orphans" );
 		cache.appendChild( node );
 	}
-	if( stacked.is_empty()) PubSub.publish( core.Constants.SIDE_PANEL_POP, { panel: id });
-	
+	if( stacked.is_empty()){
+        PubSub.publish( core.Constants.SIDE_PANEL_POP, { panel: node.__column, side: node.__side });
+        stackedPanels[id] = null;
+    }
 };
 
 module.exports = {
@@ -124,8 +135,8 @@ module.exports = {
             if( Array.isArray( opts )){
                 opts = {
                     node: opts[0],
-                    row: opts[1],
-                    column: opts[2]
+                    row: opts[1] || 0,
+                    column: opts[2] || 0
                 };
             }
 
@@ -161,8 +172,9 @@ module.exports = {
 
             let pos = opts.position || { row: 0, column: 0 };
             if( typeof pos !== "object" ) pos = { row: 0, column: 0 };
+            pos.node = panel;
 
-			open_stacked_pane( core, { node: panel, row: pos.row, column: pos.column });
+			open_stacked_pane( core, pos );
 
 		});
 

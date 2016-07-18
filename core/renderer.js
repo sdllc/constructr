@@ -464,11 +464,12 @@ var show_details = function(elt){
 		panel.setContent( elt.fulltext );
 	}
 	
-    let pos = Settings["details.panel.position"];
-    if( !pos ) pos = { row: 3, column: 0 };
-    else if( typeof pos === "number" ) pos = { row: pos, column: 0 };
+    let opts = Settings["details.panel.position"];
+    if( !opts ) opts = { row: 3, column: 0 };
+    else if( typeof opts === "number" ) opts = { row: opts, column: 0 };
+    opts.node = panel;
 
-	PubSub.publish( Constants.STACKED_PANE_SHOW, { row: pos.row, column: pos.column, node: panel });
+	PubSub.publish( Constants.STACKED_PANE_SHOW, opts );
 	
 };
 
@@ -733,7 +734,12 @@ var open_watch = function(){
 		
 
     }
-	PubSub.publish( Constants.STACKED_PANE_SHOW, { node: panel, row: 2 });
+
+    let opts = Settings["watch.panel.position"];
+    if( !opts || ( typeof opts !== "object" )) opts = { row: 2, column: 0 };
+    opts.node = panel;
+    
+	PubSub.publish( Constants.STACKED_PANE_SHOW, opts );
 	get_watches();
      
 }
@@ -849,6 +855,7 @@ var open_history_panel = function(){
                 }
             },
             _onUnload: function(){ 
+                console.info( "unload" );                
                 this.visible = false; 
                 if( token ) PubSub.unsubscribe(token);
                 if( token2 ) PubSub.unsubscribe(token2);
@@ -946,10 +953,11 @@ var open_history_panel = function(){
 
     }
 
-    let pos = Settings["history.panel.position"];
-    if( !pos || ( typeof pos !== "object" )) pos = { row: 5, column: 0 };
+    let opts = Settings["history.panel.position"];
+    if( !opts || ( typeof opts !== "object" )) opts = { row: 5, column: 0 };
+    opts.node = panel;
 
-    PubSub.publish( Constants.STACKED_PANE_SHOW, { node: panel, row: pos.row, column: pos.column });
+    PubSub.publish( Constants.STACKED_PANE_SHOW, opts );
 
 }
 
@@ -1126,7 +1134,11 @@ var open_locals = function(){
 
 	}
 
-	PubSub.publish( Constants.STACKED_PANE_SHOW, { node: panel, row: 2, column: 0 });
+    let opts = Settings["locals.panel.position"];
+    if( !opts || ( typeof opts !== "object" )) opts = { row: 2, column: 0 };
+    opts.node = panel;
+
+	PubSub.publish( Constants.STACKED_PANE_SHOW, opts);
 	get_locals();
 
 };
@@ -1757,6 +1769,9 @@ var init_r = function(opts = {}){
 						}
 						else {
 							let elts = Object.keys( val ).map( function( k2 ){
+                                let v2 = val[k2];
+                                if( typeof v2 === "string" )  
+    								return `${k2}='${val[k2]}'`;
 								return `${k2}=${val[k2]}`;
 							});
 							val = `list(${elts.join( ", " )})`;
@@ -2112,7 +2127,9 @@ document.addEventListener("DOMContentLoaded", function(event) {
 				if( null === val ) val = "NULL";
 				else {
 					var elts = Object.keys( val ).map( function( k2 ){
-						return `${k2}=${val[k2]}`;
+						let v2 = val[k2];
+                        if( typeof v2 === "string" ) return `${k2}='${v2}'`;
+						return `${k2}=${v2}`;
 					});
 					val = `list(${elts.join( ", " )})`;
 				}

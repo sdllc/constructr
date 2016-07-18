@@ -106,7 +106,8 @@ module.exports = {
             if( !pos ) pos = { row: 3, column: 0 };
             else if( typeof pos === "number" ) pos = { row: pos, column: 0 };
             else if( typeof pos !== "object" ) pos = { row: 3, column: 0 };
-            PubSub.publish( core.Constants.STACKED_PANE_SHOW, { row: pos.row, column: pos.column, node: node });
+            pos.node = node;
+            PubSub.publish( core.Constants.STACKED_PANE_SHOW, pos );
         };
 
 		let menuitem = new MenuItem({
@@ -133,7 +134,7 @@ module.exports = {
         // (optionally) override default click on locals
 		core.Hooks.install( "locals_click", function( hook, opts ){
 
-            if( !core.Utils.array_cross_match( core.Settings["locals.click.view"], "histogram" )
+            if( !core.Utils.array_cross_match( core.Settings["locals.default.view"], "histogram" )
                 || !opts.data.$data.histogram ) return false;
 
             // we have to be well-behaved
@@ -147,7 +148,7 @@ module.exports = {
 
         core.Hooks.install( "watches_click", function( hook, opts ){
 
-            if( !core.Utils.array_cross_match( core.Settings["watches.click.view"], "histogram" )
+            if( !core.Utils.array_cross_match( core.Settings["watches.default.view"], "histogram" )
                 || !opts.histogram ) return false;
 
             // we have to be well-behaved
