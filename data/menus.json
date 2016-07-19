@@ -70,6 +70,21 @@
 				}
 			]
 		},
+        {
+            "label": "File",
+            "submenu": [
+                {
+                    "label": "Save Environment",
+                    "message": "save-environment"
+                },
+                {   "type": "separator" },
+                {
+					"label": "Quit",
+					"accelerator": "CmdOrCtrl+Q",
+					"message": "close"
+				}
+            ]
+        },
 		{
 			"label": "Edit",
 			"submenu":  [

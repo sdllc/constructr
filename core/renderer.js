@@ -2286,6 +2286,21 @@ function quit(){
 	
 }
 
+function save_environment( quiet ){
+    var home = process.env[(process.platform === 'win32') ? 'USERPROFILE' : 'HOME'];
+    var data = Utils.escape_backslashes(path.join( home, RDATA), 2 );
+    //var cmd = `invisible( save.image('${data}'))`;
+    var cmd = `save.image('${data}')`;
+
+    console.info(cmd);
+    R.queued_exec(cmd).then( function(){
+        if( !quiet ){
+            PubSub.publish(Constants.SHELL_MESSAGE, [ Messages.SAVED_OK + "\n", "shell-system-information" ]);
+        }
+    });
+
+}
+
 var templates = new MenuTemplate(path.join( __dirname, "data", "menus.json" ));
 
 Menu.setApplicationMenu( templates.application );
@@ -2333,6 +2348,9 @@ PubSub.subscribe( "menu-click", function(){
 		break;
     case "history":
         open_history_panel();
+        break;
+    case "save-environment":
+        save_environment();
         break;
 	default:
 		console.warn( "Unhandled menu command", data.item.message );

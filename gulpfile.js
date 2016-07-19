@@ -79,7 +79,7 @@ gulp.task('jsclientlib', function(cb){
 	// FIXME: nonversioned package?
 	// OR: get version from GH
 
-	var win_version = "1.11.2";
+	var win_version = "1.11.3";
 	var win_package = `https://github.com/sdllc/jsclientlib/releases/download/${win_version}/jsClientLib_${win_version}.zip`;
 
 	var git_url = "https://github.com/sdllc/jsclientlib.git";

@@ -94,7 +94,11 @@ var PackageManager = function(){
 
             // load html files (polymer components)
             if( pkg.htmlComponents ){
-                let source_dir = core.Utils.escape_backslashes(core.Utils.patch_asar_path(elt), 2);
+
+                // don't blindly do that; in this case, we _want_ files from the archive
+
+                //let source_dir = core.Utils.escape_backslashes(core.Utils.patch_asar_path(elt), 2);
+                let source_dir = core.Utils.escape_backslashes(elt, 2);
                 pkg.htmlComponents.forEach( function(component){
                     core.Utils.install_html_component(
                         path.join( source_dir, component ));

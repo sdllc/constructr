@@ -40,6 +40,8 @@
 	"DOWNLOAD_COMPLETE": "Download complete",
 	"DOWNLOAD_FAILED": "Download failed",
 
+    "SAVED_OK": "Saved OK",
+
     "FIELD": "Field",
     "CLASS": "Class",
     "VALUE": "Value",
