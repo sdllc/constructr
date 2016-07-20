@@ -758,6 +758,8 @@ var open_history_panel = function(){
         let query;
         let removedLines = 0;
 
+        let markerAnnotations = [];
+
         let update_history = function( ch, args ){
 
             let cmd = args[2].join('\n').trim();
@@ -785,6 +787,23 @@ var open_history_panel = function(){
                 // preserve line numbers, session only
                 removedLines++;
                 cm.setOption( "firstLineNumber", 1+removedLines );
+
+                // markers and classes move up, but annotations don't -- correct
+                if( !markerAnnotations.length ) return;
+
+                let annotations_tmp = [];
+                markerAnnotations.forEach( function( a ){
+                    if( a.from.line > 0 ){
+                        let line = a.from.line-1;
+                        annotations_tmp.push({
+                            from: { ch: 0, line: line },
+                            to: { ch: 1, line: line }
+                        });
+                    }
+                });
+
+                markerAnnotations = annotations_tmp;
+                annotation.update(markerAnnotations);
 
             }
 
@@ -895,16 +914,26 @@ var open_history_panel = function(){
 
         let annotation = cm.annotateScrollbar("history-scrollbar-annotation");
 
-        let setMarker = function( line, marker ){
+        let setMarker = function( line, marker, tollUpdates ){
             if( !marker ){
                 cm.setGutterMarker( line, "history-gutter", null );
                 cm.getDoc().removeLineClass( line, "background", "history-marker-background" );
+                markerAnnotations = markerAnnotations.filter( function( ma ){
+                    return ma.from.line !== line;
+                });
             }
             else {
                 let x = document.createElement( "div" );
                 x.className = "history-gutter-marker";
                 cm.setGutterMarker( line, "history-gutter", x );
                 cm.getDoc().addLineClass( line, "background", "history-marker-background" );
+                markerAnnotations.push({
+                    from: { line: line, ch: 0 }, to: { line: line, ch: 1 }
+                });
+            }
+            if( !tollUpdates ){
+                markerAnnotations.sort( function(a, b){ return a.from.line - b.from.line; });
+                annotation.update(markerAnnotations);
             }
         };
 

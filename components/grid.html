@@ -157,7 +157,7 @@ FIXME: back-merge in list so we don't have multiple components
 
             },
 
-            render: function( selection, column_classes, data, m, row, row_headers, label_width, first_col, last_col, left, header, resizable, fixed, hm, sort ){
+            render: function( selection, column_classes, data, m, row, row_headers, label_width, first_col, last_col, left, header, resizable, fixed, hm, sort, precision ){
 
                 let index = 0;
 
@@ -220,8 +220,14 @@ FIXME: back-merge in list so we don't have multiple components
                     // cell.style.flexGrow = m.cell_widths[i] ;
                     
                     let val = ( header ? data[i] : data[i][row] );
+                    /*
+                    if( typeof val === "number" ){
+                        if( precision.fp >= 0 ) cell.textContent = val.toFixed( precision.fp );
+                        else cell.textContent = +val.toPrecision(precision.np);
+                    } 
+                    else */
+                    cell.textContent = val.toString();
 
-                    cell.textContent = ( typeof val === "number" ) ? +val.toPrecision(7) : ( header ? data[i] : data[i][row] );//.toString();
                     cell.style.display = "block";
                     cell.row = header ? -1 : row;
                     cell.col = i;
@@ -422,6 +428,16 @@ FIXME: back-merge in list so we don't have multiple components
                     type: Boolean, 
                     value: false
                 },
+                /*
+                fixedPrecision: {
+                    type: Number, 
+                    value: -1
+                },
+                numberPrecision: {
+                    type: Number,
+                    value: 7
+                },
+                */
                 sortColumn: -1, 
                 sortAscending: false
             },
@@ -901,29 +917,43 @@ FIXME: back-merge in list so we don't have multiple components
                 let newlines = 0;
                 //let hr1 = process.hrtime();
 
+                this.maxdecimal = 0;
+
+                //let HR = process.hrtime();
+
                 let longest = this.data.map( function( col, cindex ){
 
                     let max = 0;
-                    if( col.toString().indexOf("\n") < 0 ){
-                        for( let i = 0; i< col.length; i++ ) max = Math.max( max, col[i].toString().length );
+                    let t = typeof( col[0] );
+
+                    if( t === "number" ){
+                        for( let i = 0; i< col.length; i++ ){
+                            max = Math.max( max, col[i].toString().length ); // should be toPrecision, but that's too slow!
+                        }
                         return "X".repeat(max);
                     }
                     else {
+                        if( col.toString().indexOf("\n") < 0 ){
+                            for( let i = 0; i< col.length; i++ ) max = Math.max( max, col[i].toString().length );
+                            return "X".repeat(max);
+                        }
+                        else {
 
-                        // there's got to be a better way to do this
+                            // there's got to be a better way to do this
 
-                        for( let i = 0; i< col.length; i++ ){
-                            let s = col[i].toString().split("\n" );                        
-                            for( let j = 0; j< s.length; j++ ) max = Math.max( max, s[j].length );
-                            if( s.length > 1 ) newlines = Math.max( newlines, s.length - 1 );
-                        };
-                        return "\n".repeat(newlines) + "X".repeat(max);
+                            for( let i = 0; i< col.length; i++ ){
+                                let s = col[i].toString().split("\n" );                        
+                                for( let j = 0; j< s.length; j++ ) max = Math.max( max, s[j].length );
+                                if( s.length > 1 ) newlines = Math.max( newlines, s.length - 1 );
+                            };
+                            return "\n".repeat(newlines) + "X".repeat(max);
+                        }
                     }
-                    return tmp[0];
+                    return tmp[0]; // ??
                 });
-
-                // let hr2 = process.hrtime(hr1);
-                // console.info("elapsed (2): %ds %dms", hr2[0], hr2[1]/1000000);
+                
+                //HR = process.hrtime(HR);
+                //console.info("elapsed (2): %ds %dms", HR[0], HR[1]/1000000);
 
                 let m = this.measurement.measure( longest );
                 m.drag_delta = new Array( this.data.length );
@@ -1108,7 +1138,9 @@ FIXME: back-merge in list so we don't have multiple components
                         Polymer.dom( grid ).appendChild( this.header_row );
                     }
 
-                    this.header_row.render( this.selection, [], this.column_headers, m, -1, this.row_headers ? " " : null, this.row_header_width, first_col, last_col, left, true, this.resizeColumns, this.fixed, this.header_measurements, { col: this.sortColumn, asc: this.sortAscending });
+                    this.header_row.render( this.selection, [], this.column_headers, m, -1, this.row_headers ? " " : null, 
+                            this.row_header_width, first_col, last_col, left, true, this.resizeColumns, this.fixed, 
+                            this.header_measurements, { col: this.sortColumn, asc: this.sortAscending } ); // , { np: this.numberPrecision, fp: this.fixedPrecision });
                     this.header_row.style.top = ( area.scrollTop - margin_top ) + "px";
                     this.header_row.style.display = null;
                     //if( this.fixed ) this.header_row.style.width = area.clientWidth + "px";
@@ -1125,7 +1157,9 @@ FIXME: back-merge in list so we don't have multiple components
                         this.nodes[index] = document.createElement( this.template );
                         Polymer.dom( grid ).appendChild( this.nodes[index] );
                     }
-                    this.nodes[index].render( this.selection, this.column_classes, this.data, m, this.rank[first_row], this.row_headers, this.row_header_width, first_col, last_col, left, false, false, this.fixed, this.header_measurements, null );
+                    this.nodes[index].render( this.selection, this.column_classes, this.data, m, this.rank[first_row], this.row_headers, 
+                            this.row_header_width, first_col, last_col, left, false, false, 
+                            this.fixed, this.header_measurements, null ); // , { np: this.numberPrecision, fp: this.fixedPrecision });
                     this.nodes[index].style.display = "flex";
                     //if( this.fixed ) this.nodes[index].style.width = area.clientWidth + "px";
 
