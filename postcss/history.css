@@ -32,5 +32,9 @@
 
 .history-scrollbar-annotation {
     background: rgba( 160, 200, 255, .75 );
-
 }
+
+.history-marker-background {
+    background: rgba( 160, 200, 255, .25 );
+}
+

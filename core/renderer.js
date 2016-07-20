@@ -756,9 +756,6 @@ var open_history_panel = function(){
         let token2 = null;
         let loaded = false;
         let query;
-
-        let markers = [];
-        let markerAnnotations = [];
         let removedLines = 0;
 
         let update_history = function( ch, args ){
@@ -782,30 +779,12 @@ var open_history_panel = function(){
 
             if( count >= HISTORY_MAX ){
 
-                // remove the first line, then adjust all markers
+                // remove the first line
                 cm.replaceRange( "", { line: 0, ch: 0 }, { line: 1, ch: 0 });
 
                 // preserve line numbers, session only
                 removedLines++;
                 cm.setOption( "firstLineNumber", 1+removedLines );
-
-                if( !markerAnnotations.length ) return;
-
-                markers = [];
-                let annotations_tmp = [];
-                markerAnnotations.forEach( function( a ){
-                    if( a.from.line > 0 ){
-                        let line = a.from.line-1;
-                        annotations_tmp.push({
-                            from: { ch: 0, line: line },
-                            to: { ch: 1, line: line }
-                        });
-                        setMarker( line, true, true );
-                    }
-                });
-
-                markerAnnotations = annotations_tmp;
-                annotation.update(markerAnnotations);
 
             }
 
@@ -874,7 +853,9 @@ var open_history_panel = function(){
         panel.addEventListener( "contextmenu", function(e){
 
             let pos = cm.getDoc().getCursor();
-            let marked = !!markers[pos.line];
+            let info = cm.lineInfo(pos.line);
+            let marked = (!!info.gutterMarkers);
+
             let template = [
                 { label: 'Copy', role: 'copy' },
                 { label: 'Select All', click: function(e){
@@ -914,31 +895,23 @@ var open_history_panel = function(){
 
         let annotation = cm.annotateScrollbar("history-scrollbar-annotation");
 
-        let setMarker = function( line, marker, tollUpdates ){
+        let setMarker = function( line, marker ){
             if( !marker ){
                 cm.setGutterMarker( line, "history-gutter", null );
-                markers[line] = false;
-                markerAnnotations = markerAnnotations.filter( function( ma ){
-                    return ma.from.line !== line;
-                });
+                cm.getDoc().removeLineClass( line, "background", "history-marker-background" );
             }
             else {
                 let x = document.createElement( "div" );
                 x.className = "history-gutter-marker";
                 cm.setGutterMarker( line, "history-gutter", x );
-                markers[line] = true;
-                markerAnnotations.push({
-                    from: { line: line, ch: 0 }, to: { line: line, ch: 1 }
-                });
-            }
-            if( !tollUpdates ){
-                markerAnnotations.sort( function(a, b){ return a.from.line - b.from.line; });
-                annotation.update(markerAnnotations);
+                cm.getDoc().addLineClass( line, "background", "history-marker-background" );
             }
         };
 
         cm.on( "gutterClick", function( instance, line, gutter, e ){
-            setMarker( line, !markers[line] );
+            let info = instance.lineInfo(line);
+            let marked = (!!info.gutterMarkers);
+            setMarker( line, !marked );
         });
 
         panel.$.content_area.addEventListener( "keydown", function(e){
