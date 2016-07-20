@@ -219,7 +219,9 @@ FIXME: back-merge in list so we don't have multiple components
 
                     // cell.style.flexGrow = m.cell_widths[i] ;
                     
-                    cell.textContent = ( header ? data[i] : data[i][row] ).toString();
+                    let val = ( header ? data[i] : data[i][row] );
+
+                    cell.textContent = ( typeof val === "number" ) ? +val.toPrecision(7) : ( header ? data[i] : data[i][row] );//.toString();
                     cell.style.display = "block";
                     cell.row = header ? -1 : row;
                     cell.col = i;
