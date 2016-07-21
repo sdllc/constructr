@@ -74,7 +74,7 @@
             "label": "File",
             "submenu": [
                 {
-                    "label": "Save History",
+                    "label": "Save History...",
                     "message": "save-history"
                 },
                 {

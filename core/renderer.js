@@ -850,6 +850,11 @@ var open_history_panel = function(){
                     setMarker( pos.line, !marked );
                 }},
                 { type: 'separator' },
+                {
+                    label: 'Save History...', click: function(){
+                        save_history();
+                    }
+                },
                 { label: 'Clear History', click: function(e){
                     setImmediate( function(){
                         shell.clearHistory();
@@ -2025,7 +2030,7 @@ document.addEventListener("DOMContentLoaded", function(event) {
 	// buffered resize. we err on the side of being slow (vs. lots of calls)
 	window._resize_timeout = null;
 	window.addEventListener( "resize", function(e){
-//        console.info( "publish resize" );
+        console.info( "publish resize" );
 		PubSub.publish( "resize", e );
 		if( _resize_timeout ) window.clearTimeout( _resize_timeout );
 		_resize_timeout = window.setTimeout( resize_panes, RESIZE_TIMEOUT );

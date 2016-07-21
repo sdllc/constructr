@@ -54,6 +54,8 @@ var updateData = function( inst ){
             cmd = instance.field;
         }
 
+console.info( "Calling UD" );
+
 		R.queued_internal( cmd ).then( function( rsp ){
 			if( rsp.response && rsp.response.$data ){
                 if( rsp.response.$type === "matrix" ) updateFromMatrix( rsp.response, instance );
