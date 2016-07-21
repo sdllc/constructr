@@ -645,23 +645,24 @@ var open_watch = function(){
             let names = [];
             let values = [];
             let classes = [];
+            let sizes = [];
 
             watches = watch;
-
             watch.forEach( function( w ){
                 names.push( w.name );
                 let text = w.value;
                 if( text.length > 64 ) text = text.substring( 0, 61 ) + "...";
                 values.push( text );
+                sizes.push( w.size );
                 classes.push( w.rclass || "" );
             });
 
-            let headers = watch.length ? [ Messages.FIELD, Messages.CLASS, Messages.VALUE ] : false;
+            let headers = watch.length ? [ Messages.FIELD, Messages.CLASS, Messages.SIZE, Messages.VALUE ] : false;
 
             panel.node.update({
                 fixed: true,
-                data: [ names, classes, values ],
-                column_classes: [ "string", "string", "left" ],
+                data: [ names, classes, sizes, values ],
+                column_classes: [ "string", "string", "string", "left" ],
                 column_headers: headers
             }, true, true );
 
@@ -1591,9 +1592,10 @@ var init_r = function(opts = {}){
 					})
 					line = text.split( "\n" )[0];
 				}
-								
+
 				return {
 					rclass: elt.$data['class'],
+					size: elt.$data['size'],
 					index: index,
 					name: name,
 					key: key,
