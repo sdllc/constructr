@@ -227,6 +227,9 @@ FIXME: back-merge in list so we don't have multiple components
                     } 
                     else */
                     cell.textContent = val.toString();
+ 
+                    if( cell.offsetWidth < cell.scrollWidth ) cell.setAttribute( "title", cell.textContent );
+                    else if( cell.hasAttribute("title")) cell.removeAttribute( "title" );
 
                     cell.style.display = "block";
                     cell.row = header ? -1 : row;
@@ -354,12 +357,6 @@ FIXME: back-merge in list so we don't have multiple components
                 box-sizing: border-box;
             }
 
-            /*
-            #grid-columns.fixed-overflow {
-                max-width: 100%;
-            }
-            */
-
             #grid-rows {
                 position: static;
                 box-sizing: border-box;
@@ -369,20 +366,15 @@ FIXME: back-merge in list so we don't have multiple components
                 flex-grow: 1;
             }
 
-            /*
-            #grid-rows.fixed-overflow {
-                max-width: 100%;
-            }
-            */
             #grid-area.fixed-overflow {
                 overflow-x: hidden;
             }
 
-            #grid-area.fixed-overflow #grid-columns.fixed-overflow {
+            #grid-area.fixed-overflow > #grid-columns {
                 max-width: 100%;
             }
 
-            #grid-area.fixed-overflow #grid-rows.fixed-overflow {
+            #grid-area.fixed-overflow > #grid-columns > #grid-rows {
                 max-width: 100%;
             }
 
@@ -423,6 +415,7 @@ FIXME: back-merge in list so we don't have multiple components
 
     </template>
     <script>
+
         Polymer({
             is: "display-grid",
 
@@ -534,7 +527,6 @@ FIXME: back-merge in list so we don't have multiple components
                 clipboard.writeText(data.join("\n"));
 
             },
-
 
             keydown: function(e){
 

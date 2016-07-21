@@ -44,6 +44,7 @@
 
     "FIELD": "Field",
     "CLASS": "Class",
+    "SIZE": "Size",
     "VALUE": "Value",
     "DETAILS": "Details",
     "ADD_WATCH": "Add Watch",

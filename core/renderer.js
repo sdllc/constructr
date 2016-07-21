@@ -682,6 +682,32 @@ var open_watch = function(){
      
 }
 
+// this is preserved over multiple calls (ideally)
+let history_file = "history.R";
+var save_history = function(){
+    var p = dialog.showSaveDialog({
+        title: "Save History",
+        defaultPath: history_file,
+        filters: [
+            { name: 'R source', extensions: ['R', 'r', 'rsrc'] },
+            { name: "All files", extensions: ['*'] }
+        ]
+    })
+    // this does not fire change event, so call 
+    if( p && p.length ){
+
+        let history = shell.get_history();
+        let header = `\n# Shell history saved ${new Date().toString()}\n\n`;
+
+        fs.writeFile( p, header + history.join("\n"), { encoding: "utf8" }, function(err) {
+            if(err) {
+        		// PubSub.publish( Constants.SHELL_MESSAGE, [ Messages.R_HOME_NOT_FOUND, "shell-system-information", true ]);
+            }
+        });
+
+    }
+}
+
 var open_history_panel = function(){
 
 	var panel = document.getElementById( "history-panel" );
@@ -1050,24 +1076,25 @@ var open_locals = function(){
 			keys = locals.$data.fields && locals.$data.fields.$names ? locals.$data.fields.$names : [];
 			data = locals.$data.fields && locals.$data.fields.$data ? locals.$data.fields.$data : {};
 
-            let table_data = [ keys, Array(keys.length), Array(keys.length) ];
+            let table_data = [ keys, Array(keys.length), Array(keys.length), Array(keys.length) ];
 
             for( let i = 0; i< keys.length; i++ ){
                 let key = keys[i];
     		    let val = data[key];
                 table_data[1][i] = val.$data.class;
+                table_data[2][i] = val.$data.size.toString();
     			
                 let text = val.$data.value;
                 if( Array.isArray(text)) text = text[0];
                 if( text.length > 64 ) text = text.substring( 0, 61 ) + "...";
-                table_data[2][i] = text;
+                table_data[3][i] = text;
             };
 
             panel.node.update({
                 fixed: true,
                 data: table_data,
-                column_classes: [ "string", "string", "left" ],
-                column_headers: [ Messages.FIELD, Messages.CLASS, Messages.VALUE ]
+                column_classes: [ "string", "string", "string", "left" ],
+                column_headers: [ Messages.FIELD, Messages.CLASS, Messages.SIZE, Messages.VALUE ]
             })
 
 		};
@@ -1263,7 +1290,7 @@ var open_shell_preferences = function(toggle){
 			title: "R Startup File",
 			defaultPath: startup.value,
 			filters: [
-				{ name: 'R source', extensions: ['r', 'rsrc'] },
+				{ name: 'R source', extensions: ['R', 'r', 'rsrc'] },
 				{ name: "All files", extensions: ['*'] }],
 			properties: [ 'openFile' ]
 		})
@@ -2259,6 +2286,9 @@ PubSub.subscribe( "menu-click", function(){
         break;
     case "save-environment":
         save_environment();
+        break;
+    case "save-history":
+        save_history();
         break;
 	default:
 		console.warn( "Unhandled menu command", data.item.message );
