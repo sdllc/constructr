@@ -124,6 +124,9 @@ const updateFromMatrix = function(mat, instance){
         column_classes: colclasses
     });
 
+    //instance.header.title = `Table view: ${instance.field} ${data[0] ? data[0].length : 0}x${data.length}`;
+
+
 }
 
 const updateFromFrame = function(df, instance){
@@ -187,9 +190,11 @@ const updateFromFrame = function(df, instance){
         column_classes: column_classes
     });
 
+    //instance.header.title = `Table view: ${instance.field} ${table[0] ? table[0].length : 0}x${table.length}`;
+
 };
 
-var createInstance = function( field, id, menutype, menuindex ){
+var createInstance = function( core, field, id, menutype, menuindex ){
 
     let node = document.createElement( "display-grid" );
     let instance = { 
@@ -218,29 +223,52 @@ var createInstance = function( field, id, menutype, menuindex ){
 
     let token = 0;
 
-    var rslt = {
-        node: node,
-        onShow: function(){
-            token = PubSub.subscribe( 'resize', func );
-            instance.visible = true;
-			setImmediate( function(){
-				updateData.call( this, instance );
-			}, this );
-        },
-        onHide: function(){
-            if( token ) PubSub.unsubscribe( token );
-            token = 0;
-            instance.visible = false;
-        },
-        onUnload: function(){
-            if( token ) PubSub.unsubscribe( token );
-            token = 0;
-            instance.visible = false;
-            instance.node = null;
-        }
+    // return rslt;
+
+    let pos = core.Settings["table.panel.position"];
+    if( !pos ) pos = core.Settings["details.panel.position"];
+    if( !pos ) pos = { row: 3, column: 0 };
+
+    let panel = document.createElement( "div" );
+    panel.className = "panel";
+
+    let header = document.createElement( "panel-header" );
+    header.title = "Table view: " + field;
+
+    var closelistener = function(){
+    header.removeEventListener( "close", closelistener );
+        PubSub.publish( core.Constants.SIDE_PANEL_REMOVE, panel );
     };
 
-    return rslt;
+    header.addEventListener( "close", closelistener );
+    panel.appendChild( header );
+    panel.appendChild( node );
+
+    panel.onShow = function(){
+        token = PubSub.subscribe( 'resize', func );
+        instance.visible = true;
+        setImmediate( function(){
+            updateData.call( this, instance );
+        }, this );
+    };
+    
+    panel.onHide = function(){
+        if( token ) PubSub.unsubscribe( token );
+        token = 0;
+        instance.visible = false;
+    };
+
+    panel.onUnload = function(){
+        if( token ) PubSub.unsubscribe( token );
+        token = 0;
+        instance.visible = false;
+        instance.node = null;
+    };
+
+    //instance.panel = panel;
+    //instance.header = header;
+
+    PubSub.publish( core.Constants.SIDE_PANEL_ATTACH, { node: panel, position: pos });
 
 };
 
@@ -250,51 +278,12 @@ module.exports = {
 	init: function(core){
 		
 		R = core.R;
-
-        // grid moved to core
-        //let html = path.join( "packages", "table", "grid.html" );
-		//core.Utils.install_html_component( html );
         
 		// install hooks
 		
-		// update: data changes
-		core.Hooks.install( "update", function(){
+		core.Hooks.install( "update", function(){ // update: data changes (maybe)
 			updateData();
 		});
-
-        const show = function(opts){
-            
-            let pos = core.Settings["table.panel.position"];
-            if( !pos ) pos = core.Settings["details.panel.position"];
-            if( !pos ) pos = { row: 3, column: 0 };
-
-            // opts.position = pos;
-            // PubSub.publish( core.Constants.STACKED_PANE_INSERT, opts );
-
-            let panel = document.createElement( "div" );
-			panel.className = "panel";
-				
-			let header = document.createElement( "panel-header" );
-			header.title = opts.title || "Panel";
-				
-			var closelistener = function(){
-				header.removeEventListener( "close", closelistener );
-                //let id = panel.__stacked_pane_id || 0;
-				//remove_from_stacked_pane( id, core, panel );
-                PubSub.publish( core.Constants.SIDE_PANEL_REMOVE, panel );
-			};
-
-			header.addEventListener( "close", closelistener );
-			panel.appendChild( header );
-			panel.appendChild( opts.node );
-			
-			panel.onShow = opts.onShow;
-			panel.onHide = opts.onHide;
-			panel.onUnload = opts.onUnload;
-
-            PubSub.publish( core.Constants.SIDE_PANEL_ATTACH, { node: panel, position: pos });
-
-        };
 
         /*
         core.Hooks.install( "preferences_panel", function(){
@@ -311,9 +300,7 @@ module.exports = {
 		let menuitem = new MenuItem({
 			label: "View table",
 			click: function( menuitem ){
-				var opts = createInstance( menu_target, 100, menuitem.menutype, menu_index );
-				opts.title = "Table view: " + menu_target;
-				show( opts );
+				createInstance( core, menu_target, 100, menuitem.menutype, menu_index );
 			}
 		});
 
@@ -336,9 +323,7 @@ module.exports = {
             if( opts.handled ) return false;
             opts.handled = true;
 
-            var inst = createInstance( opts.name, 100, "locals", 0 );
-            inst.title = "Table view: " + opts.name;
-            show( inst );
+            createInstance( core, opts.name, 100, "locals", 0 );
 
             return true;
         });
@@ -360,9 +345,7 @@ module.exports = {
             if( opts.handled ) return false;
             opts.handled = true;
 
-            var inst = createInstance( opts.name, 100, "watch", opts.index );
-            inst.title = "Table view: " + opts.name;
-            show( inst );
+            createInstance( core, opts.name, 100, "watch", opts.index );
             return true;
 
         });

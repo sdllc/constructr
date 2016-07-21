@@ -354,9 +354,11 @@ FIXME: back-merge in list so we don't have multiple components
                 box-sizing: border-box;
             }
 
+            /*
             #grid-columns.fixed-overflow {
                 max-width: 100%;
             }
+            */
 
             #grid-rows {
                 position: static;
@@ -367,7 +369,20 @@ FIXME: back-merge in list so we don't have multiple components
                 flex-grow: 1;
             }
 
+            /*
             #grid-rows.fixed-overflow {
+                max-width: 100%;
+            }
+            */
+            #grid-area.fixed-overflow {
+                overflow-x: hidden;
+            }
+
+            #grid-area.fixed-overflow #grid-columns.fixed-overflow {
+                max-width: 100%;
+            }
+
+            #grid-area.fixed-overflow #grid-rows.fixed-overflow {
                 max-width: 100%;
             }
 
@@ -412,6 +427,13 @@ FIXME: back-merge in list so we don't have multiple components
             is: "display-grid",
 
             properties: {
+
+                "layout-event-handler": {
+                    type: Boolean,
+                    value: true,
+                    reflectToAttribute: true
+                },
+
                 template: {
                     type: String,
                     value: "grid-row"
@@ -442,12 +464,16 @@ FIXME: back-merge in list so we don't have multiple components
                 sortAscending: false
             },
 
-            /*
             listeners: {
-                'mousedown': 'mousedown',
-                'keydown': 'keydown'
+                'layout': 'onlayout'
             },
-            */
+
+            onlayout: function(){
+
+                // not if we have not yet initialized                
+                if( this.grid_measurements ) this.refresh();
+
+            },
 
             clear_selection: function(){
                 this.select( -1, -1 );
@@ -843,13 +869,13 @@ FIXME: back-merge in list so we don't have multiple components
                 // force boolean
                 this.fixed = !!this.fixed;
 
+                // FIXME: just cascade
+
                 if( this.fixed ){
-                    this.$['grid-rows'].classList.add( "fixed-overflow" );
-                    this.$['grid-columns'].classList.add( "fixed-overflow" );
+                    this.$['grid-area'].classList.add( "fixed-overflow" );
                 }
                 else {
-                    this.$['grid-rows'].classList.remove( "fixed-overflow" );
-                    this.$['grid-columns'].classList.remove( "fixed-overflow" );
+                    this.$['grid-area'].classList.remove( "fixed-overflow" );
                 }
 
                 if( opts.row_headers && typeof opts.row_headers === "boolean" ){

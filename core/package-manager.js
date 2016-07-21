@@ -54,12 +54,28 @@ var PackageManager = function(){
     };
 
     /**
+     * consolidate list/load
+     */
+    this.load_packages = function( dir, core, opts ){
+        let instance = this;
+        return new Promise( function( resolve, reject ){
+            instance.list_packages( dir ).then( function( list ){
+                return instance.load_packages_list( list, core, opts );
+            }).then( function(){
+                resolve();
+            }).catch( function(e){
+                reject(e);
+            });
+        });
+    };
+
+    /**
      * load packages, recursively, from list.
      * added dependencies.  todo: versioned deps
      * 
      * FIXME: this is turning into spaghetti.  refactor.
      */
-    this.load_packages = function( list, core, opts ){
+    this.load_packages_list = function( list, core, opts ){
         
         let self = this;
 
@@ -167,7 +183,7 @@ var PackageManager = function(){
                     }
                     return Promise.resolve();
                 }).then( function(){
-                    return self.load_packages( list, core, opts );
+                    return self.load_packages_list( list, core, opts );
                 }).then( function(){
                     resolve();
                 });
@@ -184,7 +200,7 @@ var PackageManager = function(){
                         })){
                             self.pending.splice( i, 1 );
                             init_package( pkg, pkg.__dirname ).then( function(){
-                                return self.load_packages( list, core, opts );
+                                return self.load_packages_list( list, core, opts );
                             }).then( function(){
                                 resolve();
                             });

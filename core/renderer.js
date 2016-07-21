@@ -73,6 +73,8 @@ if( process.platform === "darwin" ){
 /**
  * constants array can be updated by packages; but we never want it to 
  * return undefined, as that might have some side-effects in message passing.
+ * 
+ * update: can't redefine constants.  again this is just to prevent accidents.
  */
 const Constants = new Proxy({
 
@@ -86,11 +88,21 @@ const Constants = new Proxy({
 		SETTINGS_CHANGE: "settings-change"
 
 	}, {
+        set: function(target, property, value, receiver){
+			if( target.hasOwnProperty(property)) throw( "can't redefine constant: " + property );
+            target[property] = value;
+            return true;
+        },
 		get: function(target, property, receiver) {
+
+            // note: this breaks iteration? perhaps should be 
+            // if( target[property] )
+
 			if( target.hasOwnProperty(property) ) return target[property];
 			throw( "undefined constant: " + property );
 		}
-	});
+});
+
 
 const Messages = require( "./messages.js" ).load(path.join( __dirname, "data", "messages.json" ));
 const Packages = PackageManager.packages; // alias
@@ -496,92 +508,16 @@ var add_watch = function( field, func, envir, show ){
 
 	// console.info( cmd );
 	R.queued_exec(cmd).then( function(){
-		if( show ) open_watch();
-		else get_watches();
+		
+        // the method will send a callback.
+        // FIXME: make that an option in the R call
+
+        //if( show ) open_watch();
+		//else get_watches();
+
 	});
 
 }
-
-/*
-var open_watch = function(){
-
-	var panel = document.getElementById( "watch-panel" );
-	if( !panel ) {
-	
-		panel = document.createElement( "watch-list-panel" );
-		panel.id = "watch-panel";
-		panel.header = "Watches";
-		panel.className = "panel";
-		panel['node-class-list'] = "watch-entry";
-		panel.setAttribute( "data-preserve", true );
-		panel.setAttribute( "data-display", "watch" );
-		panel.watches = true;
-		panel.addEventListener( "add-watch", function(e){
-			var node = document.createElement( "add-watch-form" );
-			PubSub.publish( Constants.DIALOG_SHOW, {
-				title: "Add Watch",
-				content: node,
-				validate: function(dialog){
-					return node.$.field.value.trim() !== "";
-				},
-				complete: function( accept ){
-					if( accept ){
-						add_watch( node.$.field.value, node.$.func.value );
-					}
-				}
-			});
-		});
-		
-		panel.addEventListener( 'contextmenu', function(e){
-			var target = e.target;
-			while( target && target.tagName !== "WATCH-LIST-ENTRY" ) target = target.parentNode;
-			if( target ){
-				watches_context_menu.$index = Number( target.getAttribute( "index" ));
-				watches_context_menu.target = target;
-				Hooks.exec( "watch_context_menu", watches_context_menu );
-				watches_context_menu.popup(remote.getCurrentWindow());
-			}
-		});
-		
-		panel.addEventListener( 'close', function(e){ 
-			PubSub.publish( Constants.STACKED_PANE_REMOVE, panel );
-		});
-
-		panel.addEventListener( 'select-field', function(e){
-			show_details( e.detail );
-		});
-		
-		panel.addEventListener( 'remove-watch', function(e){
-			var cmd = `js.client.remove.watch(${e.detail.index+1});`;
-			R.queued_exec( cmd ).then( function(){
-				get_watches();
-			})
-		});
-		
-		var on_watch = function(msg, watch){
-			panel.data = watch;
-		};
-		
-		//Bus.on( "watch", on_watch );
-		PubSub.subscribe( "watch", on_watch );
-		
-		panel._onHide = function(){
-			delete( watches_registry.watch );
-		};
-		panel._onShow = function(){
-			watches_registry.watch = 1;
-		};
-		panel._onUnload = function(){
-			delete( watches_registry.watch );
-		};
-		
-	}
-
-	PubSub.publish( Constants.STACKED_PANE_SHOW, [ panel, 2 ]);
-	get_watches();
-
-}
-*/
 
 var open_watch = function(){
 
@@ -2170,9 +2106,6 @@ document.addEventListener("DOMContentLoaded", function(event) {
 	}).then( function( rslt ){
 
 		init_status = rslt;
-		return PackageManager.list_packages( path.join( __dirname, "packages" ));
-
-	}).then( function(list){
 
 		var core = { 
 			R: R, 
@@ -2183,7 +2116,8 @@ document.addEventListener("DOMContentLoaded", function(event) {
 			Packages: PackageManager.packages, 
 			Messages: Messages 
 		};
-		return PackageManager.load_packages( list, core );
+
+		return PackageManager.load_packages( path.join( __dirname, "packages" ), core );
 
 	}).then( function(){
 
@@ -2241,50 +2175,22 @@ document.addEventListener("DOMContentLoaded", function(event) {
 });
 
 function resize_panes(){
+
 	update_spinner();
 	set_console_width();
-};
 
-//////////////
-
-//////////////
-/*
-var help_styles = {
-
-	dir: path.join( __dirname, "theme/help" ),
-	styles: ["default"],
-
-	list_styles: function (){
-		fs.readdir( help_styles.dir, function(err, files){
-			files.map( function( f ){
-				help_styles.styles.push( f.replace( /\.css$/, "" ));
-			});
-		})
-	},
-
-	load_style: function( style, save ){
-		help_stylesheet = style;
-		if( save ){
-			Settings.set( "help_stylesheet", style );
-		}
-	}
+    // FIXME: this needs to move somwhere else, or get encapsulated
+    let nodes = document.querySelectorAll("[layout-event-handler]")
+    for( let i = 0; i< nodes.length; i++ ){
+        nodes[i].dispatchEvent( new CustomEvent( 'layout' ));
+    }
 
 };
-
-help_styles.list_styles();
-*/
-
-//////////////
 
 function quit(){
 	
 	global.__quit = true;
-//	if (process.platform == 'darwin') {
-//		ipcRenderer.send( 'system', 'quit' );
-//	}
-//	else {
-		remote.getCurrentWindow().close();			
-//	}
+    remote.getCurrentWindow().close();			
 	
 }
 
@@ -2374,7 +2280,7 @@ var details_context_menu = Menu.buildFromTemplate([
  * context menu for locals.  this has changed slightly because
  * menu labels can't change dynamically; therefore we construct
  * it on the fly.
- */
+ * /
 var locals_context_menu_template = [
     { label: 'Field', enabled: false },
     { type: 'separator' },
@@ -2388,7 +2294,7 @@ var locals_context_menu_template = [
 
 // FIXME: REMOVE (legacy)
 var locals_context_menu = Menu.buildFromTemplate(locals_context_menu_template);
-
+*/
 
 /**
  * context menu for watches: delete

@@ -197,6 +197,7 @@
                     observer: '_splitChanged'
                 }
             },
+
             ready: function(){
                 if( this.hide ) this.classList.add("hidden");
             },
@@ -647,8 +648,17 @@
         },
         
         fire_resize: function(){
+
             this.fire( 'resize' );
-            let panes = Polymer.dom(this).children;
+
+            // OK, so how this works now: we fire a layout event 
+            // on all events that match the selector.
+
+            let nodes = Polymer.dom(this).querySelectorAll("[layout-event-handler]")
+            for( let i = 0; i< nodes.length; i++ ){
+                nodes[i].dispatchEvent( new CustomEvent( 'layout' ));
+            }
+
         },
 
         ready: function(){
