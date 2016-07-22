@@ -24,6 +24,10 @@
 			"message": "clear-shell"
 		},
 		{
+			"label": "Save Shell Contents...",
+			"message": "save-shell"
+		},
+		{
 			"label": "Shell Preferences",
 			"message": "preferences"
 		},
@@ -76,6 +80,10 @@
                 {
                     "label": "Save History...",
                     "message": "save-history"
+                },
+                {
+                    "label": "Save Shell Contents as HTML...",
+                    "message": "save-shell"
                 },
                 {
                     "label": "Save Environment",

@@ -683,6 +683,103 @@ var open_watch = function(){
      
 }
 
+let html_file = "";
+var save_shell = function(){
+
+    var p = dialog.showSaveDialog({
+        title: "Save Shell Contents",
+        defaultPath: html_file || "shell.html",
+        filters: [
+            { name: 'HTML', extensions: ['html'] },
+            { name: "All files", extensions: ['*'] }
+        ]
+    });
+
+    // this does not fire change event, so call 
+    if( p && p.length ){
+
+        html_file = p;
+
+        let embedded_style = "";
+        let theme = Settings.theme || "default";
+
+        // let ss = document.head.querySelectorAll( "link[rel='stylesheet']:not([data-export])");
+        let stylesheets = [ Utils.patch_asar_path( path.join( "data", "codemirror-minimal.css" )) ];
+        let themestylesheet = document.head.querySelector( "link[rel='stylesheet'][data-target='theme']");
+        if( themestylesheet ){
+            if( themestylesheet.href.startsWith( "file://" )) stylesheets.push( themestylesheet.href.substring(7));
+        }
+
+        for( let i = 0; i< stylesheets.length; i++ ){
+            let href = stylesheets[i];
+            let contents = fs.readFileSync( stylesheets[i], { encoding: "utf-8" });
+            embedded_style += `\n/* ==== ${stylesheets[i]} ==== */\n\n`;
+            embedded_style += contents + "\n";
+        }
+        
+        let s = document.head.querySelector( "style[data-id='user']");
+        if( s ){
+            embedded_style += `\n/* ==== user stylesheet ==== */\n\n`;
+            embedded_style += s.innerText + "\n";
+        }
+
+        let x = shell.getOption( "viewportMargin" );
+        shell.setOption( "viewportMargin", Infinity );
+        shell.refresh();
+        let code = document.querySelector( "#shell-container .CodeMirror-code" );
+        let html = code.innerHTML;
+        let platformClass = document.body.className;
+
+        let head = 
+`<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <style>
+${embedded_style}
+        </style>
+    </head>
+    <body>
+        <div class='${platformClass}'>
+            <div class='CodeMirror'><div class='cm-s-${theme}'>
+`;
+
+        let foot = `\n</div>\n</div></div>\n</body>\n</html>\n`;
+
+        let m = html.match( /<canvas.*?<\/canvas>/g );
+        if( m ){
+            for( let i = 0; i< m.length; i++ ){
+                let id = null, dataurl = null, style="", cls="";
+                let n = m[i].match( /id="(.*?)"/ );
+                if( n ) id = n[1];
+                n = m[0].match( /style=".*?"/ );
+                if( n ) style = n[0];
+                n = m[0].match( /class=".*?"/ );
+                if( n ) cls = n[0];
+                if( id ){
+                    let canvas = code.querySelector( "#" + id );
+                    if( canvas ){
+                        let dataURL = canvas.toDataURL('image/png');
+                        let img = `<img src="${dataURL}" ${style} ${cls}/>\n`;
+                        html = html.replace( m[i], img );
+                    }
+                }
+            }
+            // console.info( m );
+        }
+
+        shell.setOption( "viewportMargin", x );
+
+        // shell.refresh();
+        fs.writeFile( p, head + html + foot, { encoding: "utf8" }, function(err) {
+            if(err) {
+        		// PubSub.publish( Constants.SHELL_MESSAGE, [ Messages.R_HOME_NOT_FOUND, "shell-system-information", true ]);
+            }
+        });
+    }
+
+};
+
 // this is preserved over multiple calls (ideally)
 let history_file = "history.R";
 var save_history = function(){
@@ -2296,6 +2393,9 @@ PubSub.subscribe( "menu-click", function(){
         break;
     case "save-history":
         save_history();
+        break;
+    case "save-shell":
+        save_shell();
         break;
 	default:
 		console.warn( "Unhandled menu command", data.item.message );

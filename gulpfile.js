@@ -181,7 +181,7 @@ var polymer_files = [
 ];
 
 var html_source = [ 'html/**/*.html' ];
-var core_source = [ 'core/**/*.js' ];
+var core_source = [ 'core/**/*.js', '../cmjs-shell/*.js' ];
 var plugin_source = [ 'plugin/**/*.*' ];
 
 const r_source = [ 'R/**/*' ];
