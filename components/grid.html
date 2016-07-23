@@ -228,8 +228,14 @@ FIXME: back-merge in list so we don't have multiple components
                     else */
                     cell.textContent = val.toString();
  
-                    if( cell.offsetWidth < cell.scrollWidth ) cell.setAttribute( "title", cell.textContent );
-                    else if( cell.hasAttribute("title")) cell.removeAttribute( "title" );
+                    if( fixed ){
+
+                        // this turns out to be incredibly slow for some reason, so we don't do it
+                        // for unfixed tables.  need to find a solution...
+
+                        if( cell.offsetWidth < cell.scrollWidth ) cell.setAttribute( "title", cell.textContent );
+                        else if( cell.hasAttribute("title")) cell.removeAttribute( "title" );
+                    }
 
                     cell.style.display = "block";
                     cell.row = header ? -1 : row;

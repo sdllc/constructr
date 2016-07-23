@@ -707,7 +707,12 @@ var save_shell = function(){
         let stylesheets = [ Utils.patch_asar_path( path.join( "data", "codemirror-minimal.css" )) ];
         let themestylesheet = document.head.querySelector( "link[rel='stylesheet'][data-target='theme']");
         if( themestylesheet ){
-            if( themestylesheet.href.startsWith( "file://" )) stylesheets.push( themestylesheet.href.substring(7));
+            if( themestylesheet.href.startsWith( "file://" )){
+                if( process.platform === "win32" ){
+                    stylesheets.push( themestylesheet.href.substring(8));
+                }
+                else stylesheets.push( themestylesheet.href.substring(7));
+            }
         }
 
         for( let i = 0; i< stylesheets.length; i++ ){
