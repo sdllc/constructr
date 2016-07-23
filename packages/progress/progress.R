@@ -27,14 +27,14 @@ override.binding <- function( name, func, ns, assign.in.namespace=T ){
 	}
 }
 
-override.binding( "winProgressBar", jsClientLib::js.client.progress.bar, "utils");
-override.binding( "setWinProgressBar", jsClientLib::js.client.set.progress.bar, "utils");
-override.binding( "getWinProgressBar", jsClientLib::js.client.get.progress.bar, "utils");
+override.binding( "winProgressBar", js.client.progress.bar, "utils");
+override.binding( "setWinProgressBar", js.client.set.progress.bar, "utils");
+override.binding( "getWinProgressBar", js.client.get.progress.bar, "utils");
 
 # optionally this one as well
 
-#override.binding( "txtProgressBar", jsClientLib::js.client.progress.bar, "utils");
-#override.binding( "setTxtProgressBar", jsClientLib::js.client.set.progress.bar, "utils");
-#override.binding( "getTxtProgressBar", jsClientLib::js.client.get.progress.bar, "utils");
+#override.binding( "txtProgressBar", js.client.progress.bar, "utils");
+#override.binding( "setTxtProgressBar", js.client.set.progress.bar, "utils");
+#override.binding( "getTxtProgressBar", js.client.get.progress.bar, "utils");
 
 })();

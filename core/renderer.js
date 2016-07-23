@@ -281,14 +281,14 @@ var hint_function = function(text, pos, callback){
  * FIXME: allow function override 
  */
 var get_locals = function(){
-	R.queued_exec( "jsClientLib:::locals(environment())", "locals");
+	R.queued_exec( ".js.client.locals(environment())", "locals");
 };
 
 /**
  * FIXME: should this use internal? (...)
  */
 var get_watches = function(){
-	R.queued_exec( "jsClientLib:::watches()", "watches");
+	R.queued_exec( ".js.client.watches()", "watches");
 };
 
 /**
@@ -1832,8 +1832,20 @@ var init_r = function(opts = {}){
             else return Promise.resolve();
 
 		}).then( function(){ 
+			
+            // load startup file
+			if( libloaded ){
+				console.info( "Loading startup file" );
+				let startup_path = Utils.patch_asar_path( path.join( __dirname, "startup.R" ));
+				return R.internal( `source('${Utils.escape_backslashes(startup_path,2)}')` );
+			}
+			else return Promise.resolve();
+
+		}).then( function( ){
 
 			if( libloaded ){
+
+                console.info("Setting options" );
 
                 // NOTE: this happens twice? FIXME
 
@@ -1870,7 +1882,7 @@ var init_r = function(opts = {}){
 					else {
 						// ...
 					}
-					return `assign( "${key}", ${val}, envir=jsClientLib:::.js.client.options.env )`;
+					return `assign( "${key}", ${val}, envir=.js.client.options.env )`;
 				});
 				
 				return R.internal( cmds.join( "\n" ));
@@ -1985,16 +1997,6 @@ var init_r = function(opts = {}){
 		}).then( function( rsp ){
 
 			versions.R = rsp.response;
-
-			// load startup file
-			if( libloaded ){
-				// console.info( "Loading startup file" );
-				let startup_path = Utils.patch_asar_path( path.join( __dirname, "startup.R" ));
-				return R.internal( `source('${Utils.escape_backslashes(startup_path,2)}')` );
-			}
-			else return Promise.resolve();
-
-		}).then( function( obj ){
 			
 			init_complete = true;
 			set_console_width();
@@ -2227,7 +2229,7 @@ document.addEventListener("DOMContentLoaded", function(event) {
             else {
                 console.info( "??", type, obj );
             }
-			cmds.push( `assign( "${key}", ${val}, envir=jsClientLib:::.js.client.options.env )` );
+			cmds.push( `assign( "${key}", ${val}, envir=.js.client.options.env )` );
 			R.queued_internal( cmds );
 		}
 		
