@@ -37,6 +37,8 @@ module.exports = {
 
 		core.Hooks.install( "browser", function(hook, url){
 
+console.info( "..." );
+
 			if( core.Settings["browser.panel"])
 			{
 				var browser = document.getElementById( "browser-pane" );

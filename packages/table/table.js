@@ -48,7 +48,7 @@ var updateData = function( inst ){
 
         if( instance.menutype === "watch" ){
             let idx = instance.index + 1; // r indexing
-            cmd = `eval( jsClientLib:::.data.env$watches[[${ idx }]]$expr, envir=jsClientLib:::.data.env$watches[[${ idx }]]$envir )`;
+            cmd = `eval( jsClientLib:::.client.env$.data.env$watches[[${ idx }]]$expr, envir=jsClientLib:::.client.env$.data.env$watches[[${ idx }]]$envir )`;
         }
         else {
             cmd = `get0("${instance.field}")`;

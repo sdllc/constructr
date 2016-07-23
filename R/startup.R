@@ -376,7 +376,7 @@ js.client.unwatch.all <- function(){
 #'
 #' @param path Path to the file
 #'
-file.changed <- function( filename, original_path ){
+.js.client.file.changed <- function( filename, original_path ){
 	x<- lapply( .js.client.data.env$file.watches, function( watch ){
 		if( watch$path == original_path ){
 			if( is.null( watch$func )){

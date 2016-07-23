@@ -110,7 +110,7 @@ module.exports = {
 			source: core.R,
 			change_callback: function( path, original_path ){
 				//console.info( `filewatcher cb: ${path} (${original_path})`);
-				var cmd = `jsClientLib:::file.changed('${core.Utils.escape_backslashes(path, 2)}', '${core.Utils.escape_backslashes(original_path, 2)}')`;
+				var cmd = `.js.client.file.changed('${core.Utils.escape_backslashes(path, 2)}', '${core.Utils.escape_backslashes(original_path, 2)}')`;
 				//console.info( cmd );
 				core.R.queued_internal( cmd ); // FIXME: should use exec?
 			},
