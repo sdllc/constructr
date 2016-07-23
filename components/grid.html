@@ -914,8 +914,16 @@ FIXME: back-merge in list so we don't have multiple components
                     //this.rh_cache = rh;
                 }
                 else {
+
+                    // if you're not measuring, at least update the height in case of
+                    // rows being added/removed.  especially visible when callign 
+                    // rm(list=ls()) on a large number of fields.
+
+                    // I don't think col_count could ever not trigger a measurement, though.
+
                     this.col_count = this.data.length; 
                     this.row_count = this.data[0].length;
+                    this.grid_measurements.total_height = ( this.row_count + ( this.column_headers ? 1 : 0 )) * this.grid_measurements.line_height;
                 }
                 
                 this.patch_selection();
