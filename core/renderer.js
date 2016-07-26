@@ -2058,10 +2058,14 @@ function update_user_stylesheet(){
 
 document.addEventListener("DOMContentLoaded", function(event) {
 	
+console.info( "CBR 0");
+
 	// shell
 	shell = new Shell( CodeMirror, {
+        // inputStyle: "contenteditable",
 		// debug: true,
 		container: "#shell-container",
+        cursorBlinkRate: 0,
 		mode: "r",
 		hint_function: hint_function,
 		tip_function: tip_function,
@@ -2073,6 +2077,8 @@ document.addEventListener("DOMContentLoaded", function(event) {
 		}
 	});
 	if( Settings["line.wrapping"]) shell.setOption( "lineWrapping", true );
+
+    // window.shell = shell;
 
 	// most interaction with the shell is indirect, via messaging
 	// this lets us isolate the shell reasonably well. (this is true
