@@ -99,6 +99,9 @@ body.ubuntu {
 .cm-s-default span.shell-piped-stream { color: #000 !important; }
 .cm-s-default span.shell-prompt-debug { color: red; }
 
+/** I just don't like the default */
+.cm-s-default .CodeMirror-matchingbracket { outline:1px solid #ccc; background: #ddd; color:black !important; }
+
 #shell-container {
     position: absolute;
     width: 100%;

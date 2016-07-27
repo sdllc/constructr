@@ -2078,6 +2078,8 @@ console.info( "CBR 0");
 	});
 	if( Settings["line.wrapping"]) shell.setOption( "lineWrapping", true );
 
+    shell.setOption( "matchBrackets", true );
+
     // window.shell = shell;
 
 	// most interaction with the shell is indirect, via messaging
