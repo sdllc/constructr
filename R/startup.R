@@ -335,7 +335,7 @@ js.client.options <- function(...) {
 #' \code{override} parameter is set. Defaults to True.
 #'
 #' @export
-js.client.watch.file <- function( path, FUNC=NULL, override=T, source.now=F ){
+js.client.watch.file <- function( path, FUNC=NULL, override=T, source.now=T ){
 	path = normalizePath(path);
 	if( !override ){ unwatch.file( path ); }
 	if( source.now ){ source(path); }

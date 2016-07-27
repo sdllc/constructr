@@ -830,10 +830,8 @@ var open_history_panel = function(){
             let cmd = args[2].join('\n').trim();
             if( !cmd.length ) return;
 
-            //let x = shell.get_history(); // need a method for just 1 line
-            //let append = x[x.length-1];
-            //if( x.length !== 1 ) append = "\n" + append;
             let count = cm.getDoc().lineCount();
+            if( count == 1 && ("" === cm.getDoc().getLine(0))){ count = 0; }
             let append = count ? "\n" + cmd : cmd;
 
             let ln = cm.lastLine();
@@ -885,6 +883,15 @@ var open_history_panel = function(){
 		});
 
         if( Settings.theme ) cm.setOption( "theme", Settings.theme );
+
+        let clearHistory = function(reset){
+            if( reset ) shell.clearHistory();
+            removedLines = 0;
+            cm.setValue("");
+           // cm.setOption( "firstLineNumber", 1 );
+            markerAnnotations = [];
+            annotation.update(markerAnnotations);
+        };
 
         Object.assign( panel, {
             visible: false,
@@ -959,8 +966,12 @@ var open_history_panel = function(){
                 },
                 { label: 'Clear History', click: function(e){
                     setImmediate( function(){
-                        shell.clearHistory();
-                        cm.setValue("");
+                        clearHistory();
+                    });
+                }},
+                { label: 'Reset History', click: function(e){
+                    setImmediate( function(){
+                        clearHistory(true);
                     });
                 }}
             ];
@@ -2058,8 +2069,6 @@ function update_user_stylesheet(){
 
 document.addEventListener("DOMContentLoaded", function(event) {
 	
-console.info( "CBR 0");
-
 	// shell
 	shell = new Shell( CodeMirror, {
         // inputStyle: "contenteditable",
