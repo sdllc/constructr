@@ -157,6 +157,7 @@ FIXME: back-merge in list so we don't have multiple components
 
             },
 
+            /*
             render: function( selection, column_classes, data, m, row, row_headers, label_width, first_col, last_col, left, header, resizable, fixed, hm, sort, precision ){
 
                 let index = 0;
@@ -220,12 +221,12 @@ FIXME: back-merge in list so we don't have multiple components
                     // cell.style.flexGrow = m.cell_widths[i] ;
                     
                     let val = ( header ? data[i] : data[i][row] );
-                    /*
+                    / *
                     if( typeof val === "number" ){
                         if( precision.fp >= 0 ) cell.textContent = val.toFixed( precision.fp );
                         else cell.textContent = +val.toPrecision(precision.np);
                     } 
-                    else */
+                    else * /
                     cell.textContent = val.toString();
  
                     if( fixed ){
@@ -270,12 +271,171 @@ FIXME: back-merge in list so we don't have multiple components
                     else {
 
                         if( column_classes ){
-                            /*
+                            / *
                             if( column_classes[i] === "date" ) className += " table-cell-date";
                             if( column_classes[i] === "string" ) className += " table-cell-string";
                             if( column_classes[i] === "factor" ) className += " table-cell-factor";
-                            */
+                            * /
                             className += " table-cell-" + column_classes[i];
+                        }
+
+                        if( selection.start.c <= i && selection.end.c >= i
+                            && selection.start.r <= row && selection.end.r >= row ){
+                                
+                                className += " selected";
+                                
+                                if( selection.start.r === row ){
+                                    let cst = document.createElement( "div" );
+                                    cst.className = "selection-border selection-border-top";
+                                    cst.style.width = `calc(100% + ${m.horizontal_margin}px)`;
+                                    Polymer.dom(cell).appendChild( cst );
+                                } 
+                                if( selection.end.r === row ){
+                                    let cst = document.createElement( "div" );
+                                    cst.className = "selection-border selection-border-bottom";
+                                    cst.style.width = `calc(100% + ${m.horizontal_margin}px)`;
+                                    cst.style.bottom = `-${m.horizontal_margin}px`;
+                                    Polymer.dom(cell).appendChild( cst );
+                                } 
+                                if( selection.start.c === i ){
+                                    let cst = document.createElement( "div" );
+                                    cst.className = "selection-border selection-border-left";
+                                    cst.style.height = `calc(100% + ${m.vertical_margin}px)`;
+                                    Polymer.dom(cell).appendChild( cst );
+                                } 
+                                if( selection.end.c === i ){
+                                    let cst = document.createElement( "div" );
+                                    cst.className = "selection-border selection-border-right";
+                                    cst.style.height = `calc(100% + ${m.vertical_margin}px)`;
+                                    cst.style.right = `-${m.vertical_margin}px`;
+                                    Polymer.dom(cell).appendChild( cst );
+                                } 
+
+                        }
+                    }
+                    cell.className = className;
+                    index++;
+                }
+                for( let i = index; i< this.cells.length; i++ ){
+                    this.cells[i].style.display = "none";
+                }
+
+            },
+            */
+
+            render: function(args){ 
+           
+                let index = 0;
+
+                let selection = args.selection;
+                let m = args.measurements;
+                let row = args.row;
+                let header = args.header;
+
+                if( args.row_headers ){
+
+                    // FIXME: fixed
+
+                    if( !this.row_header ){
+                        this.row_header = this.create_cell( true );
+                        this.row_header.classList.add( "grid-row-header");
+                    }
+
+                    this.row_header.style.minWidth = args.label_width + "px";
+                    this.row_header.style.left = args.left + "px";
+                    this.row_header.textContent = header ? " " : args.row_headers[row];
+                    this.row_header.row = row;
+                    this.row_header.col = -1;
+                    this.row_header.style.height = m.max_height + "px";
+
+                    if( header ){
+                        if( selection.rows && selection.columns )
+                            this.row_header.classList.add( "selected" );
+                        else this.row_header.classList.remove( "selected" );
+                    }
+                    else {
+                        if( selection.rows && selection.start.r <= row && selection.end.r >= row )
+                            this.row_header.classList.add( "selected" );
+                        else this.row_header.classList.remove( "selected" );
+                    }
+
+                } 
+
+                for( let i = args.first_col; i<= args.last_col; i++ ){
+
+                    if( this.cells.length <= index ){
+                        this.cells[index] = this.create_cell( header, args.fixed );
+                    }
+                    let cell = this.cells[index];
+
+                    if( args.fixed ){
+                        //cell.style.minWidth = m.pct[i] + "%";
+                        //cell.style.minWidth = `calc(${m.pct[i]}% - 3px)`;
+                        cell.style.minWidth = ( args.hm.cell_widths[i] + m.horizontal_margin ) + "px";
+                        cell.style.width = `calc(${m.pct[i]}% - 3px + ${m.drag_delta[i]}px)`;
+                        cell.style.flexBasis = `calc(${m.pct[i]}% - 3px + ${m.drag_delta[i]}px)`;
+                    }
+                    else {
+                        cell.style.minWidth = m.cell_widths[i] + "px";
+                        cell.style.flexBasis = ( m.cell_widths[i] + m.drag_delta[i] ) + "px";
+                    }
+
+                    // this is an interesting effect, and might be worth using.  it allocates
+                    // free space according to the calculated column widths.  the effect is 
+                    // a little strange in one case: the 10x10 null matrix with all zeros, because
+                    // column 10 has a wider header it gets more space, while the expected 
+                    // layout has all columns even.
+
+                    // something to thing about.  disabled atm.
+
+                    // cell.style.flexGrow = m.cell_widths[i] ;
+                    
+                    let val = ( header ? args.data[i] : args.data[i][row] );
+                    cell.textContent = val.toString();
+ 
+                    if( args.fixed ){
+
+                        // this turns out to be incredibly slow for some reason, so we don't do it
+                        // for unfixed tables.  need to find a solution...
+
+                        if( cell.offsetWidth < cell.scrollWidth ) cell.setAttribute( "title", cell.textContent );
+                        else if( cell.hasAttribute("title")) cell.removeAttribute( "title" );
+                    }
+
+                    cell.style.display = "block";
+                    cell.row = header ? -1 : row;
+                    cell.col = i;
+                    cell.style.height = m.max_height + "px";
+
+                    if( header && args.sort && args.sort.col === i ){
+                        let span = document.createElement( "span" );
+                        span.className = "header-column-sort header-column-sort-" + (args.sort.asc?"ascending":"descending");
+                        span.textContent = args.data[i].toString();
+                        cell.textContent = "";
+                        Polymer.dom(cell).appendChild( span );
+                    }
+
+                    if( header && args.resizable && i ){
+                        let target = document.createElement( "div" );
+                        target.className = "grid-resize-target";
+                        target.dataColumn = i;
+                        Polymer.dom(cell).appendChild( target );
+                    }
+
+                    // rather than manipulate classes via the list API we'll build 
+                    // Q: is this actually more efficient?
+
+                    let className = cell.baseClass;
+
+                    if( header ){
+                        if( selection.start.c <= i && selection.end.c >= i && selection.columns ){
+                            className += " selected";
+                        }
+                    }
+                    else {
+
+                        if( args.column_classes ){
+                            className += " table-cell-" + args.column_classes[i];
                         }
 
                         if( selection.start.c <= i && selection.end.c >= i
@@ -1160,6 +1320,23 @@ FIXME: back-merge in list so we don't have multiple components
 
                 left = area.scrollLeft - padding_left;
 
+                render_args = {
+                    selection: this.selection,
+                    column_classes: this.column_classes,
+                    measurements: m,
+                    row_headers: this.row_headers ? " " : null,
+                    label_width: this.row_header_width,
+                    first_col: first_col,
+                    last_col: last_col,
+                    left: left,
+                    resizable: this.resizeColumns, 
+                    fixed: this.fixed,
+                    hm: this.header_measurements,
+                    sort: { col: this.sortColumn, asc: this.sortAscending },
+                    precision: null,
+                    html: false 
+                };
+
                 if( this.column_headers ){
 
                     // render column header
@@ -1170,9 +1347,12 @@ FIXME: back-merge in list so we don't have multiple components
                         Polymer.dom( grid ).appendChild( this.header_row );
                     }
 
-                    this.header_row.render( this.selection, [], this.column_headers, m, -1, this.row_headers ? " " : null, 
-                            this.row_header_width, first_col, last_col, left, true, this.resizeColumns, this.fixed, 
-                            this.header_measurements, { col: this.sortColumn, asc: this.sortAscending } ); // , { np: this.numberPrecision, fp: this.fixedPrecision });
+                    render_args.header = true;
+                    render_args.data = this.column_headers;
+                    render_args.row = -1;
+
+                    this.header_row.render( render_args );
+
                     this.header_row.style.top = ( area.scrollTop - margin_top ) + "px";
                     this.header_row.style.display = null;
                     //if( this.fixed ) this.header_row.style.width = area.clientWidth + "px";
@@ -1183,15 +1363,23 @@ FIXME: back-merge in list so we don't have multiple components
 
                 this.selection.r = undefined;
 
+                render_args.header = false;
+                render_args.data = this.data;
+                render_args.row_headers = this.row_headers;
+                render_args.resizable = false;
+                render_args.sort = null;
+
                 // render rows
                 while( height > 0 && first_row < this.row_count ){
                     if( index >= this.nodes.length ){
                         this.nodes[index] = document.createElement( this.template );
                         Polymer.dom( grid ).appendChild( this.nodes[index] );
                     }
-                    this.nodes[index].render( this.selection, this.column_classes, this.data, m, this.rank[first_row], this.row_headers, 
-                            this.row_header_width, first_col, last_col, left, false, false, 
-                            this.fixed, this.header_measurements, null ); // , { np: this.numberPrecision, fp: this.fixedPrecision });
+
+                    render_args.row = this.rank[first_row];
+
+                    this.nodes[index].render( render_args );
+
                     this.nodes[index].style.display = "flex";
                     //if( this.fixed ) this.nodes[index].style.width = area.clientWidth + "px";
 
