@@ -257,13 +257,19 @@
 				white-space: nowrap;
 				overflow: hidden;
 				text-overflow: ellipsis;
+                width: 100%;
 			}
 			
+            :host a {
+                padding-right: 1em;
+            }
+
 		</style>
 		
 		<input id='check' on-click='checkbox_click' type='checkbox' checked='{{or(checked, installed)}}' disabled='{{installed}}'></input>
 		<div>{{Package}}</div>
-			
+        <a class='cran_link' href='{{link}}'>...</a>
+
 	</template>
 	
 	<script>
@@ -274,6 +280,7 @@
 			
 			properties: {
 				Package: String,
+                link: String,
 				checked: {
 					type: Boolean,
 					value: false
@@ -431,6 +438,12 @@
 		clickSelected: function(e){
 			e.stopPropagation();
 			e.preventDefault();
+
+            if( e.target.tagName === "A" ){
+                this.fire( "click-link", e.target );
+                return;
+            }
+
 			var target = e.target;
 			while( target && target.is !== "package-list-entry" ){
 				target = target.parentElement;
@@ -443,8 +456,15 @@
 		},
 		
 		clickAvailable: function(e){
+
 			e.stopPropagation();
 			e.preventDefault();
+
+            if( e.target.tagName === "A" ){
+                this.fire( "click-link", e.target );
+                return;
+            }
+
 			var target = e.target;
 			while( target && target.is !== "package-list-entry" ){
 				target = target.parentElement;

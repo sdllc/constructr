@@ -93,6 +93,11 @@ package-list-entry > div {
 	padding: 12px 4px 12px 8px;
 }
 
+.cran_link, .cran_link:visited, .cran_link:active {
+    text-decoration: none;
+    color: inherit;
+}
+
 /* --- layout specific to preferences ----------------- */
 
 preferences-option, preferences-size, preferences-input, preferences-select {

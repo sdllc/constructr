@@ -24,6 +24,7 @@
 
 const path = require( "path" );
 const PubSub = require( "pubsub-js" );
+const electron = require('electron');
 
 /**
  * open the CRAN mirror selector in the panel
@@ -177,19 +178,32 @@ var open_package_chooser = function(core){
 	panel.addEventListener( 'close', function(){ PubSub.publish( core.Constants.SIDE_PANEL_POP, panel ); });
 	panel.$.cancel.addEventListener( 'click', function(){ PubSub.publish( core.Constants.SIDE_PANEL_POP, panel ); });
 
+    let mirror;
+    let click_cran_link = function(e){
+        electron.shell.openExternal(e.detail.href);
+    }
+    panel.addEventListener( "click-link", click_cran_link );
+
 	panel.message = core.Messages.LOADING_PACKAGE_LIST;
 
 	PubSub.publish( core.Constants.SIDE_PANEL_PUSH, { node: panel });
 	
 	var packages = undefined;
 	var installed = undefined;
-	
-	core.Utils.data_cache.get_cached_data( "available.packages", core.Utils.data_cache.DEFAULT_CACHE_TIME, "available.packages()" ).then( function( obj ){
+
+    core.R.get_cran_mirror().then( function( rslt ){
+        mirror = rslt ;
+        if( !mirror.endsWith( "/" )) mirror = mirror + "/";
+	    return core.Utils.data_cache.get_cached_data( "available.packages", core.Utils.data_cache.DEFAULT_CACHE_TIME, "available.packages()" );
+
+    }).then( function( obj ){
+
 		packages = core.Utils.data_cache.build_matrix(obj.$data, obj.$nrows, obj.$ncols, true );
 		
 		// this is nice, but unecessary and expensive
 		packages = core.Utils.data_cache.apply_names( packages, 1, obj.$dimnames.$data[1] );
 		return core.R.queued_internal( "installed.packages()" );
+
 	}).then( function( obj ){
 		
 		// leave this one as column-dominant; we only need the first column
@@ -208,7 +222,8 @@ var open_package_chooser = function(core){
 			
 			// for ref
 			packages[i].index = i;
-						
+            packages[i].link = mirror + "web/packages/" + packages[i].Package;
+
 			for( var j = 0; j< installed_packages.length; j++ ){
 				if( packages[i].Package === installed_packages[j] ){
 					packages[i].installed = true;
