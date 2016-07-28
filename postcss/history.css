@@ -24,10 +24,13 @@
     width: 1em;
 }
 
+.history-gutter-marker {
+
+}
+
 .history-gutter-marker:after {
-    content: "▶";
-    color: blue;
-    margin-left: .6em;
+    content: "x";
+    margin-left: .5em;
 }
 
 .history-scrollbar-annotation {
