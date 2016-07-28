@@ -244,10 +244,9 @@ var function_key_callback = function(key){
 };
 
 var tip_function = function( text, pos ){
-	
+    
 	if( !function_tips ) return;
-	
-	var cmd = "utils:::.win32consoleCompletion('" + text + "', " + pos + "); utils:::.CompletionEnv";
+	var cmd = `.js.client.autocomplete( '${text}', ${pos})`;
 	R.queued_internal( cmd, "autocomplete" ).then( function(obj){
 
 		if( obj.response && obj.response['function.signature'] ){
@@ -255,7 +254,14 @@ var tip_function = function( text, pos ){
 		}
 		else shell.hide_function_tip();
 		
-	});
+	}).catch(function(e){
+        
+        // generally speaking we can ignore this, although
+        // we probably need some filter... for now we will ignore
+
+        // FIXME: debug?
+
+    }); 
 };
 
 var hint_function = function(text, pos, callback){
@@ -264,7 +270,7 @@ var hint_function = function(text, pos, callback){
 	text = text.replace( /"/g, "\\\"" );
 	text = text.replace( /'/g, "\\'" );
 
-	var cmd = `utils:::.win32consoleCompletion('${text}', ${pos}); utils:::.CompletionEnv`;
+	var cmd = `.js.client.autocomplete( '${text}', ${pos})`;
 
 	R.internal( cmd ).then( function( obj ){
 		if( obj.response && obj.response.comps && obj.response.comps !== "NA" ){
@@ -943,9 +949,66 @@ var open_history_panel = function(){
 
         panel.addEventListener( "contextmenu", function(e){
 
-            let pos = cm.getDoc().getCursor();
-            let info = cm.lineInfo(pos.line);
-            let marked = (!!info.gutterMarkers);
+            let doc = cm.getDoc();
+            let pos = doc.getCursor();
+
+            let ss = doc.somethingSelected();
+            let markoption, execoption;
+
+            if( ss ){
+
+                // kind of hard to figure out... see if there are 
+                // any marks in the selection?
+
+                let selections = [];
+                let selection_has_marks = false;
+                doc.listSelections().forEach( function( sel ){
+                    let a = Math.min( sel.anchor.line, sel.head.line );
+                    let b = Math.max( sel.anchor.line, sel.head.line );
+                    for( let i = a; i<= b; i++ ){
+                        let info = cm.lineInfo(i);
+                        let marked = (!!info.gutterMarkers);
+                        selection_has_marks = selection_has_marks || marked;
+                        selections.push( i );
+                    }
+                });
+                selections.sort();
+                console.info( selections );
+
+                markoption = {
+                    label: selection_has_marks ? 'Clear Markers in Selection' : 'Mark Selection', 
+                    click: function(e){
+                        selections.forEach( function( line ){
+                            setMarker( line, !selection_has_marks, true );
+                        });
+                        markerAnnotations.sort( function(a, b){ return a.from.line - b.from.line; });
+                        annotation.update(markerAnnotations);   
+                    }
+                };
+                execoption = {
+                    label: 'Execute Selection', 
+                    click: function(e){
+                    }
+                };
+            }
+            else{
+
+                // add/remove single-line marker
+
+                let info = cm.lineInfo(pos.line);
+                let marked = (!!info.gutterMarkers);
+                markoption = { 
+                    label: marked ? 'Remove Marker' : 'Mark Line', 
+                    click: function(e){
+                        setMarker( pos.line, !marked );
+                    }
+                };
+                execoption = {
+                    label: 'Execute Line', 
+                    click: function(e){
+                    }
+                };
+            }
 
             let template = [
                 { label: 'Copy', role: 'copy' },
@@ -955,9 +1018,10 @@ var open_history_panel = function(){
                     });
                 }},
                 { type: 'separator' },
-                { label: marked ? 'Remove Marker' : 'Add Marker', click: function(e){
-                    setMarker( pos.line, !marked );
-                }},
+
+                markoption,
+                // TODO // execoption,
+
                 { type: 'separator' },
                 {
                     label: 'Save History...', click: function(){
@@ -2151,7 +2215,7 @@ document.addEventListener("DOMContentLoaded", function(event) {
 	// buffered resize. we err on the side of being slow (vs. lots of calls)
 	window._resize_timeout = null;
 	window.addEventListener( "resize", function(e){
-        console.info( "publish resize" );
+        // console.info( "publish resize" );
 		PubSub.publish( "resize", e );
 		if( _resize_timeout ) window.clearTimeout( _resize_timeout );
 		_resize_timeout = window.setTimeout( resize_panes, RESIZE_TIMEOUT );

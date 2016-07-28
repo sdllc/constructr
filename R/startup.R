@@ -116,7 +116,7 @@ assign( "watches", list(), envir=.js.client.data.env );
 #' to \code{.GlobalEnv}.
 #'
 #' @export
-js.client.add.watch <- function( expr, func, label, envir=.GlobalEnv ){
+js.client.add.watch <- function( expr, func, label, envir=.GlobalEnv, open.watch.panel=T ){
 	if( missing( func )){
 		
 		# NOTE: this resolves expr, which will throw an error
@@ -153,8 +153,10 @@ js.client.add.watch <- function( expr, func, label, envir=.GlobalEnv ){
     # notify the client so it can pop open a view (if desired)
     # .js.client.callback( "add-watch", as.list( environment()));
 
-    .js.client.callback( "add-watch", label );
-
+    if( open.watch.panel){
+        .js.client.callback( "add-watch", label );
+    }
+    
 }
 
 #'
@@ -474,7 +476,19 @@ close.js.client.progress.bar <- function( pb ){
 	.js.client.callback( "progress.bar", struct );
 	.js.client.data.env$progress.bars[[toString(pb$key)]] <- NULL;
 }
-   
+
+#
+# FIXME: move
+#
+
+.js.client.autocomplete <- function( text, pos ){
+    tryCatch(
+    	utils:::.win32consoleCompletion( text, pos ),
+        error = function(e){
+        }
+    );
+    utils:::.CompletionEnv;
+}
 
 });
 
