@@ -27,7 +27,7 @@ with( jsClientLib:::.client.env, {
 # data store for watches, file watcher, and progress bars
 #------------------------------------------------------------------------------
 
-.js.client.data.env <- new.env();
+data.env <- new.env();
 
 #------------------------------------------------------------------------------
 # tools
@@ -72,7 +72,7 @@ with( jsClientLib:::.client.env, {
 # for custom results (see, e.g., capture.histogram).
 #
 
-assign( "watches", list(), envir=.js.client.data.env );
+assign( "watches", list(), envir=data.env );
 
 #'
 #' Get watches
@@ -85,7 +85,7 @@ assign( "watches", list(), envir=.js.client.data.env );
 #'
 .js.client.watches <- function(){
 	.js.client.callback( "watches", list(
-		fields = lapply( .js.client.data.env$watches, function(a){ 
+		fields = lapply( data.env$watches, function(a){ 
 			envir <- a$envir;
 			a$envir <- capture.output(str(envir));
 			tryCatch({
@@ -146,9 +146,9 @@ js.client.add.watch <- function( expr, func, label, envir=.GlobalEnv, open.watch
 		label = capture.output(print(substitute(expr)));
 	}
 	
-	tmp <- .js.client.data.env$watches;
+	tmp <- data.env$watches;
 	tmp[[length(tmp)+1]] <- list( label=label, expr=substitute(expr), func=func, envir=envir );
-	.js.client.data.env$watches <- tmp ;
+	data.env$watches <- tmp ;
 
     # notify the client so it can pop open a view (if desired)
     # .js.client.callback( "add-watch", as.list( environment()));
@@ -170,7 +170,7 @@ js.client.add.watch <- function( expr, func, label, envir=.GlobalEnv, open.watch
 #'
 #' @export
 js.client.remove.watch <- function( index ){
-	.js.client.data.env$watches <- .js.client.data.env$watches[-index];
+	data.env$watches <- data.env$watches[-index];
 }
 
 #'
@@ -178,7 +178,7 @@ js.client.remove.watch <- function( index ){
 #'
 #' @export
 js.client.clear.watches <- function(){
-	.js.client.data.env$watches <- list();
+	data.env$watches <- list();
 }
 
 # these are utility functions for watch/locals
@@ -323,7 +323,7 @@ js.client.options <- function(...) {
 # FIXME: use an environment (for storage).  simplifies semantics.
 #------------------------------------------------------------------------------
 
-.js.client.data.env$file.watches <- list();
+data.env$file.watches <- list();
 
 #'
 #' Watch a file
@@ -341,10 +341,18 @@ js.client.watch.file <- function( path, FUNC=NULL, override=T, source.now=T ){
 	path = normalizePath(path);
 	if( !override ){ unwatch.file( path ); }
 	if( source.now ){ source(path); }
-	tmp <- .js.client.data.env$file.watches;
+	tmp <- data.env$file.watches;
 	tmp[[length(tmp)+1]] <- list( path=path, func=FUNC );
-	.js.client.data.env$file.watches <- tmp ;
+	data.env$file.watches <- tmp ;
 	.js.client.callback( "file.watch", list( command="watch", path=path ));
+}
+
+#'
+#' List watched files
+#'
+#' @export
+js.client.watched.files <- function(){
+	data.env$file.watches;
 }
 
 #'
@@ -354,13 +362,14 @@ js.client.watch.file <- function( path, FUNC=NULL, override=T, source.now=T ){
 #'
 #' @export
 js.client.unwatch.file <- function( path ){
-	tmp <- .js.client.data.env$file.watches;
+	tmp <- data.env$file.watches;
+	path = normalizePath(path);
 	for( index in length(tmp):1 ){
 		if( tmp[[index]]$path == path ){
 			tmp[[index]] <- NULL;
 		}
 	}
-	.js.client.data.env$file.watches <- tmp;
+	data.env$file.watches <- tmp;
 	.js.client.callback( "file.watch", list( command="unwatch", path=path ));
 }
 
@@ -369,7 +378,7 @@ js.client.unwatch.file <- function( path ){
 #'
 #' @export
 js.client.unwatch.all <- function(){
-	.js.client.data.env$file.watches <- list();
+	data.env$file.watches <- list();
 	.js.client.callback( "file.watch", list( command="clear" ));
 }
 
@@ -379,7 +388,7 @@ js.client.unwatch.all <- function(){
 #' @param path Path to the file
 #'
 .js.client.file.changed <- function( filename, original_path ){
-	x<- lapply( .js.client.data.env$file.watches, function( watch ){
+	x<- lapply( data.env$file.watches, function( watch ){
 		if( watch$path == original_path ){
 			if( is.null( watch$func )){
 				.js.client.callback( "file.watch", list( command="reloading", filename=filename, original_path=original_path ));
@@ -397,8 +406,8 @@ js.client.unwatch.all <- function(){
 # progress bars (for win/tk replacement, text progress bars are ok as-is)
 #------------------------------------------------------------------------------
 
-.js.client.data.env$progress.bars <- list();
-.js.client.data.env$progress.bar.key <- 1;
+data.env$progress.bars <- list();
+data.env$progress.bar.key <- 1;
 
 #'
 #' Create progress bar
@@ -416,17 +425,17 @@ js.client.unwatch.all <- function(){
 
 js.client.progress.bar <- function( min=0, max=1, initial=min, ... ){
 
-	key <- .js.client.data.env$progress.bar.key;
+	key <- data.env$progress.bar.key;
 	struct <- list( key=key, min=min, max=max, initial=initial, value=initial, ... );
 	handle <- list( key=key );
 	class(handle) <- "js.client.progress.bar";
-	.js.client.data.env$progress.bars[[toString(key)]] <- struct;
+	data.env$progress.bars[[toString(key)]] <- struct;
 	.js.client.callback( "progress.bar", struct );
 	
     print("A4");
 
 	# increment key	for next call
-	.js.client.data.env$progress.bar.key <- .js.client.data.env$progress.bar.key + 1;	
+	data.env$progress.bar.key <- data.env$progress.bar.key + 1;	
 	
 	return(handle);
 }
@@ -439,7 +448,7 @@ js.client.progress.bar <- function( min=0, max=1, initial=min, ... ){
 #'
 #' @export
 js.client.get.progress.bar <- function( pb ){
-	struct <- .js.client.data.env$progress.bars[[toString(pb$key)]];
+	struct <- data.env$progress.bars[[toString(pb$key)]];
 	return( struct$value );	
 }
 
@@ -452,9 +461,9 @@ js.client.get.progress.bar <- function( pb ){
 #'
 #' @export
 js.client.set.progress.bar <- function( pb, value ){
-	struct <- .js.client.data.env$progress.bars[[toString(pb$key)]];
+	struct <- data.env$progress.bars[[toString(pb$key)]];
 	struct$value <- value;
-	.js.client.data.env$progress.bars[[toString(pb$key)]] <- struct;
+	data.env$progress.bars[[toString(pb$key)]] <- struct;
 	.js.client.callback( "progress.bar", struct );
 	return( struct$value );	
 }
@@ -471,10 +480,10 @@ js.client.set.progress.bar <- function( pb, value ){
 #'
 #' @export
 close.js.client.progress.bar <- function( pb ){
-	struct <- .js.client.data.env$progress.bars[[toString(pb$key)]];
+	struct <- data.env$progress.bars[[toString(pb$key)]];
 	struct$closed <- T;
 	.js.client.callback( "progress.bar", struct );
-	.js.client.data.env$progress.bars[[toString(pb$key)]] <- NULL;
+	data.env$progress.bars[[toString(pb$key)]] <- NULL;
 }
 
 #
