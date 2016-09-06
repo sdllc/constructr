@@ -247,7 +247,7 @@ var tip_function = function( text, pos ){
     
 	if( !function_tips ) return;
 	var cmd = `.js.client.autocomplete( '${text}', ${pos})`;
-	R.queued_internal( cmd, "autocomplete" ).then( function(obj){
+	R.internal( cmd, "autocomplete" ).then( function(obj){
 
 		if( obj.response && obj.response['function.signature'] ){
 			shell.show_function_tip( obj.response['function.signature'] );
@@ -287,14 +287,14 @@ var hint_function = function(text, pos, callback){
  * FIXME: allow function override 
  */
 var get_locals = function(){
-	R.queued_exec( ".js.client.locals(environment())", "locals");
+	R.exec( ".js.client.locals(environment())", "locals");
 };
 
 /**
  * FIXME: should this use internal? (...)
  */
 var get_watches = function(){
-	R.queued_exec( ".js.client.watches()", "watches");
+	R.exec( ".js.client.watches()", "watches");
 };
 
 /**
@@ -340,7 +340,7 @@ var exec_function = function( original_cmd, callback ){
 	// value through pubsub as well, so the prompt gets 
 	// inserted in proper order always
 
-	R.queued_exec( original_cmd ).then( function( rslt ){
+	R.exec( original_cmd ).then( function( rslt ){
 
 		if( rslt.data && rslt.data.srcref && Object.keys( rslt.data.srcref ).length ){
 			rslt.data.prompt_class = "shell-prompt-debug";
@@ -494,7 +494,7 @@ var show_details = function(elt){
 
 var remove_watch = function(index){
 	var cmd = `js.client.remove.watch(${index+1})`;
-	R.queued_exec(cmd).then( function(){
+	R.exec(cmd).then( function(){
 		get_watches();
 	});
 }
@@ -513,7 +513,7 @@ var add_watch = function( field, func, envir, show ){
 	cmd += ")";
 
 	// console.info( cmd );
-	R.queued_exec(cmd).then( function(){
+	R.exec(cmd).then( function(){
 		
         // the method will send a callback.
         // FIXME: make that an option in the R call
@@ -1856,7 +1856,7 @@ var init_r = function(opts = {}){
 		let libpaths = `c( .libPaths(), "${Utils.escape_backslashes(libpath,2)}" )`;
 		
 		R.init({
-			debug: false,
+			debug: true,
 			basedir: basedir,
 			rhome: rhome,
 			permissive: true,
@@ -2009,7 +2009,7 @@ var init_r = function(opts = {}){
 						var data = Utils.escape_backslashes(path.join( home, RDATA), 2 );
 						var cmd = `invisible( save.image('${data}'))`;
 						console.info(cmd);
-						R.queued_exec(cmd).then( function(){
+						R.exec(cmd).then( function(){
 							console.info( "saved; calling shutdown");
 							return R.shutdown(); 
 						}).then( function(){
@@ -2273,7 +2273,7 @@ document.addEventListener("DOMContentLoaded", function(event) {
 			break;	
 
 //		case "graphics.target":
-//			R.queued_internal( `dev.set(${ graphics_devices[obj.val].device_number })`)
+//			R.internal( `dev.set(${ graphics_devices[obj.val].device_number })`)
 //			break;			
 			
 		default:
@@ -2311,7 +2311,7 @@ document.addEventListener("DOMContentLoaded", function(event) {
                 console.info( "??", type, obj );
             }
 			cmds.push( `assign( "${key}", ${val}, envir=.js.client.options.env )` );
-			R.queued_internal( cmds );
+			R.internal( cmds );
 		}
 		
 	});
@@ -2380,7 +2380,7 @@ document.addEventListener("DOMContentLoaded", function(event) {
 					`${Messages.LOADING_STARTUP_FILE}: "${Utils.escape_backslashes( startup, 2 )}"\n\n`, "shell-system-information" ]);
 				startup = Utils.escape_backslashes( startup, 2 );
 				var cmd = `source(\"${ startup }\")`;
-				R.queued_exec( cmd ).then( function(){
+				R.exec( cmd ).then( function(){
 					oncomplete();
 				}).catch(function(){
 					oncomplete();
@@ -2408,9 +2408,9 @@ function resize_panes(){
 
 function quit(){
 	
-	global.__quit = true;
+	global.__quit = true; 
     remote.getCurrentWindow().close();			
-	
+
 }
 
 function save_environment( quiet ){
@@ -2420,7 +2420,7 @@ function save_environment( quiet ){
     var cmd = `save.image('${data}')`;
 
     console.info(cmd);
-    R.queued_exec(cmd).then( function(){
+    R.exec(cmd).then( function(){
         if( !quiet ){
             PubSub.publish(Constants.SHELL_MESSAGE, [ Messages.SAVED_OK + "\n", "shell-system-information" ]);
         }

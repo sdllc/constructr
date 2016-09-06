@@ -22,9 +22,9 @@
 
 "use strict";
 
-
 const path = require( "path" );
-const ControlR = require( "controlr" );
+//const ControlR = require( "controlr" );
+const ControlR = require( "../../controlr/js/controlr.js" );
 
 /**
  * controlR is the basic R wrapper.  here we're adding some convenience 
@@ -49,18 +49,18 @@ var ExtendR = function(){
 
 	/** get all options */
 	this.options = function(){
-		return this.queued_internal( `options()` );	
+		return this.internal( `options()` );	
 	};
 
 	/** get option */
 	this.get_option = function( key ){
-		return this.queued_internal( `options('${key}')` );	
+		return this.internal( `options('${key}')` );	
 	};
 	
 	/** set option.  strings will be quoted. */
 	this.set_option = function( key, value ){
 		if( typeof value === "string" ) value = enquote( value );
-		return this.queued_internal( `options(${key}=${value})` );
+		return this.internal( `options(${key}=${value})` );
 	};
 
 	/** set multiple options */
@@ -74,7 +74,7 @@ var ExtendR = function(){
 		}
 		var cmd = `options(${s.join( "," )})`;
 		console.info(cmd);
-		return this.queued_internal(cmd);
+		return this.internal(cmd);
 		
 	};
 
@@ -97,7 +97,7 @@ var ExtendR = function(){
 		);
 		
 		cmd.push( `})()` );
-		return this.queued_internal( cmd );
+		return this.internal( cmd );
 		
 	};
 	
@@ -105,7 +105,7 @@ var ExtendR = function(){
 	this.get_cran_mirror = function(){
 		var instance = this;
 		return new Promise( function( resolve, reject ){
-			instance.queued_internal( "getOption('repos')").then( function( rslt ){
+			instance.internal( "getOption('repos')").then( function( rslt ){
                 if( rslt && rslt.response ){
                     if( typeof rslt.response === "string" ){
                         resolve( rslt.response.repos );
@@ -126,7 +126,7 @@ var ExtendR = function(){
 	 * set console width (in characters)
 	 */
 	this.set_console_width = function(chars){
-		this.queued_internal( `options(width=${chars})`, "set.console.width" );
+		this.internal( `options(width=${chars})`, "set.console.width" );
 	};
 
 	// === constructor ========================================================

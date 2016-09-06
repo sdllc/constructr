@@ -54,7 +54,7 @@ var updateData = function( inst ){
             cmd = `get0("${instance.field}")`;
         }
 
-		R.queued_internal( cmd ).then( function( rsp ){
+		R.internal( cmd ).then( function( rsp ){
 			if( rsp.response && rsp.response.$data ){
                 if( rsp.response.$type === "matrix" ) updateFromMatrix( rsp.response, instance );
 				else updateFromFrame( rsp.response, instance );

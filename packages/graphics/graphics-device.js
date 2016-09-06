@@ -516,7 +516,7 @@ function show_graphics_panel( core ){
 					requestAnimationFrame( function(){
 						if( graphics_devices.panel && graphics_devices.panel.device_number ){
 							let cmd = `jsClientLib:::device.resize( ${graphics_devices.panel.device_number}, ${width}, ${height}, T );`;
-							core.R.queued_internal( cmd, "graphics.panel.resize" );
+							core.R.internal( cmd, "graphics.panel.resize" );
 						}
 					});
 				}
@@ -572,7 +572,7 @@ function show_graphics_panel( core ){
 const create_graphics_device = function(core, opts){
 	return new Promise( function( resolve, reject ){
 		opts.size = opts.size || { width: 600, height: 400 };
-		core.R.queued_internal( `jsClientLib:::device( name="json-${opts.name}", width=${opts.size.width}`
+		core.R.internal( `jsClientLib:::device( name="json-${opts.name}", width=${opts.size.width}`
 			+ `, height=${opts.size.height}, pointsize=14 )` ).then( function(rsp){	
 			if( !rsp.response ) throw( rsp );
 			graphics_devices[opts.name] = new GraphicsDevice(core, {
@@ -595,7 +595,7 @@ module.exports = {
             if(graphics_devices.panel.device_number){
                 let i = graphics_devices.inline.device_number;
                 let p = graphics_devices.panel.device_number;
-                core.R.queued_internal( `(function(){ x <- dev.cur(); dev.set(${i}); dev.copy(which=${p}); dev.set(x); })()` );
+                core.R.internal( `(function(){ x <- dev.cur(); dev.set(${i}); dev.copy(which=${p}); dev.set(x); })()` );
             }
         };
 
@@ -607,14 +607,14 @@ module.exports = {
 			switch( obj.key ){
 			case "graphics.target":
 				if( graphics_devices[obj.val] && graphics_devices[obj.val].device_number ){
-					core.R.queued_internal( `dev.set(${ graphics_devices[obj.val].device_number })`)
+					core.R.internal( `dev.set(${ graphics_devices[obj.val].device_number })`)
 				}
 				break;			
 
 			case "inline.graphics.size":
 				if( graphics_devices.inline && graphics_devices.inline.device_number ){
 					let cmd = `jsClientLib:::device.resize( ${graphics_devices.inline.device_number}, ${obj.val.width}, ${obj.val.height}, F)`;
-					core.R.queued_internal( cmd );
+					core.R.internal( cmd );
 				}
 				break;
 			};
@@ -680,7 +680,7 @@ module.exports = {
 				let current = core.Settings['graphics.target'] || "inline";
 				if( graphics_devices[current] ){
 					let currentDevice = graphics_devices[current].device_number;
-					return core.R.queued_internal( `dev.set(${currentDevice})` );
+					return core.R.internal( `dev.set(${currentDevice})` );
 				}
 				else return Promise.resolve();
 

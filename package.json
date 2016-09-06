@@ -26,19 +26,25 @@
       "iconUrl": "https://raw.githubusercontent.com/sdllc/constructr/master/build/icon.ico"
     },
     "linux": {
-        "depends": [
-            "r-base-core", "r-base", "r-recommended", "libappindicator1", "libnotify-bin"
-        ],
-        "fpm": [
-            "--deb-priority", "optional",
-            "--category", "devel"
-        ]
+      "depends": [
+        "r-base-core",
+        "r-base",
+        "r-recommended",
+        "libappindicator1",
+        "libnotify-bin"
+      ],
+      "fpm": [
+        "--deb-priority",
+        "optional",
+        "--category",
+        "devel"
+      ]
     }
   },
   "dependencies": {
     "chokidar": "^1.4.3",
     "cmjs-shell": "^0.3.0",
-    "controlr": "^1.4.7",
+    "controlr": "^2.0.1",
     "electron-squirrel-startup": "^1.0.0",
     "electron-window-state": "^3.0.3",
     "pubsub-js": "^1.5.3",
